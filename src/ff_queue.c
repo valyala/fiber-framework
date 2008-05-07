@@ -16,9 +16,12 @@ struct ff_queue
 
 struct ff_queue *ff_queue_create()
 {
-	struct ff_queue *queue = (struct ff_queue *) ff_malloc(sizeof(*queue));
+	struct ff_queue *queue;
+
+	queue = (struct ff_queue *) ff_malloc(sizeof(*queue));
 	queue->front = NULL;
 	queue->back_ptr = &queue->front;
+
 	return queue;
 }
 
@@ -32,7 +35,9 @@ void ff_queue_delete(struct ff_queue *queue)
 
 void ff_queue_push(struct ff_queue *queue, void *data)
 {
-	struct queue_entry *entry = (struct queue_entry *) ff_malloc(sizeof(*entry));
+	struct queue_entry *entry;
+
+	entry = (struct queue_entry *) ff_malloc(sizeof(*entry));
 	entry->next = NULL;
 	entry->data = data;
 
@@ -42,7 +47,9 @@ void ff_queue_push(struct ff_queue *queue, void *data)
 
 int ff_queue_is_empty(struct ff_queue *queue)
 {
-	int is_empty = (queue->front == NULL) ? 1 : 0;
+	int is_empty;
+
+	is_empty = (queue->front == NULL) ? 1 : 0;
 	return is_empty;
 }
 
