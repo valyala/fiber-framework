@@ -221,6 +221,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\ff_semaphore.c"
+				>
+			</File>
+			<File
 				RelativePath=".\src\ff_stack.c"
 				>
 			</File>
@@ -416,6 +420,10 @@
 					>
 				</File>
 				<File
+					RelativePath=".\include\private\ff_semaphore.h"
+					>
+				</File>
+				<File
 					RelativePath=".\include\private\ff_stack.h"
 					>
 				</File>
@@ -473,6 +481,10 @@
 				</File>
 				<File
 					RelativePath=".\include\public\ff_lock.h"
+					>
+				</File>
+				<File
+					RelativePath=".\include\public\ff_semaphore.h"
 					>
 				</File>
 			</Filter>
