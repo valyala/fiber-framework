@@ -12,12 +12,12 @@ struct ff_arch_fiber
 	LPVOID handle;
 };
 
-struct ff_arch_fiber *ff_arch_fiber_initialize(void *ctx)
+struct ff_arch_fiber *ff_arch_fiber_initialize()
 {
 	struct ff_arch_fiber *fiber;
 
 	fiber = (struct ff_arch_fiber *) ff_malloc(sizeof(*fiber));
-	fiber->handle = ConvertThreadToFiber((LPVOID) ctx);
+	fiber->handle = ConvertThreadToFiber((LPVOID) NULL);
 	ff_assert(fiber->handle != NULL);
 	return fiber;
 }
