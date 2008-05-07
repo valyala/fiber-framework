@@ -13,13 +13,7 @@ extern "C" {
  * @public
  * Schedules the given fiber for execution
  */
-void ff_core_schedule_local_fiber(struct ff_fiber *fiber);
-
-/**
- * @public
- * Schedules the given fiber for execution from threadpool
- */
-void ff_core_schedule_remote_fiber(struct ff_fiber *fiber);
+void ff_core_schedule_fiber(struct ff_fiber *fiber);
 
 /**
  * @public

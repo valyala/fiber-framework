@@ -41,29 +41,34 @@ struct generic_threadpool_data
 	void *ctx;
 };
 
-static int must_stop;
-static struct ff_fiber *current_fiber;
-static struct ff_arch_completion_port *completion_port;
-static struct ff_queue *completion_packets;
-static struct ff_threadpool *threadpool;
-static struct ff_fiberpool *fiberpool;
-static struct ff_queue *timeout_operations;
-static struct ff_mutex *timeout_operations_mutex;
-static struct ff_fiber *timeout_checker_fiber;
+struct core_data
+{
+	int must_stop;
+	struct ff_fiber *current_fiber;
+	struct ff_arch_completion_port *completion_port;
+	struct ff_queue *pending_fibers;
+	struct ff_threadpool *threadpool;
+	struct ff_fiberpool *fiberpool;
+	struct ff_queue *timeout_operations;
+	struct ff_mutex *timeout_operations_mutex;
+	struct ff_fiber *timeout_checker_fiber;
+}
+
+static struct core_data core_ctx;
 
 static void generic_threadpool_func(void *ctx)
 {
 	struct generic_threadpool_data *data;
-	
+
 	data = (struct generic_threadpool_data *) ctx;
 	data->func(data->ctx);
-	ff_core_schedule_remote_fiber(data->fiber);
+	ff_arch_completion_port_put(core_ctx.completion_port, data->fiber);
 }
 
 static void threadpool_sleep(void *ctx)
 {
 	struct threadpool_sleep_data *data;
-	
+
 	data = (struct threadpool_sleep_data *) ctx;
 	ff_arch_misc_sleep(data->interval);
 }
@@ -78,7 +83,7 @@ static void internal_sleep(int interval)
 
 static void sleep_timeout_func(struct ff_fiber *fiber, void *ctx)
 {
-	ff_core_schedule_local_fiber(fiber);
+	ff_core_schedule_fiber(fiber);
 }
 
 static void timeout_operations_visitor_func(void *data, void *ctx)
@@ -100,45 +105,45 @@ static void timeout_operations_visitor_func(void *data, void *ctx)
 
 static void timeout_checker_func(void *ctx)
 {
-	while (!must_stop)
+	while (!core_ctx.must_stop)
 	{
 		struct timeout_checker_data timeout_checker_data;
 
 		timeout_checker_data.current_time = ff_arch_misc_get_current_time();
-		ff_mutex_lock(timeout_operations_mutex);
-		ff_queue_for_each(timeout_operations, timeout_operations_visitor_func, &timeout_checker_data);
-		ff_mutex_unlock(timeout_operations_mutex);
+		ff_mutex_lock(core_ctx.timeout_operations_mutex);
+		ff_queue_for_each(core_ctx.timeout_operations, timeout_operations_visitor_func, &timeout_checker_data);
+		ff_mutex_unlock(core_ctx.timeout_operations_mutex);
 		internal_sleep(TIMEOUT_CHECKER_INTERVAL);
 	}
 }
 
 void ff_core_initialize()
 {
-	must_stop = 0;
-	current_fiber = ff_fiber_initialize();
-	completion_port = ff_arch_completion_port_create(COMPLETION_PORT_CONCURRENCY);
-	completion_packets = ff_queue_create();
-	threadpool = ff_threadpool_create(MAX_THREADPOOL_SIZE);
-	fiberpool = ff_fiberpool_create(MAX_FIBERPOOL_SIZE);
-	timeout_operations = ff_queue_create();
-	timeout_operations_mutex = ff_mutex_create();
-	timeout_checker_fiber = ff_fiber_create(timeout_checker_func, 0);
-	ff_arch_tcp_initialize(completion_port);
+	core_ctx.must_stop = 0;
+	core_ctx.current_fiber = ff_fiber_initialize();
+	core_ctx.completion_port = ff_arch_completion_port_create(COMPLETION_PORT_CONCURRENCY);
+	core_ctx.pending_fibers = ff_queue_create();
+	core_ctx.threadpool = ff_threadpool_create(MAX_THREADPOOL_SIZE);
+	core_ctx.fiberpool = ff_fiberpool_create(MAX_FIBERPOOL_SIZE);
+	core_ctx.timeout_operations = ff_queue_create();
+	core_ctx.timeout_operations_mutex = ff_mutex_create();
+	core_ctx.timeout_checker_fiber = ff_fiber_create(timeout_checker_func, 0);
+	ff_arch_tcp_initialize(core_ctx.completion_port);
 	ff_fiber_start(timeout_checker_fiber, NULL);
 }
 
 void ff_core_shutdown()
 {
-	must_stop = 1;
-	ff_fiber_join(timeout_checker_fiber);
-	ff_fiber_delete(timeout_checker_fiber);
+	core_ctx.must_stop = 1;
+	ff_fiber_join(core_ctx.timeout_checker_fiber);
+	ff_fiber_delete(core_ctx.timeout_checker_fiber);
 	ff_arch_tcp_shutdown();
-	ff_mutex_delete(timeout_operations_mutex);
-	ff_queue_delete(timeout_operations);
-	ff_fiberpool_delete(fiberpool);
-	ff_threadpool_delete(threadpool);
-	ff_queue_delete(completion_packets);
-	ff_arch_completion_port_delete(completion_port);
+	ff_mutex_delete(core_ctx.timeout_operations_mutex);
+	ff_queue_delete(core_ctx.timeout_operations);
+	ff_fiberpool_delete(core_ctx.fiberpool);
+	ff_threadpool_delete(core_ctx.threadpool);
+	ff_queue_delete(core_ctx.pending_fibers);
+	ff_arch_completion_port_delete(core_ctx.completion_port);
 	ff_fiber_shutdown();
 }
 
@@ -151,16 +156,16 @@ void ff_core_threadpool_execute(ff_core_threadpool_func func, void *ctx)
 {
 	struct generic_threadpool_data data;
 
-	data.fiber = current_fiber;
+	data.fiber = core_ctx.current_fiber;
 	data.func = func;
 	data.ctx = ctx;
-	ff_threadpool_execute(threadpool, generic_threadpool_func, &data);
+	ff_threadpool_execute(core_ctx.threadpool, generic_threadpool_func, &data);
 	ff_core_yield_fiber();
 }
 
 void ff_core_fiberpool_begin_execute(ff_core_fiberpool_func func, void *ctx)
 {
-	ff_fiberpool_execute(fiberpool, func, ctx);
+	ff_fiberpool_execute(core_ctx.fiberpool, func, ctx);
 }
 
 int ff_core_do_timeout_operation(int timeout, ff_core_cancel_timeout_func cancel_timeout_func, void *ctx)
@@ -175,58 +180,53 @@ int ff_core_do_timeout_operation(int timeout, ff_core_cancel_timeout_func cancel
 		current_time = ff_arch_misc_get_current_time();
 		cancel_timeout_data.expiration_time = current_time + timeout;
 		cancel_timeout_data.cancel_timeout_func = cancel_timeout_func;
-		cancel_timeout_data.fiber = current_fiber;
+		cancel_timeout_data.fiber = core_ctx.current_fiber;
 		cancel_timeout_data.ctx = ctx;
 		cancel_timeout_data.is_expired = 0;
 
-		ff_mutex_lock(timeout_operations_mutex);
-		ff_queue_push(timeout_operations, &cancel_timeout_data);
-		ff_mutex_unlock(timeout_operations_mutex);
+		ff_mutex_lock(core_ctx.timeout_operations_mutex);
+		ff_queue_push(core_ctx.timeout_operations, &cancel_timeout_data);
+		ff_mutex_unlock(core_ctx.timeout_operations_mutex);
 	}
 	ff_core_yield_fiber();
 	if (timeout > 0)
 	{
 		int is_removed;
 
-		ff_mutex_lock(timeout_operations_mutex);
-		is_removed = ff_queue_remove_entry(timeout_operations, &cancel_timeout_data);
+		ff_mutex_lock(core_ctx.timeout_operations_mutex);
+		is_removed = ff_queue_remove_entry(core_ctx.timeout_operations, &cancel_timeout_data);
 		ff_assert(is_removed);
-		ff_mutex_unlock(timeout_operations_mutex);
+		ff_mutex_unlock(core_ctx.timeout_operations_mutex);
 		is_success = !cancel_timeout_data.is_expired;
 	}
 	return is_success;
 }
 
-void ff_core_schedule_local_fiber(struct ff_fiber *fiber)
+void ff_core_schedule_fiber(struct ff_fiber *fiber)
 {
-	ff_queue_push(completion_packets, fiber);
-}
-
-void ff_core_schedule_remote_fiber(struct ff_fiber *fiber)
-{
-	ff_arch_completion_port_put(completion_port, fiber);
+	ff_queue_push(core_ctx.pending_fibers, fiber);
 }
 
 void ff_core_yield_fiber()
 {
 	int is_empty;
-	
-	is_empty = ff_queue_is_empty(completion_packets);
+
+	is_empty = ff_queue_is_empty(core_ctx.pending_fibers);
 	if (!is_empty)
 	{
-		current_fiber = (struct ff_fiber *) ff_queue_front(completion_packets);
-		ff_assert(current_fiber != NULL);
-		ff_queue_pop(completion_packets);
+		core_ctx.current_fiber = (struct ff_fiber *) ff_queue_front(core_ctx.pending_fibers);
+		ff_assert(core_ctx.current_fiber != NULL);
+		ff_queue_pop(core_ctx.pending_fibers);
 	}
 	else
 	{
-		current_fiber = (struct ff_fiber *) ff_arch_completion_port_get(completion_port);
-		ff_assert(current_fiber != NULL);
+		core_ctx.current_fiber = (struct ff_fiber *) ff_arch_completion_port_get(core_ctx.completion_port);
+		ff_assert(core_ctx.current_fiber != NULL);
 	}
-	ff_fiber_switch(current_fiber);
+	ff_fiber_switch(core_ctx.current_fiber);
 }
 
 struct ff_fiber *ff_core_get_current_fiber()
 {
-	return current_fiber;
+	return core_ctx.current_fiber;
 }

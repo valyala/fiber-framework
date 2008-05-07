@@ -54,7 +54,7 @@ void ff_mutex_unlock(struct ff_mutex *mutex)
 
 		fiber = (struct ff_fiber *) ff_stack_top(mutex->pending_fibers);
 		ff_stack_pop(mutex->pending_fibers);
-		ff_core_schedule_local_fiber(fiber);
+		ff_core_schedule_fiber(fiber);
 	}
 	mutex->is_locked = 0;
 }
