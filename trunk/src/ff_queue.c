@@ -1,7 +1,6 @@
 #include "private/ff_common.h"
 
 #include "private/ff_queue.h"
-#include "private/ff_lock.h"
 
 struct queue_entry
 {
@@ -11,7 +10,6 @@ struct queue_entry
 
 struct ff_queue
 {
-	struct ff_lock *lock;
 	struct queue_entry *front;
 	struct queue_entry **back_ptr;
 };
@@ -19,7 +17,6 @@ struct ff_queue
 struct ff_queue *ff_queue_create()
 {
 	struct ff_queue *queue = (struct ff_queue *) ff_malloc(sizeof(*queue));
-	queue->lock = ff_lock_create();
 	queue->front = NULL;
 	queue->back_ptr = &queue->front;
 	return queue;
@@ -30,7 +27,6 @@ void ff_queue_delete(struct ff_queue *queue)
 	ff_assert(queue->front == NULL);
 	ff_assert(queue->back_ptr == &queue->front);
 
-	ff_lock_delete(queue->lock);
 	ff_free(queue);
 }
 
@@ -40,10 +36,8 @@ void ff_queue_push(struct ff_queue *queue, void *data)
 	entry->next = NULL;
 	entry->data = data;
 
-	ff_lock_lock(queue->lock);
 	*queue->back_ptr = entry;
 	queue->back_ptr = &entry->next;
-	ff_lock_unlock(queue->lock);
 }
 
 int ff_queue_is_empty(struct ff_queue *queue)
@@ -65,14 +59,12 @@ void ff_queue_pop(struct ff_queue *queue)
 
 	ff_assert(queue->front != NULL);
 
-	ff_lock_lock(queue->lock);
 	entry = queue->front;
 	queue->front = entry->next;
 	if (queue->back_ptr == &entry->next)
 	{
 		queue->back_ptr = &queue->front;
 	}
-	ff_lock_unlock(queue->lock);
 
 	ff_free(entry);
 }
@@ -83,7 +75,6 @@ int ff_queue_remove_entry(struct ff_queue *queue, void *data)
 	struct queue_entry **entry_ptr;
 	struct queue_entry *entry;
 
-	ff_lock_lock(queue->lock);
 	entry_ptr = &queue->front;
 	entry = queue->front;
 	while (entry != NULL)
@@ -102,7 +93,6 @@ int ff_queue_remove_entry(struct ff_queue *queue, void *data)
 		entry_ptr = &entry->next;
 		entry = entry->next;
 	}
-	ff_lock_unlock(queue->lock);
 
 	return is_removed;
 }
@@ -111,12 +101,10 @@ void ff_queue_for_each(struct ff_queue *queue, ff_queue_for_each_func for_each_f
 {
 	struct queue_entry *entry;
 
-	ff_lock_lock(queue->lock);
 	entry = queue->front;
 	while (entry != NULL)
 	{
 		for_each_func(entry->data, ctx);
 		entry = entry->next;
 	}
-	ff_lock_unlock(queue->lock);
 }
