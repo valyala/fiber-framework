@@ -2,6 +2,7 @@
 
 #include "private/arch/ff_arch_completion_port.h"
 #include "ff_win_completion_port.h"
+#include "ff_win_error_check.h"
 #include "private/ff_dictionary.h"
 
 #include <windows.h>
@@ -18,6 +19,7 @@ struct ff_arch_completion_port *ff_arch_completion_port_create(int concurrency)
 	
 	completion_port = (struct ff_arch_completion_port *) ff_malloc(sizeof(*completion_port));
 	completion_port->handle = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, (ULONG_PTR) NULL, concurrency);
+	ff_winapi_fatal_error_check(completion_port->handle != NULL, L"cannot create completion port");
 	completion_port->overlapped_dictionary = ff_dictionary_create();
 	return completion_port;
 }
@@ -85,4 +87,14 @@ void ff_win_completion_port_deregister_overlapped_data(struct ff_arch_completion
 
 	is_removed = ff_dictionary_remove_entry(completion_port->overlapped_dictionary, overlapped, &data);
 	ff_assert(is_removed);
+}
+
+void ff_win_completion_port_register_handle(struct ff_arch_completion_port *completion_port, HANDLE handle)
+{
+	HANDLE result_handle;
+	ULONG_PTR key;
+
+	key = (ULONG_PTR) NULL;
+	result_handle = CreateIoCompletionPort(handle, completion_port->handle, key, 0);
+	ff_winapi_fatal_error_check(result_handle == completion_port->handle, L"cannot assign handle to completion port");
 }

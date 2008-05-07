@@ -4,6 +4,7 @@
 #include "private/ff_core.h"
 #include "private/arch/ff_arch_completion_port.h"
 #include "ff_win_completion_port.h"
+#include "ff_win_error_check.h"
 
 #include <winsock2.h>
 #include <Mswsock.h>
@@ -19,7 +20,8 @@ struct ff_arch_tcp_addr
 	struct sockaddr_in addr;
 };
 
-LPFN_CONNECTEX connect_ex;
+static LPFN_CONNECTEX connect_ex = NULL;
+static struct ff_arch_completion_port *win_completion_port = NULL;
 
 static void cancel_io_operation(struct ff_fiber *fiber, void *ctx)
 {
@@ -31,16 +33,14 @@ static void cancel_io_operation(struct ff_fiber *fiber, void *ctx)
 
 static int complete_overlapped_io(struct ff_arch_tcp *tcp, WSAOVERLAPPED *overlapped, int timeout)
 {
-	struct ff_arch_completion_port *completion_port;
 	struct ff_fiber *current_fiber;
 	int int_bytes_transferred = -1;
 	int is_success;
 
-	completion_port = ff_core_get_completion_port();
 	current_fiber = ff_core_get_current_fiber();
-	ff_win_completion_port_register_overlapped_data(completion_port, overlapped, current_fiber);
+	ff_win_completion_port_register_overlapped_data(win_completion_port, overlapped, current_fiber);
 	is_success = ff_core_do_timeout_operation(timeout, cancel_io_operation, tcp);
-	ff_win_completion_port_deregister_overlapped_data(completion_port, overlapped);
+	ff_win_completion_port_deregister_overlapped_data(win_completion_port, overlapped);
 	if (is_success)
 	{
 		BOOL result;
@@ -57,24 +57,16 @@ static int complete_overlapped_io(struct ff_arch_tcp *tcp, WSAOVERLAPPED *overla
 	return int_bytes_transferred;
 }
 
-static struct ff_arch_tcp *ff_arch_tcp_create()
-{
-	struct ff_arch_tcp *tcp;
-
-	tcp = (struct ff_arch_tcp *) ff_malloc(sizeof(*tcp));
-	tcp->handle = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0, WSA_FLAG_OVERLAPPED);
-	tcp->is_disconnected = 0;
-	return tcp;
-}
-
-void ff_arch_tcp_initialize()
+void ff_arch_tcp_initialize(struct ff_arch_completion_port *completion_port)
 {
 	int rv;
 	WORD version;
 	struct WSAData wsa;
 
+	win_completion_port = completion_port;
 	version = MAKEWORD(2, 2);
 	rv = WSAStartup(version, &wsa);
+	ff_winsock_fatal_error_check(rv == 0, "cannot initialize winsock");
 }
 
 void ff_arch_tcp_shutdown()
@@ -85,39 +77,19 @@ void ff_arch_tcp_shutdown()
 	ff_assert(rv == 0);
 }
 
-struct ff_arch_tcp *ff_arch_tcp_connect(const struct ff_arch_tcp_addr *addr)
+struct ff_arch_tcp *ff_arch_tcp_create()
 {
+	HANDLE handle;
 	struct ff_arch_tcp *tcp;
-	BOOL result;
-	WSAOVERLAPPED overlapped;
-	int bytes_transferred;
 
-	tcp = ff_arch_tcp_create();
+	tcp = (struct ff_arch_tcp *) ff_malloc(sizeof(*tcp));
+	tcp->handle = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0, WSA_FLAG_OVERLAPPED);
+	ff_winsock_fatal_error_check(tcp->handle != INVALID_SOCKET, L"cannot create tcp socket");
+	tcp->is_disconnected = 0;
 
-	memset(&overlapped, 0, sizeof(overlapped));
-	result = connect_ex(tcp->handle, (struct sockaddr *) &addr->addr, sizeof(addr->addr), NULL, 0, NULL, &overlapped);
-	if (result == FALSE)
-	{
-		int last_error;
+	handle = (HANDLE) tcp->handle;
+	ff_win_completion_port_register_handle(win_completion_port, handle);
 
-		last_error = WSAGetLastError();
-		if (last_error != WSA_IO_PENDING)
-		{
-			ff_arch_tcp_delete(tcp);
-			tcp = NULL;
-			goto end;
-		}
-	}
-
-	bytes_transferred = complete_overlapped_io(tcp, &overlapped, 0);
-	if (bytes_transferred == -1)
-	{
-		ff_arch_tcp_delete(tcp);
-		tcp = NULL;
-		goto end;
-	}
-
-end:
 	return tcp;
 }
 
@@ -128,6 +100,38 @@ void ff_arch_tcp_delete(struct ff_arch_tcp *tcp)
 	rv = closesocket(tcp->handle);
 	ff_assert(rv == 0);
 	ff_free(tcp);
+}
+
+int ff_arch_tcp_connect(struct ff_arch_tcp *tcp, const struct ff_arch_tcp_addr *addr)
+{
+	int is_connected = 0;
+	BOOL result;
+	WSAOVERLAPPED overlapped;
+	int bytes_transferred;
+
+	memset(&overlapped, 0, sizeof(overlapped));
+	result = connect_ex(tcp->handle, (struct sockaddr *) &addr->addr, sizeof(addr->addr), NULL, 0, NULL, &overlapped);
+	if (result == FALSE)
+	{
+		int last_error;
+
+		last_error = WSAGetLastError();
+		if (last_error != WSA_IO_PENDING)
+		{
+			goto end;
+		}
+	}
+
+	bytes_transferred = complete_overlapped_io(tcp, &overlapped, 0);
+	if (bytes_transferred == -1)
+	{
+		goto end;
+	}
+
+	is_connected = 1;
+
+end:
+	return is_connected;
 }
 
 int ff_arch_tcp_read(struct ff_arch_tcp *tcp, void *buf, int len)
@@ -218,8 +222,12 @@ end:
 
 void ff_arch_tcp_disconnect(struct ff_arch_tcp *tcp)
 {
-	BOOL result;
-	
-	result = CancelIo((HANDLE) tcp->handle);
-	tcp->is_disconnected = 1;
+	if (!tcp->is_disconnected)
+	{
+		BOOL result;
+
+		result = CancelIo((HANDLE) tcp->handle);
+		ff_assert(result != FALSE);
+		tcp->is_disconnected = 1;
+	}
 }

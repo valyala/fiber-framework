@@ -112,13 +112,13 @@ void ff_core_initialize()
 {
 	must_stop = 0;
 	current_fiber = ff_fiber_initialize();
-	ff_arch_tcp_initialize();
 	completion_port = ff_arch_completion_port_create(COMPLETION_PORT_CONCURRENCY);
 	completion_packets = ff_queue_create();
 	threadpool = ff_threadpool_create(MAX_THREADPOOL_SIZE);
 	fiberpool = ff_fiberpool_create(MAX_FIBERPOOL_SIZE);
 	timeout_operations = ff_queue_create();
 	timeout_checker_fiber = ff_fiber_create(timeout_checker_func, 0);
+	ff_arch_tcp_initialize(completion_port);
 	ff_fiber_start(timeout_checker_fiber, NULL);
 }
 
@@ -127,12 +127,12 @@ void ff_core_shutdown()
 	must_stop = 1;
 	ff_fiber_join(timeout_checker_fiber);
 	ff_fiber_delete(timeout_checker_fiber);
+	ff_arch_tcp_shutdown();
 	ff_queue_delete(timeout_operations);
 	ff_fiberpool_delete(fiberpool);
 	ff_threadpool_delete(threadpool);
 	ff_queue_delete(completion_packets);
 	ff_arch_completion_port_delete(completion_port);
-	ff_arch_tcp_shutdown();
 	ff_fiber_shutdown();
 }
 
@@ -219,9 +219,4 @@ void ff_core_yield_fiber()
 struct ff_fiber *ff_core_get_current_fiber()
 {
 	return current_fiber;
-}
-
-struct ff_arch_completion_port *ff_core_get_completion_port()
-{
-	return completion_port;
 }

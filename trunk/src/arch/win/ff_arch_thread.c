@@ -1,6 +1,7 @@
 #include "private/ff_common.h"
 
 #include "private/arch/ff_arch_thread.h"
+#include "ff_win_error_check.h"
 
 //#define _WIN32_WINNT 0x0502
 
@@ -16,15 +17,20 @@ struct ff_arch_thread
 
 static unsigned int WINAPI generic_thread_func(void *ctx)
 {
-	struct ff_arch_thread *thread = (struct ff_arch_thread *) ctx;
+	struct ff_arch_thread *thread;
+
+	thread = (struct ff_arch_thread *) ctx;
 	thread->func(thread->ctx);
 	return 0;
 }
 
 struct ff_arch_thread *ff_arch_thread_create(ff_arch_thread_func func, int stack_size)
 {
-	struct ff_arch_thread *thread = (struct ff_arch_thread *) ff_malloc(sizeof(*thread));
+	struct ff_arch_thread *thread;
+
+	thread = (struct ff_arch_thread *) ff_malloc(sizeof(*thread));
 	thread->handle = (HANDLE) _beginthreadex(NULL, stack_size, generic_thread_func, thread, CREATE_SUSPENDED, NULL);
+    ff_winapi_fatal_error_check(thread->handle != NULL, L"cannot start new thread");
 	thread->func = func;
 	thread->ctx = NULL;
 	return thread;
@@ -32,8 +38,10 @@ struct ff_arch_thread *ff_arch_thread_create(ff_arch_thread_func func, int stack
 
 void ff_arch_thread_delete(struct ff_arch_thread *thread)
 {
-	BOOL rv = CloseHandle(thread->handle);
-	ff_assert(rv != FALSE);
+	BOOL result;
+	
+	result = CloseHandle(thread->handle);
+	ff_assert(result != FALSE);
 	ff_free(thread);
 }
 
@@ -48,6 +56,8 @@ void ff_arch_thread_start(struct ff_arch_thread *thread, void *ctx)
 
 void ff_arch_thread_join(struct ff_arch_thread *thread)
 {
-	DWORD result = WaitForSingleObject(thread->handle, INFINITE);
+	DWORD result;
+
+	result = WaitForSingleObject(thread->handle, INFINITE);
 	ff_assert(result == WAIT_OBJECT_0);
 }

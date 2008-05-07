@@ -6,7 +6,9 @@
 
 int64_t ff_arch_misc_get_current_time()
 {
-	int64_t current_time = GetTickCount();
+	int64_t current_time;
+
+	current_time = GetTickCount();
 	return current_time;
 }
 
