@@ -16,7 +16,9 @@ struct ff_dictionary
 
 struct ff_dictionary *ff_dictionary_create()
 {
-	struct ff_dictionary *dictionary = (struct ff_dictionary *) ff_malloc(sizeof(*dictionary));
+	struct ff_dictionary *dictionary;
+
+	dictionary = (struct ff_dictionary *) ff_malloc(sizeof(*dictionary));
 	dictionary->head = NULL;
 
 	return dictionary;
@@ -31,7 +33,9 @@ void ff_dictionary_delete(struct ff_dictionary *dictionary)
 
 void ff_dictionary_put(struct ff_dictionary *dictionary, void *key, void *value)
 {
-	struct dictionary_entry *entry = (struct dictionary_entry *) ff_malloc(sizeof(*entry));
+	struct dictionary_entry *entry;
+
+	entry = (struct dictionary_entry *) ff_malloc(sizeof(*entry));
 	entry->next = dictionary->head;
 	entry->key = key;
 	entry->value = value;
@@ -41,8 +45,9 @@ void ff_dictionary_put(struct ff_dictionary *dictionary, void *key, void *value)
 int ff_dictionary_get(struct ff_dictionary *dictionary, void *key, void **value)
 {
 	int is_found = 0;
-	struct dictionary_entry *entry = dictionary->head;
+	struct dictionary_entry *entry;
 
+	entry = dictionary->head;
 	while (entry != NULL)
 	{
 		if (entry->key == key)
@@ -59,9 +64,11 @@ int ff_dictionary_get(struct ff_dictionary *dictionary, void *key, void **value)
 int ff_dictionary_remove_entry(struct ff_dictionary *dictionary, void *key, void **value)
 {
 	int is_removed = 0;
-	struct dictionary_entry **entry_ptr = &dictionary->head;
-	struct dictionary_entry *entry = dictionary->head;
+	struct dictionary_entry **entry_ptr;
+	struct dictionary_entry *entry;
 
+	entry_ptr = &dictionary->head;
+	entry = dictionary->head;
 	while (entry != NULL)
 	{
 		if (entry->key == key)
