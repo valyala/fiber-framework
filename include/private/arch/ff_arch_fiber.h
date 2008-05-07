@@ -21,7 +21,7 @@ typedef void (*ff_arch_fiber_func)(void *ctx);
  * @public
  * Converts the thread to fibers
  */
-struct ff_arch_fiber *ff_arch_fiber_initialize(void *ctx);
+struct ff_arch_fiber *ff_arch_fiber_initialize();
 
 /**
  * @public
