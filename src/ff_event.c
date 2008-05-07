@@ -18,7 +18,7 @@ static void cancel_event_wait(struct ff_fiber *fiber, void *ctx)
 	int is_removed = ff_stack_remove_entry(event->pending_fibers, fiber);
 	if (is_removed)
 	{
-		ff_core_schedule_local_fiber(fiber);
+		ff_core_schedule_fiber(fiber);
 	}
 }
 
@@ -55,7 +55,7 @@ void ff_event_set(struct ff_event *event)
 
 			fiber = (struct ff_fiber *) ff_stack_top(event->pending_fibers);
 			ff_stack_pop(event->pending_fibers);
-			ff_core_schedule_local_fiber(fiber);
+			ff_core_schedule_fiber(fiber);
 			if (event->event_type == FF_EVENT_AUTO)
 			{
 				/* event->is_set = 1 skipped here intentionally */

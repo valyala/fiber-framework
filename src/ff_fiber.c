@@ -80,7 +80,7 @@ void ff_fiber_start(struct ff_fiber *fiber, void *ctx)
 {
 	fiber->ctx = ctx;
 	ff_event_reset(fiber->stop_event);
-	ff_core_schedule_local_fiber(fiber);
+	ff_core_schedule_fiber(fiber);
 }
 
 void ff_fiber_join(struct ff_fiber *fiber)
