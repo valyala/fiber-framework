@@ -5,6 +5,8 @@
 #include "private/ff_core.h"
 #include "private/arch/ff_arch_fiber.h"
 
+static const int DEFAULT_FIBER_STACK_SIZE = 0x10000;
+
 struct ff_fiber
 {
 	/* context, which will be passed to the func */
@@ -65,6 +67,13 @@ void ff_fiber_switch(struct ff_fiber *fiber)
 struct ff_fiber *ff_fiber_create(ff_fiber_func fiber_func, int stack_size)
 {
 	struct ff_fiber *fiber;
+
+	ff_assert(stack_size >= 0);
+
+	if (stack_size == 0)
+	{
+		stack_size = DEFAULT_FIBER_STACK_SIZE;
+	}
 
 	fiber = (struct ff_fiber *) ff_malloc(sizeof(*fiber));
 	fiber->ctx = NULL;
