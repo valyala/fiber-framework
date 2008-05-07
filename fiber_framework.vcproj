@@ -358,6 +358,10 @@
 						RelativePath=".\src\arch\win\ff_win_completion_port.h"
 						>
 					</File>
+					<File
+						RelativePath=".\src\arch\win\ff_win_error_check.h"
+						>
+					</File>
 				</Filter>
 			</Filter>
 		</Filter>
