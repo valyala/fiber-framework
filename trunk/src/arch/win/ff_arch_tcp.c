@@ -11,6 +11,7 @@
 struct ff_arch_tcp
 {
 	SOCKET handle;
+	int is_disconnected;
 };
 
 struct ff_arch_tcp_addr
@@ -62,6 +63,7 @@ static struct ff_arch_tcp *ff_arch_tcp_create()
 
 	tcp = (struct ff_arch_tcp *) ff_malloc(sizeof(*tcp));
 	tcp->handle = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0, WSA_FLAG_OVERLAPPED);
+	tcp->is_disconnected = 0;
 	return tcp;
 }
 
@@ -145,6 +147,11 @@ int ff_arch_tcp_read_with_timeout(struct ff_arch_tcp *tcp, void *buf, int len, i
 	int int_bytes_read = -1;
 	DWORD flags = 0;
 
+	if (tcp->is_disconnected)
+	{
+		goto end;
+	}
+
 	wsa_buf.len = 1;
 	wsa_buf.buf = (char *) buf;
 	memset(&overlapped, 0, sizeof(overlapped));
@@ -183,6 +190,11 @@ int ff_arch_tcp_write_with_timeout(struct ff_arch_tcp *tcp, const void *buf, int
 	int int_bytes_written = -1;
 	DWORD flags = 0;
 
+	if (tcp->is_disconnected)
+	{
+		goto end;
+	}
+
 	wsa_buf.len = 1;
 	wsa_buf.buf = (char *) buf;
 	memset(&overlapped, 0, sizeof(overlapped));
@@ -206,5 +218,8 @@ end:
 
 void ff_arch_tcp_disconnect(struct ff_arch_tcp *tcp)
 {
-	BOOL result = CancelIo((HANDLE) tcp->handle);
+	BOOL result;
+	
+	result = CancelIo((HANDLE) tcp->handle);
+	tcp->is_disconnected = 1;
 }
