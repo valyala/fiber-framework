@@ -32,14 +32,16 @@ static void generic_fiberpool_func(void *ctx)
 
 		fiberpool->busy_fibers_cnt--;
 		task = (struct fiberpool_task *) ff_blocking_queue_get(fiberpool->pending_tasks);
-		fiberpool->busy_fibers_cnt++;
 		if (task == NULL)
 		{
 			break;
 		}
+		fiberpool->busy_fibers_cnt++;
+
 		task->func(task->ctx);
 		ff_free(task);
 	}
+	fiberpool->running_fibers_cnt--;
 }
 
 static void add_worker_fiber(struct ff_fiberpool *fiberpool)
@@ -85,6 +87,9 @@ void ff_fiberpool_delete(struct ff_fiberpool *fiberpool)
 		ff_fiber_join(fiber);
 		ff_fiber_delete(fiber);
 	}
+	ff_assert(fiberpool->busy_fibers_cnt == 0);
+	ff_assert(fiberpool->running_fibers_cnt == 0);
+
 	ff_free(fiberpool->fibers);
 	ff_blocking_queue_delete(fiberpool->pending_tasks);
 	ff_free(fiberpool);
