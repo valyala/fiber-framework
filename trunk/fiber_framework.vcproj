@@ -209,7 +209,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\src\ff_lock.c"
+				RelativePath=".\src\ff_mutex.c"
 				>
 			</File>
 			<File
@@ -279,7 +279,7 @@
 						</FileConfiguration>
 					</File>
 					<File
-						RelativePath=".\src\arch\win\ff_arch_lock.c"
+						RelativePath=".\src\arch\win\ff_arch_mutex.c"
 						>
 						<FileConfiguration
 							Name="Debug|Win32"
@@ -408,7 +408,7 @@
 					>
 				</File>
 				<File
-					RelativePath=".\include\private\ff_lock.h"
+					RelativePath=".\include\private\ff_mutex.h"
 					>
 				</File>
 				<File
@@ -443,7 +443,7 @@
 						>
 					</File>
 					<File
-						RelativePath=".\include\private\arch\ff_arch_lock.h"
+						RelativePath=".\include\private\arch\ff_arch_mutex.h"
 						>
 					</File>
 					<File
@@ -480,7 +480,7 @@
 					>
 				</File>
 				<File
-					RelativePath=".\include\public\ff_lock.h"
+					RelativePath=".\include\public\ff_mutex.h"
 					>
 				</File>
 				<File

@@ -1,7 +1,7 @@
-#ifndef FF_LOCK_PRIVATE
-#define FF_LOCK_PRIVATE
+#ifndef FF_MUTEX_PRIVATE
+#define FF_MUTEX_PRIVATE
 
-#include "public/ff_lock.h"
+#include "public/ff_mutex.h"
 
 #ifdef __cplusplus
 extern "C" {
