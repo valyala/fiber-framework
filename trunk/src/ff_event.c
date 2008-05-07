@@ -7,15 +7,18 @@
 
 struct ff_event
 {
-	int is_set;
-	enum ff_event_type event_type;
 	struct ff_stack *pending_fibers;
+	enum ff_event_type event_type;
+	int is_set;
 };
 
 static void cancel_event_wait(struct ff_fiber *fiber, void *ctx)
 {
-	struct ff_event *event = (struct ff_event *) ctx;
-	int is_removed = ff_stack_remove_entry(event->pending_fibers, fiber);
+	struct ff_event *event;
+	int is_removed;
+	
+	event = (struct ff_event *) ctx;
+	is_removed = ff_stack_remove_entry(event->pending_fibers, fiber);
 	if (is_removed)
 	{
 		ff_core_schedule_fiber(fiber);
@@ -24,11 +27,12 @@ static void cancel_event_wait(struct ff_fiber *fiber, void *ctx)
 
 struct ff_event *ff_event_create(enum ff_event_type event_type)
 {
-	struct ff_event *event = (struct ff_event *) ff_malloc(sizeof(*event));
+	struct ff_event *event;
 
-	event->is_set = 0;
-	event->event_type = event_type;
+	event = (struct ff_event *) ff_malloc(sizeof(*event));
 	event->pending_fibers = ff_stack_create();
+	event->event_type = event_type;
+	event->is_set = 0;
 
 	return event;
 }
@@ -46,7 +50,9 @@ void ff_event_set(struct ff_event *event)
 		for (;;)
 		{
 			struct ff_fiber *fiber;
-			int is_empty = ff_stack_is_empty(event->pending_fibers);
+			int is_empty;
+
+			is_empty = ff_stack_is_empty(event->pending_fibers);
 			if (is_empty)
 			{
 				event->is_set = 1;
@@ -81,9 +87,12 @@ void ff_event_wait(struct ff_event *event)
 int ff_event_wait_with_timeout(struct ff_event *event, int timeout)
 {
 	int is_success = 1;
+
 	if (!event->is_set)
 	{
-		struct ff_fiber *current_fiber = ff_core_get_current_fiber();
+		struct ff_fiber *current_fiber;
+
+		current_fiber = ff_core_get_current_fiber();
 		ff_stack_push(event->pending_fibers, current_fiber);
 		is_success = ff_core_do_timeout_operation(timeout, cancel_event_wait, event);
 	}
@@ -94,4 +103,3 @@ int ff_event_is_set(struct ff_event *event)
 {
 	return event->is_set;
 }
-
