@@ -15,8 +15,12 @@ struct ff_arch_lock
 
 struct ff_arch_lock *ff_arch_lock_create()
 {
-	struct ff_arch_lock *lock = (struct ff_arch_lock *) ff_malloc(sizeof(*lock));
-	InitializeCriticalSectionAndSpinCount(&lock->critical_section, SPIN_COUNT);
+	struct ff_arch_lock *lock;
+	BOOL rv;
+
+	lock = (struct ff_arch_lock *) ff_malloc(sizeof(*lock));
+	rv = InitializeCriticalSectionAndSpinCount(&lock->critical_section, SPIN_COUNT);
+	ff_assert(rv != FALSE);
 	return lock;
 }
 

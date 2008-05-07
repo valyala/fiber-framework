@@ -46,12 +46,6 @@ int ff_core_do_timeout_operation(int timeout, ff_core_cancel_timeout_func cancel
  */
 struct ff_fiber *ff_core_get_current_fiber();
 
-/**
- * @public
- * Returns the completion port
- */
-struct ff_arch_completion_port *ff_core_get_completion_port();
-
 #ifdef __cplusplus
 }
 #endif
