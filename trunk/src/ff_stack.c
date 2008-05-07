@@ -15,7 +15,9 @@ struct ff_stack
 
 struct ff_stack *ff_stack_create()
 {
-	struct ff_stack *stack = (struct ff_stack *) ff_malloc(sizeof(*stack));
+	struct ff_stack *stack;
+
+	stack = (struct ff_stack *) ff_malloc(sizeof(*stack));
 	stack->top = NULL;
 
 	return stack;
@@ -30,7 +32,9 @@ void ff_stack_delete(struct ff_stack *stack)
 
 void ff_stack_push(struct ff_stack *stack, void *data)
 {
-	struct stack_entry *entry = (struct stack_entry *) ff_malloc(sizeof(*entry));
+	struct stack_entry *entry;
+
+	entry = (struct stack_entry *) ff_malloc(sizeof(*entry));
 	entry->next = stack->top;
 	entry->data = data;
 	stack->top = entry;
@@ -38,7 +42,9 @@ void ff_stack_push(struct ff_stack *stack, void *data)
 
 int ff_stack_is_empty(struct ff_stack *stack)
 {
-	int is_empty = stack->top == NULL ? 1 : 0;
+	int is_empty;
+
+	is_empty = stack->top == NULL ? 1 : 0;
 	return is_empty;
 }
 
@@ -63,9 +69,11 @@ void ff_stack_pop(struct ff_stack *stack)
 int ff_stack_remove_entry(struct ff_stack *stack, void *data)
 {
 	int is_removed = 0;
-	struct stack_entry **entry_ptr = &stack->top;
-	struct stack_entry *entry = stack->top;
+	struct stack_entry **entry_ptr;
+	struct stack_entry *entry;
 
+	entry_ptr = &stack->top;
+	entry = stack->top;
 	while (entry != NULL)
 	{
 		if (entry->data == data)
