@@ -22,12 +22,24 @@ struct ff_arch_tcp_addr
 
 struct tcp_data
 {
-	LPFN_CONNECTEX connect_ex;
 	struct ff_arch_completion_port *completion_port;
 	SOCKET aux_socket;
+	LPFN_CONNECTEX connect_ex;
+	LPFN_ACCEPTEX accept_ex;
+	LPFN_GETACCEPTEXSOCKADDRS get_accept_ex_sockaddrs;
 };
 
 static struct tcp_data tcp_ctx;
+
+static SOCKET create_tcp_socket()
+{
+	SOCKET socket;
+
+	socket = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0, WSA_FLAG_OVERLAPPED);
+	ff_winsock_fatal_error_check(socket != INVALID_SOCKET, L"cannot create tcp socket");
+
+	return socket;
+}
 
 static void cancel_io_operation(struct ff_fiber *fiber, void *ctx)
 {
@@ -68,8 +80,10 @@ void ff_win_tcp_initialize(struct ff_arch_completion_port *completion_port)
 	int rv;
 	WORD version;
 	struct WSAData wsa;
-	GUID connect_ex_guid = WSAID_CONNECTEX;
 	DWORD len;
+	GUID connect_ex_guid = WSAID_CONNECTEX;
+	GUID accept_ex_guid = WSAID_ACCEPTEX;
+	GUID get_accept_ex_sockaddrs_guid = WSAID_GETACCEPTEXSOCKADDRS;
 
 	tcp_ctx.completion_port = completion_port;
 
@@ -77,14 +91,23 @@ void ff_win_tcp_initialize(struct ff_arch_completion_port *completion_port)
 	rv = WSAStartup(version, &wsa);
 	ff_winsock_fatal_error_check(rv == 0, L"cannot initialize winsock");
 
-	tcp_ctx.aux_socket = WSASocket(AF_INET, SOCK_DGRAM, IPPROTO_UDP, NULL, 0, WSA_FLAG_OVERLAPPED);
-	ff_winsock_fatal_error_check(tcp.aux_socket != INVALID_SOCKET, L"cannot create auxiliary socket");
+	tcp_ctx.aux_socket = create_tcp_socket();
 
 	tcp_ctx.connect_ex = NULL;
 	rv = WSAIoctl(tcp_ctx.aux_socket, SIO_GET_EXTENSION_FUNCTION_POINTER, &connect_ex_guid, sizeof(connect_ex_guid),
 		&tcp_ctx.connect_ex, sizeof(tcp_ctx.connect_ex), &len, NULL, NULL);
 	ff_winsock_fatal_error_check(rv == 0, L"cannot obtain ConnectEx() function");
 	ff_assert(tcp_ctx.connect_ex != NULL);
+
+	rv = WSAIoctl(tcp_ctx.aux_socket, SIO_GET_EXTENSION_FUNCTION_POINTER, &accept_ex_guid, sizeof(accept_ex_guid),
+		&tcp_ctx.accept_ex, sizeof(tcp_ctx.accept_ex), &len, NULL, NULL);
+	ff_winsock_fatal_error_check(rv == 0, L"cannot obtain AcceptEx() function");
+	ff_assert(tcp_ctx.accept_ex != NULL);
+
+	rv = WSAIoctl(tcp_ctx.aux_socket, SIO_GET_EXTENSION_FUNCTION_POINTER, &get_accept_ex_sockaddrs_guid, sizeof(get_accept_ex_sockaddrs_guid),
+		&tcp_ctx.get_accept_ex_sockaddrs, sizeof(tcp_ctx.get_accept_ex_sockaddrs), &len, NULL, NULL);
+	ff_winsock_fatal_error_check(rv == 0, L"cannot obtain GetAcceptExSockaddrs() function");
+	ff_assert(tcp_ctx.get_accept_ex_sockaddrs != NULL);
 }
 
 void ff_win_tcp_shutdown()
@@ -104,8 +127,7 @@ struct ff_arch_tcp *ff_arch_tcp_create()
 	struct ff_arch_tcp *tcp;
 
 	tcp = (struct ff_arch_tcp *) ff_malloc(sizeof(*tcp));
-	tcp->handle = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0, WSA_FLAG_OVERLAPPED);
-	ff_winsock_fatal_error_check(tcp->handle != INVALID_SOCKET, L"cannot create tcp socket");
+	tcp->handle = create_tcp_socket();
 	tcp->is_disconnected = 0;
 
 	handle = (HANDLE) tcp->handle;
@@ -123,12 +145,41 @@ void ff_arch_tcp_delete(struct ff_arch_tcp *tcp)
 	ff_free(tcp);
 }
 
+int ff_arch_tcp_bind(struct ff_arch_tcp *tcp, const struct ff_arch_tcp_addr *addr)
+{
+	int rv;
+	int is_success = 0;
+
+	rv = bind(tcp->handle, (struct sockaddr *) &addr->addr, sizeof(addr->addr));
+	if (rv == SOCKET_ERROR)
+	{
+		goto end;
+	}
+
+	rv = listen(tcp->handle, SOMAXCONN);
+	ff_winsock_fatal_error_check(rv != SOCKET_ERROR, L"cannot enable listening mode for the tcp socket");
+
+	is_success = 1;
+
+end:
+	return is_success;
+}
+
 int ff_arch_tcp_connect(struct ff_arch_tcp *tcp, const struct ff_arch_tcp_addr *addr)
 {
 	int is_connected = 0;
 	BOOL result;
 	WSAOVERLAPPED overlapped;
 	int bytes_transferred;
+	struct sockaddr_in local_addr;
+	int rv;
+
+	memset(&local_addr, 0, sizeof(local_addr));
+	local_addr.sin_family = AF_INET;
+	local_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+	local_addr.sin_port = htons(0);
+	rv = bind(tcp->handle, (struct sockaddr *) &local_addr, sizeof(local_addr));
+	ff_winsock_fatal_error_check(rv != SOCKET_ERROR, L"cannot bind arbitrary address");
 
 	memset(&overlapped, 0, sizeof(overlapped));
 	result = tcp_ctx.connect_ex(tcp->handle, (struct sockaddr *) &addr->addr, sizeof(addr->addr), NULL, 0, NULL, &overlapped);
@@ -153,6 +204,62 @@ int ff_arch_tcp_connect(struct ff_arch_tcp *tcp, const struct ff_arch_tcp_addr *
 
 end:
 	return is_connected;
+}
+
+struct ff_arch_tcp *ff_arch_tcp_accept(struct ff_arch_tcp *tcp, struct ff_arch_tcp_addr *remote_addr)
+{
+	WSAOVERLAPPED overlapped;
+	struct ff_arch_tcp *remote_tcp;
+	DWORD local_addr_len;
+	DWORD remote_addr_len;
+	DWORD bytes_read;
+	BOOL result;
+	size_t addr_buf_size;
+	char *addr_buf;
+	int bytes_transferred;
+	int local_sockaddr_len;
+	int remote_sockaddr_len;
+	struct sockaddr *local_addr_ptr;
+	struct sockaddr *remote_addr_ptr;
+
+	local_addr_len = sizeof(struct sockaddr_in) + 16;
+	remote_addr_len = sizeof(struct sockaddr_in) + 16;
+	addr_buf_size = local_addr_len + remote_addr_len;
+	addr_buf = (char *) ff_malloc(addr_buf_size);
+
+	remote_tcp = ff_arch_tcp_create();
+	memset(&overlapped, 0, sizeof(overlapped));
+	result = tcp_ctx.accept_ex(tcp->handle, remote_tcp->handle, addr_buf, 0, local_addr_len, remote_addr_len, &bytes_read, &overlapped);
+	if (result == FALSE)
+	{
+		int last_error;
+
+		last_error = WSAGetLastError();
+		if (last_error != ERROR_IO_PENDING)
+		{
+			ff_arch_tcp_delete(remote_tcp);
+			remote_tcp = NULL;
+			goto end;
+		}
+	}
+
+	bytes_transferred = complete_overlapped_io(tcp, &overlapped, 0);
+	if (bytes_transferred == -1)
+	{
+		ff_arch_tcp_delete(remote_tcp);
+		remote_tcp = NULL;
+		goto end;
+	}
+
+	tcp_ctx.get_accept_ex_sockaddrs(addr_buf, 0, local_addr_len, remote_addr_len,
+		&local_addr_ptr, &local_sockaddr_len, &remote_addr_ptr, &remote_sockaddr_len);
+	ff_assert(local_sockaddr_len == sizeof(struct sockaddr_in));
+	ff_assert(remote_sockaddr_len == sizeof(struct sockaddr_in));
+	memcpy(&remote_addr->addr, remote_addr_ptr, sizeof(*remote_addr));
+
+end:
+	ff_free(addr_buf);
+	return remote_tcp;
 }
 
 int ff_arch_tcp_read(struct ff_arch_tcp *tcp, void *buf, int len)
