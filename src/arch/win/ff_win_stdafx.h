@@ -9,5 +9,7 @@
 
 #include <windows.h>
 #include <string.h>
+#include <stdio.h>
+#include <wchar.h>
 
 #endif

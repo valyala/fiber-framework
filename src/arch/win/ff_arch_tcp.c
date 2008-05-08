@@ -8,6 +8,9 @@
 
 #include <winsock2.h>
 #include <Mswsock.h>
+#include <ws2tcpip.h>
+
+#define MAX_STR_PORT_SIZE 6
 
 struct ff_arch_tcp
 {
@@ -20,6 +23,14 @@ struct ff_arch_tcp_addr
 	struct sockaddr_in addr;
 };
 
+struct threadpool_addr_resolve_data
+{
+	struct ff_arch_tcp_addr *addr;
+	const wchar_t *host;
+	int port;
+	int is_success;
+};
+
 struct tcp_data
 {
 	struct ff_arch_completion_port *completion_port;
@@ -30,6 +41,47 @@ struct tcp_data
 };
 
 static struct tcp_data tcp_ctx;
+
+static int resolve_addr(struct ff_arch_tcp_addr *addr, const wchar_t *host, int port)
+{
+	int is_success = 0;
+	int rv;
+	ADDRINFOW hint;
+	PADDRINFOW addr_info_ptr;
+	wchar_t str_port[MAX_STR_PORT_SIZE];
+
+	ff_assert(port >= 0);
+	ff_assert(port < 0x10000);
+
+	memset(&hint, 0, sizeof(hint));
+	hint.ai_family = AF_INET;
+
+	rv = swprintf_s(str_port, MAX_STR_PORT_SIZE, L"%d", port);
+	ff_assert(rv != -1);
+	addr_info_ptr = NULL;
+	rv = GetAddrInfoW(host, str_port, &hint, &addr_info_ptr);
+	if (rv != 0)
+	{
+		goto end;
+	}
+	ff_assert(addr_info_ptr != NULL);
+
+	ff_assert(addr_info_ptr->ai_addrlen == sizeof(addr->addr));
+	memcpy(&addr->addr, addr_info_ptr->ai_addr, sizeof(addr->addr));
+	FreeAddrInfoW(addr_info_ptr);
+	is_success = 1;
+
+end:
+	return is_success;
+}
+
+static void threadpool_addr_resolve_func(void *ctx)
+{
+	struct threadpool_addr_resolve_data *data;
+
+	data = (struct threadpool_addr_resolve_data *) ctx;
+	data->is_success = resolve_addr(data->addr, data->host, data->port);
+}
 
 static SOCKET create_tcp_socket()
 {
@@ -99,11 +151,13 @@ void ff_win_tcp_initialize(struct ff_arch_completion_port *completion_port)
 	ff_winsock_fatal_error_check(rv == 0, L"cannot obtain ConnectEx() function");
 	ff_assert(tcp_ctx.connect_ex != NULL);
 
+	tcp_ctx.accept_ex = NULL;
 	rv = WSAIoctl(tcp_ctx.aux_socket, SIO_GET_EXTENSION_FUNCTION_POINTER, &accept_ex_guid, sizeof(accept_ex_guid),
 		&tcp_ctx.accept_ex, sizeof(tcp_ctx.accept_ex), &len, NULL, NULL);
 	ff_winsock_fatal_error_check(rv == 0, L"cannot obtain AcceptEx() function");
 	ff_assert(tcp_ctx.accept_ex != NULL);
 
+	tcp_ctx.get_accept_ex_sockaddrs = NULL;
 	rv = WSAIoctl(tcp_ctx.aux_socket, SIO_GET_EXTENSION_FUNCTION_POINTER, &get_accept_ex_sockaddrs_guid, sizeof(get_accept_ex_sockaddrs_guid),
 		&tcp_ctx.get_accept_ex_sockaddrs, sizeof(tcp_ctx.get_accept_ex_sockaddrs), &len, NULL, NULL);
 	ff_winsock_fatal_error_check(rv == 0, L"cannot obtain GetAcceptExSockaddrs() function");
@@ -119,6 +173,32 @@ void ff_win_tcp_shutdown()
 
 	rv = WSACleanup();
 	ff_assert(rv == 0);
+}
+
+struct ff_arch_tcp_addr *ff_arch_tcp_addr_create()
+{
+	struct ff_arch_tcp_addr *addr;
+
+	addr = (struct ff_arch_tcp_addr *) ff_malloc(sizeof(*addr));
+		
+	return addr;
+}
+
+void ff_arch_tcp_addr_delete(struct ff_arch_tcp_addr *addr)
+{
+	ff_free(addr);
+}
+
+int ff_arch_tcp_addr_resolve(struct ff_arch_tcp_addr *addr, const wchar_t *host, int port)
+{
+	struct threadpool_addr_resolve_data data;
+	data.addr = addr;
+	data.host = host;
+	data.port = port;
+	data.is_success = 0;
+	ff_core_threadpool_execute(threadpool_addr_resolve_func, &data);
+
+	return data.is_success;
 }
 
 struct ff_arch_tcp *ff_arch_tcp_create()
@@ -224,8 +304,8 @@ struct ff_arch_tcp *ff_arch_tcp_accept(struct ff_arch_tcp *tcp, struct ff_arch_t
 	struct sockaddr *local_addr_ptr;
 	struct sockaddr *remote_addr_ptr;
 
-	local_addr_len = sizeof(struct sockaddr_in) + 16;
-	remote_addr_len = sizeof(struct sockaddr_in) + 16;
+	local_addr_len = sizeof(remote_addr->addr) + 16;
+	remote_addr_len = sizeof(remote_addr->addr) + 16;
 	addr_buf_size = local_addr_len + remote_addr_len;
 	addr_buf = (char *) ff_malloc(addr_buf_size);
 
@@ -255,9 +335,9 @@ struct ff_arch_tcp *ff_arch_tcp_accept(struct ff_arch_tcp *tcp, struct ff_arch_t
 
 	tcp_ctx.get_accept_ex_sockaddrs(addr_buf, 0, local_addr_len, remote_addr_len,
 		&local_addr_ptr, &local_sockaddr_len, &remote_addr_ptr, &remote_sockaddr_len);
-	ff_assert(local_sockaddr_len == sizeof(struct sockaddr_in));
-	ff_assert(remote_sockaddr_len == sizeof(struct sockaddr_in));
-	memcpy(&remote_addr->addr, remote_addr_ptr, sizeof(*remote_addr));
+	ff_assert(local_sockaddr_len == sizeof(remote_addr->addr));
+	ff_assert(remote_sockaddr_len == sizeof(remote_addr->addr));
+	memcpy(&remote_addr->addr, remote_addr_ptr, sizeof(remote_addr->addr));
 
 end:
 	ff_free(addr_buf);

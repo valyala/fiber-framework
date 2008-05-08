@@ -11,6 +11,12 @@ struct ff_arch_tcp;
 
 struct ff_arch_tcp_addr;
 
+struct ff_arch_tcp_addr *ff_arch_tcp_addr_create();
+
+void ff_arch_tcp_addr_delete(struct ff_arch_tcp_addr *addr);
+
+int ff_arch_tcp_addr_resolve(struct ff_arch_tcp_addr *addr, const wchar_t *host, int port);
+
 struct ff_arch_tcp *ff_arch_tcp_create();
 
 void ff_arch_tcp_delete(struct ff_arch_tcp *tcp);
