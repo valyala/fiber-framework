@@ -33,7 +33,7 @@ struct ff_arch_fiber *ff_arch_fiber_create(ff_arch_fiber_func arch_fiber_func, v
 
 	fiber = (struct ff_arch_fiber *) ff_malloc(sizeof(*fiber));
 	fiber->handle = CreateFiber(stack_size, (LPFIBER_START_ROUTINE) arch_fiber_func, ctx);
-	ff_winapi_fatal_error_check(fiber->handle != NULL, "cannot create new fiber");
+	ff_winapi_fatal_error_check(fiber->handle != NULL, L"cannot create new fiber");
 	return fiber;
 }
 
