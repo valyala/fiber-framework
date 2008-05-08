@@ -17,6 +17,26 @@ struct threadpool_open_file_data
 	HANDLE handle;
 };
 
+struct threadpool_erase_file_data
+{
+	const wchar_t *path;
+	int is_success;
+};
+
+struct threadpool_copy_file_data
+{
+	const wchar_t *src_path;
+	const wchar_t *dst_path;
+	int is_success;
+};
+
+struct threadpool_move_file_data
+{
+	const wchar_t *src_path;
+	const wchar_t *dst_path;
+	int is_success;
+};
+
 struct file_data
 {
 	struct ff_arch_completion_port *completion_port;
@@ -35,6 +55,36 @@ static void threadpool_open_file_func(void *ctx)
 	creation_disposition = (data->access_mode == FF_ARCH_FILE_READ) ? OPEN_EXISTING : CREATE_ALWAYS;
 	data->handle = CreateFileW(data->path, access_rights, 0, NULL, creation_disposition,
 		FILE_FLAG_OVERLAPPED | FILE_FLAG_SEQUENTIAL_SCAN, NULL);
+}
+
+static void threadpool_erase_file_func(void *ctx)
+{
+	struct threadpool_erase_file_data *data;
+	BOOL result;
+
+	data = (struct threadpool_erase_file_data *) ctx;
+	result = DeleteFileW(data->path);
+	data->is_success = (result == FALSE) ? 0 : 1;
+}
+
+static void threadpool_copy_file_func(void *ctx)
+{
+	struct threadpool_copy_file_data *data;
+	BOOL result;
+
+	data = (struct threadpool_copy_file_data *) ctx;
+	result = CopyFileW(data->src_path, data->dst_path, TRUE);
+	data->is_success = (result == FALSE) ? 0 : 1;
+}
+
+static void threadpool_move_file_func(void *ctx)
+{
+	struct threadpool_move_file_data *data;
+	BOOL result;
+
+	data = (struct threadpool_move_file_data *) ctx;
+	result = MoveFileEx(data->src_path, data->dst_path, MOVEFILE_COPY_ALLOWED | MOVEFILE_WRITE_THROUGH);
+	data->is_success = (result == FALSE) ? 0 : 1;
 }
 
 static int complete_overlapped_io(struct ff_arch_file *file, OVERLAPPED *overlapped)
@@ -161,4 +211,52 @@ int ff_arch_file_write(struct ff_arch_file *file, const void *buf, int len)
 
 end:
 	return int_bytes_written;
+}
+
+int ff_arch_file_erase(const wchar_t *path)
+{
+	struct threadpool_erase_file_data data;
+
+	data.path = path;
+	data.is_success = 0;
+	ff_core_threadpool_execute(threadpool_erase_file_func, &data);
+
+	return data.is_success;
+}
+
+int ff_arch_file_copy(const wchar_t *src_path, const wchar_t *dst_path)
+{
+	struct threadpool_copy_file_data data;
+
+	data.src_path = src_path;
+	data.dst_path = dst_path;
+	data.is_success = 0;
+	ff_core_threadpool_execute(threadpool_copy_file_func, &data);
+
+	return data.is_success;
+}
+
+int ff_arch_file_move(const wchar_t *src_path, const wchar_t *dst_path)
+{
+	struct threadpool_move_file_data data;
+
+	data.src_path = src_path;
+	data.dst_path = dst_path;
+	data.is_success = 0;
+	ff_core_threadpool_execute(threadpool_move_file_func, &data);
+
+	return data.is_success;
+}
+
+int64_t ff_arch_file_get_size(struct ff_arch_file *file)
+{
+	LARGE_INTEGER size;
+	BOOL result;
+	int64_t file_size;
+
+	result = GetFileSizeEx(file->handle, &size);
+	ff_winapi_fatal_error_check(result != FALSE, L"cannot determine file size");
+
+	file_size = (int64_t) size.QuadPart;
+	return file_size;
 }
