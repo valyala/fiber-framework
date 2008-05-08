@@ -11,10 +11,6 @@ struct ff_arch_tcp;
 
 struct ff_arch_tcp_addr;
 
-void ff_arch_tcp_initialize(struct ff_arch_completion_port *completion_port);
-
-void ff_arch_tcp_shutdown();
-
 struct ff_arch_tcp *ff_arch_tcp_create();
 
 void ff_arch_tcp_delete(struct ff_arch_tcp *tcp);

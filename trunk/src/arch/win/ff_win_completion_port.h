@@ -1,11 +1,8 @@
 #ifndef FF_WIN_COMPLETION_PORT
 #define FF_WIN_COMPLETION_PORT
 
+#include "ff_win_stdafx.h"
 #include "private/arch/ff_arch_completion_port.h"
-
-#define WIN32_LEAN_AND_MEAN
-
-#include <windows.h>
 
 #ifdef __cplusplus
 extern "C" {

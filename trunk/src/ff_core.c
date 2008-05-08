@@ -7,7 +7,6 @@
 #include "private/ff_queue.h"
 #include "private/ff_mutex.h"
 #include "private/arch/ff_arch_completion_port.h"
-#include "private/arch/ff_arch_tcp.h"
 #include "private/arch/ff_arch_misc.h"
 
 static const int COMPLETION_PORT_CONCURRENCY = 1;
@@ -128,16 +127,16 @@ void ff_core_initialize()
 	core_ctx.timeout_operations = ff_queue_create();
 	core_ctx.timeout_operations_mutex = ff_mutex_create();
 	core_ctx.timeout_checker_fiber = ff_fiber_create(timeout_checker_func, 0);
-	ff_arch_tcp_initialize(core_ctx.completion_port);
 	ff_fiber_start(core_ctx.timeout_checker_fiber, NULL);
+	ff_arch_misc_initialize(core_ctx.completion_port);
 }
 
 void ff_core_shutdown()
 {
+	ff_arch_misc_shutdown();
 	core_ctx.must_stop = 1;
 	ff_fiber_join(core_ctx.timeout_checker_fiber);
 	ff_fiber_delete(core_ctx.timeout_checker_fiber);
-	ff_arch_tcp_shutdown();
 	ff_mutex_delete(core_ctx.timeout_operations_mutex);
 	ff_queue_delete(core_ctx.timeout_operations);
 	ff_fiberpool_delete(core_ctx.fiberpool);
