@@ -151,18 +151,20 @@ int ff_arch_tcp_bind(struct ff_arch_tcp *tcp, const struct ff_arch_tcp_addr *add
 	int is_success = 0;
 
 	rv = bind(tcp->handle, (struct sockaddr *) &addr->addr, sizeof(addr->addr));
-	if (rv == SOCKET_ERROR)
+	if (rv != SOCKET_ERROR)
 	{
-		goto end;
+		is_success = 1;
 	}
+
+	return is_success;
+}
+
+void ff_arch_tcp_enable_listening_mode(struct ff_arch_tcp *tcp)
+{
+	int rv;
 
 	rv = listen(tcp->handle, SOMAXCONN);
 	ff_winsock_fatal_error_check(rv != SOCKET_ERROR, L"cannot enable listening mode for the tcp socket");
-
-	is_success = 1;
-
-end:
-	return is_success;
 }
 
 int ff_arch_tcp_connect(struct ff_arch_tcp *tcp, const struct ff_arch_tcp_addr *addr)
