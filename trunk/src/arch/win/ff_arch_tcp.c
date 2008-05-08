@@ -273,7 +273,6 @@ int ff_arch_tcp_read_with_timeout(struct ff_arch_tcp *tcp, void *buf, int len, i
 	int rv;
 	WSAOVERLAPPED overlapped;
 	WSABUF wsa_buf;
-	DWORD bytes_read;
 	int int_bytes_read = -1;
 	DWORD flags = 0;
 
@@ -287,7 +286,7 @@ int ff_arch_tcp_read_with_timeout(struct ff_arch_tcp *tcp, void *buf, int len, i
 	wsa_buf.len = (u_long) len;
 	wsa_buf.buf = (char *) buf;
 	memset(&overlapped, 0, sizeof(overlapped));
-	rv = WSARecv(tcp->handle, &wsa_buf, 1, &bytes_read, &flags, &overlapped, NULL);
+	rv = WSARecv(tcp->handle, &wsa_buf, 1, NULL, &flags, &overlapped, NULL);
 	if (rv != 0)
 	{
 		int last_error;
@@ -320,7 +319,6 @@ int ff_arch_tcp_write_with_timeout(struct ff_arch_tcp *tcp, const void *buf, int
 	int rv;
 	WSAOVERLAPPED overlapped;
 	WSABUF wsa_buf;
-	DWORD bytes_written;
 	int int_bytes_written = -1;
 	DWORD flags = 0;
 
@@ -334,7 +332,7 @@ int ff_arch_tcp_write_with_timeout(struct ff_arch_tcp *tcp, const void *buf, int
 	wsa_buf.len = len;
 	wsa_buf.buf = (char *) buf;
 	memset(&overlapped, 0, sizeof(overlapped));
-	rv = WSASend(tcp->handle, &wsa_buf, 1, &bytes_written, flags, &overlapped, NULL);
+	rv = WSASend(tcp->handle, &wsa_buf, 1, NULL, flags, &overlapped, NULL);
 	if (rv != 0)
 	{
 		int last_error;
