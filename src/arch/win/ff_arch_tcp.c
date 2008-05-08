@@ -57,7 +57,7 @@ static int complete_overlapped_io(struct ff_arch_tcp *tcp, WSAOVERLAPPED *overla
 	return int_bytes_transferred;
 }
 
-void ff_arch_tcp_initialize(struct ff_arch_completion_port *completion_port)
+void ff_win_tcp_initialize(struct ff_arch_completion_port *completion_port)
 {
 	int rv;
 	WORD version;
@@ -69,7 +69,7 @@ void ff_arch_tcp_initialize(struct ff_arch_completion_port *completion_port)
 	ff_winsock_fatal_error_check(rv == 0, "cannot initialize winsock");
 }
 
-void ff_arch_tcp_shutdown()
+void ff_win_tcp_shutdown()
 {
 	int rv;
 

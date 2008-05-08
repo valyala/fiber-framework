@@ -418,6 +418,10 @@
 						RelativePath=".\src\arch\win\ff_win_stdafx.h"
 						>
 					</File>
+					<File
+						RelativePath=".\src\arch\win\ff_win_tcp.h"
+						>
+					</File>
 				</Filter>
 			</Filter>
 		</Filter>
