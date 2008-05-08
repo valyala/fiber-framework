@@ -1,11 +1,7 @@
-#include "private/ff_common.h"
+#include "ff_win_stdafx.h"
 
 #include "private/arch/ff_arch_fiber.h"
 #include "ff_win_error_check.h"
-
-#define _WIN32_WINNT 0x0502
-
-#include <windows.h>
 
 struct ff_arch_fiber
 {

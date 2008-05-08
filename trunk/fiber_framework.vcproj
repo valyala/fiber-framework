@@ -209,11 +209,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\src\ff_mutex.c"
+				RelativePath=".\src\ff_malloc.c"
 				>
 			</File>
 			<File
-				RelativePath=".\src\ff_malloc.c"
+				RelativePath=".\src\ff_mutex.c"
 				>
 			</File>
 			<File
@@ -247,6 +247,8 @@
 							<Tool
 								Name="VCCLCompilerTool"
 								DisableLanguageExtensions="false"
+								UsePrecompiledHeader="2"
+								PrecompiledHeaderThrough="ff_win_stdafx.h"
 							/>
 						</FileConfiguration>
 						<FileConfiguration
@@ -255,6 +257,8 @@
 							<Tool
 								Name="VCCLCompilerTool"
 								DisableLanguageExtensions="false"
+								UsePrecompiledHeader="2"
+								PrecompiledHeaderThrough="ff_win_stdafx.h"
 							/>
 						</FileConfiguration>
 					</File>
@@ -267,6 +271,8 @@
 							<Tool
 								Name="VCCLCompilerTool"
 								DisableLanguageExtensions="false"
+								UsePrecompiledHeader="2"
+								PrecompiledHeaderThrough="ff_win_stdafx.h"
 							/>
 						</FileConfiguration>
 						<FileConfiguration
@@ -275,26 +281,8 @@
 							<Tool
 								Name="VCCLCompilerTool"
 								DisableLanguageExtensions="false"
-							/>
-						</FileConfiguration>
-					</File>
-					<File
-						RelativePath=".\src\arch\win\ff_arch_mutex.c"
-						>
-						<FileConfiguration
-							Name="Debug|Win32"
-							>
-							<Tool
-								Name="VCCLCompilerTool"
-								DisableLanguageExtensions="false"
-							/>
-						</FileConfiguration>
-						<FileConfiguration
-							Name="Release|Win32"
-							>
-							<Tool
-								Name="VCCLCompilerTool"
-								DisableLanguageExtensions="false"
+								UsePrecompiledHeader="2"
+								PrecompiledHeaderThrough="ff_win_stdafx.h"
 							/>
 						</FileConfiguration>
 					</File>
@@ -307,6 +295,8 @@
 							<Tool
 								Name="VCCLCompilerTool"
 								DisableLanguageExtensions="false"
+								UsePrecompiledHeader="2"
+								PrecompiledHeaderThrough="ff_win_stdafx.h"
 							/>
 						</FileConfiguration>
 						<FileConfiguration
@@ -315,6 +305,32 @@
 							<Tool
 								Name="VCCLCompilerTool"
 								DisableLanguageExtensions="false"
+								UsePrecompiledHeader="2"
+								PrecompiledHeaderThrough="ff_win_stdafx.h"
+							/>
+						</FileConfiguration>
+					</File>
+					<File
+						RelativePath=".\src\arch\win\ff_arch_mutex.c"
+						>
+						<FileConfiguration
+							Name="Debug|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								DisableLanguageExtensions="false"
+								UsePrecompiledHeader="2"
+								PrecompiledHeaderThrough="ff_win_stdafx.h"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								DisableLanguageExtensions="false"
+								UsePrecompiledHeader="2"
+								PrecompiledHeaderThrough="ff_win_stdafx.h"
 							/>
 						</FileConfiguration>
 					</File>
@@ -327,6 +343,8 @@
 							<Tool
 								Name="VCCLCompilerTool"
 								DisableLanguageExtensions="false"
+								UsePrecompiledHeader="2"
+								PrecompiledHeaderThrough="ff_win_stdafx.h"
 							/>
 						</FileConfiguration>
 						<FileConfiguration
@@ -335,6 +353,8 @@
 							<Tool
 								Name="VCCLCompilerTool"
 								DisableLanguageExtensions="false"
+								UsePrecompiledHeader="2"
+								PrecompiledHeaderThrough="ff_win_stdafx.h"
 							/>
 						</FileConfiguration>
 					</File>
@@ -347,6 +367,8 @@
 							<Tool
 								Name="VCCLCompilerTool"
 								DisableLanguageExtensions="false"
+								UsePrecompiledHeader="2"
+								PrecompiledHeaderThrough="ff_win_stdafx.h"
 							/>
 						</FileConfiguration>
 						<FileConfiguration
@@ -355,6 +377,8 @@
 							<Tool
 								Name="VCCLCompilerTool"
 								DisableLanguageExtensions="false"
+								UsePrecompiledHeader="2"
+								PrecompiledHeaderThrough="ff_win_stdafx.h"
 							/>
 						</FileConfiguration>
 					</File>
@@ -364,6 +388,34 @@
 					</File>
 					<File
 						RelativePath=".\src\arch\win\ff_win_error_check.h"
+						>
+					</File>
+					<File
+						RelativePath=".\src\arch\win\ff_win_stdafx.c"
+						>
+						<FileConfiguration
+							Name="Debug|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								DisableLanguageExtensions="false"
+								UsePrecompiledHeader="1"
+								PrecompiledHeaderThrough="ff_win_stdafx.h"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								DisableLanguageExtensions="false"
+								UsePrecompiledHeader="1"
+								PrecompiledHeaderThrough="ff_win_stdafx.h"
+							/>
+						</FileConfiguration>
+					</File>
+					<File
+						RelativePath=".\src\arch\win\ff_win_stdafx.h"
 						>
 					</File>
 				</Filter>
@@ -408,11 +460,11 @@
 					>
 				</File>
 				<File
-					RelativePath=".\include\private\ff_mutex.h"
+					RelativePath=".\include\private\ff_malloc.h"
 					>
 				</File>
 				<File
-					RelativePath=".\include\private\ff_malloc.h"
+					RelativePath=".\include\private\ff_mutex.h"
 					>
 				</File>
 				<File
@@ -443,11 +495,11 @@
 						>
 					</File>
 					<File
-						RelativePath=".\include\private\arch\ff_arch_mutex.h"
+						RelativePath=".\include\private\arch\ff_arch_misc.h"
 						>
 					</File>
 					<File
-						RelativePath=".\include\private\arch\ff_arch_misc.h"
+						RelativePath=".\include\private\arch\ff_arch_mutex.h"
 						>
 					</File>
 					<File

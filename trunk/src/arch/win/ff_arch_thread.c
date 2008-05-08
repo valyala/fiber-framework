@@ -1,11 +1,8 @@
-#include "private/ff_common.h"
+#include "ff_win_stdafx.h"
 
 #include "private/arch/ff_arch_thread.h"
 #include "ff_win_error_check.h"
 
-//#define _WIN32_WINNT 0x0502
-
-#include <windows.h>
 #include <process.h>
 
 struct ff_arch_thread

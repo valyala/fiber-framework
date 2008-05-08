@@ -1,11 +1,9 @@
-#include "private/ff_common.h"
+#include "ff_win_stdafx.h"
 
 #include "private/arch/ff_arch_completion_port.h"
 #include "ff_win_completion_port.h"
 #include "ff_win_error_check.h"
 #include "private/ff_dictionary.h"
-
-#include <windows.h>
 
 struct ff_arch_completion_port
 {
