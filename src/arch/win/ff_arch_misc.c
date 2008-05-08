@@ -1,8 +1,6 @@
-#include "private/ff_common.h"
+#include "ff_win_stdafx.h"
 
 #include "private/arch/ff_arch_misc.h"
-
-#include <windows.h>
 
 int64_t ff_arch_misc_get_current_time()
 {

@@ -1,10 +1,6 @@
-#include "private/ff_common.h"
+#include "ff_win_stdafx.h"
 
 #include "private/arch/ff_arch_mutex.h"
-
-#define _WIN32_WINNT 0x0502
-
-#include <windows.h>
 
 static const int SPIN_COUNT = 100;
 
