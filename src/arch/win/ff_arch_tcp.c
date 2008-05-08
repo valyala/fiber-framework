@@ -24,6 +24,7 @@ struct tcp_data
 {
 	LPFN_CONNECTEX connect_ex;
 	struct ff_arch_completion_port *completion_port;
+	SOCKET aux_socket;
 };
 
 static struct tcp_data tcp_ctx;
@@ -67,16 +68,31 @@ void ff_win_tcp_initialize(struct ff_arch_completion_port *completion_port)
 	int rv;
 	WORD version;
 	struct WSAData wsa;
+	GUID connect_ex_guid = WSAID_CONNECTEX;
+	DWORD len;
 
 	tcp_ctx.completion_port = completion_port;
+
 	version = MAKEWORD(2, 2);
 	rv = WSAStartup(version, &wsa);
 	ff_winsock_fatal_error_check(rv == 0, "cannot initialize winsock");
+
+	tcp_ctx.aux_socket = WSASocket(AF_INET, SOCK_DGRAM, IPPROTO_UDP, NULL, 0, WSA_FLAG_OVERLAPPED);
+	ff_winsock_fatal_error_check(tcp.aux_socket != INVALID_SOCKET, "cannot create auxiliary socket");
+
+	tcp_ctx.connect_ex = NULL;
+	rv = WSAIoctl(tcp_ctx.aux_socket, SIO_GET_EXTENSION_FUNCTION_POINTER, &connect_ex_guid, sizeof(connect_ex_guid),
+		&tcp_ctx.connect_ex, sizeof(tcp_ctx.connect_ex), &len, NULL, NULL);
+	ff_winsock_fatal_error_check(rv == 0, "cannot obtain ConnectEx() function");
+	ff_assert(tcp_ctx.connect_ex != NULL);
 }
 
 void ff_win_tcp_shutdown()
 {
 	int rv;
+
+	rv = closesocket(tcp_ctx.aux_socket);
+	ff_assert(rv == 0);
 
 	rv = WSACleanup();
 	ff_assert(rv == 0);
