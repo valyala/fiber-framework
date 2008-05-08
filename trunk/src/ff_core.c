@@ -52,7 +52,7 @@ struct core_data
 	struct ff_queue *timeout_operations;
 	struct ff_mutex *timeout_operations_mutex;
 	struct ff_fiber *timeout_checker_fiber;
-}
+};
 
 static struct core_data core_ctx;
 
@@ -129,7 +129,7 @@ void ff_core_initialize()
 	core_ctx.timeout_operations_mutex = ff_mutex_create();
 	core_ctx.timeout_checker_fiber = ff_fiber_create(timeout_checker_func, 0);
 	ff_arch_tcp_initialize(core_ctx.completion_port);
-	ff_fiber_start(timeout_checker_fiber, NULL);
+	ff_fiber_start(core_ctx.timeout_checker_fiber, NULL);
 }
 
 void ff_core_shutdown()

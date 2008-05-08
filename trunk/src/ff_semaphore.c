@@ -18,6 +18,8 @@ struct ff_semaphore *ff_semaphore_create(int value)
 	semaphore = (struct ff_semaphore *) ff_malloc(sizeof(*semaphore));
 	semaphore->event = ff_event_create(FF_EVENT_AUTO);
 	semaphore->value = value;
+
+	return semaphore;
 }
 
 void ff_semaphore_delete(struct ff_semaphore *semaphore)
