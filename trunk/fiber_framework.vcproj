@@ -287,6 +287,26 @@
 						</FileConfiguration>
 					</File>
 					<File
+						RelativePath=".\src\arch\win\ff_arch_file.c"
+						>
+						<FileConfiguration
+							Name="Debug|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								DisableLanguageExtensions="false"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								DisableLanguageExtensions="false"
+							/>
+						</FileConfiguration>
+					</File>
+					<File
 						RelativePath=".\src\arch\win\ff_arch_misc.c"
 						>
 						<FileConfiguration
@@ -388,6 +408,10 @@
 					</File>
 					<File
 						RelativePath=".\src\arch\win\ff_win_error_check.h"
+						>
+					</File>
+					<File
+						RelativePath=".\src\arch\win\ff_win_file.h"
 						>
 					</File>
 					<File
@@ -496,6 +520,10 @@
 					</File>
 					<File
 						RelativePath=".\include\private\arch\ff_arch_fiber.h"
+						>
+					</File>
+					<File
+						RelativePath=".\include\private\arch\ff_arch_file.h"
 						>
 					</File>
 					<File
