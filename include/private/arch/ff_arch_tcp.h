@@ -15,7 +15,11 @@ struct ff_arch_tcp *ff_arch_tcp_create();
 
 void ff_arch_tcp_delete(struct ff_arch_tcp *tcp);
 
+int ff_arch_tcp_bind(struct ff_arch_tcp *tcp, const struct ff_arch_tcp_addr *addr);
+
 int ff_arch_tcp_connect(struct ff_arch_tcp *tcp, const struct ff_arch_tcp_addr *addr);
+
+struct ff_arch_tcp *ff_arch_tcp_accept(struct ff_arch_tcp *tcp, struct ff_arch_tcp_addr *remote_addr);
 
 int ff_arch_tcp_read(struct ff_arch_tcp *tcp, void *buf, int len);
 
