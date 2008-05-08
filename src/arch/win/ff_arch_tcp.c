@@ -4,31 +4,12 @@
 #include "private/ff_core.h"
 #include "private/arch/ff_arch_completion_port.h"
 #include "ff_win_completion_port.h"
-#include "ff_win_error_check.h"
-
-#include <winsock2.h>
-#include <Mswsock.h>
-#include <ws2tcpip.h>
-
-#define MAX_STR_PORT_SIZE 6
+#include "ff_win_net_addr.h"
 
 struct ff_arch_tcp
 {
 	SOCKET handle;
 	int is_disconnected;
-};
-
-struct ff_arch_tcp_addr
-{
-	struct sockaddr_in addr;
-};
-
-struct threadpool_addr_resolve_data
-{
-	struct ff_arch_tcp_addr *addr;
-	const wchar_t *host;
-	int port;
-	int is_success;
 };
 
 struct tcp_data
@@ -41,47 +22,6 @@ struct tcp_data
 };
 
 static struct tcp_data tcp_ctx;
-
-static int resolve_addr(struct ff_arch_tcp_addr *addr, const wchar_t *host, int port)
-{
-	int is_success = 0;
-	int rv;
-	ADDRINFOW hint;
-	PADDRINFOW addr_info_ptr;
-	wchar_t str_port[MAX_STR_PORT_SIZE];
-
-	ff_assert(port >= 0);
-	ff_assert(port < 0x10000);
-
-	memset(&hint, 0, sizeof(hint));
-	hint.ai_family = AF_INET;
-
-	rv = swprintf_s(str_port, MAX_STR_PORT_SIZE, L"%d", port);
-	ff_assert(rv != -1);
-	addr_info_ptr = NULL;
-	rv = GetAddrInfoW(host, str_port, &hint, &addr_info_ptr);
-	if (rv != 0)
-	{
-		goto end;
-	}
-	ff_assert(addr_info_ptr != NULL);
-
-	ff_assert(addr_info_ptr->ai_addrlen == sizeof(addr->addr));
-	memcpy(&addr->addr, addr_info_ptr->ai_addr, sizeof(addr->addr));
-	FreeAddrInfoW(addr_info_ptr);
-	is_success = 1;
-
-end:
-	return is_success;
-}
-
-static void threadpool_addr_resolve_func(void *ctx)
-{
-	struct threadpool_addr_resolve_data *data;
-
-	data = (struct threadpool_addr_resolve_data *) ctx;
-	data->is_success = resolve_addr(data->addr, data->host, data->port);
-}
 
 static SOCKET create_tcp_socket()
 {
@@ -175,32 +115,6 @@ void ff_win_tcp_shutdown()
 	ff_assert(rv == 0);
 }
 
-struct ff_arch_tcp_addr *ff_arch_tcp_addr_create()
-{
-	struct ff_arch_tcp_addr *addr;
-
-	addr = (struct ff_arch_tcp_addr *) ff_malloc(sizeof(*addr));
-		
-	return addr;
-}
-
-void ff_arch_tcp_addr_delete(struct ff_arch_tcp_addr *addr)
-{
-	ff_free(addr);
-}
-
-int ff_arch_tcp_addr_resolve(struct ff_arch_tcp_addr *addr, const wchar_t *host, int port)
-{
-	struct threadpool_addr_resolve_data data;
-	data.addr = addr;
-	data.host = host;
-	data.port = port;
-	data.is_success = 0;
-	ff_core_threadpool_execute(threadpool_addr_resolve_func, &data);
-
-	return data.is_success;
-}
-
 struct ff_arch_tcp *ff_arch_tcp_create()
 {
 	HANDLE handle;
@@ -225,7 +139,7 @@ void ff_arch_tcp_delete(struct ff_arch_tcp *tcp)
 	ff_free(tcp);
 }
 
-int ff_arch_tcp_bind(struct ff_arch_tcp *tcp, const struct ff_arch_tcp_addr *addr)
+int ff_arch_tcp_bind(struct ff_arch_tcp *tcp, const struct ff_arch_net_addr *addr)
 {
 	int rv;
 	int is_success = 0;
@@ -247,7 +161,7 @@ void ff_arch_tcp_enable_listening_mode(struct ff_arch_tcp *tcp)
 	ff_winsock_fatal_error_check(rv != SOCKET_ERROR, L"cannot enable listening mode for the tcp socket");
 }
 
-int ff_arch_tcp_connect(struct ff_arch_tcp *tcp, const struct ff_arch_tcp_addr *addr)
+int ff_arch_tcp_connect(struct ff_arch_tcp *tcp, const struct ff_arch_net_addr *addr)
 {
 	int is_connected = 0;
 	BOOL result;
@@ -288,7 +202,7 @@ end:
 	return is_connected;
 }
 
-struct ff_arch_tcp *ff_arch_tcp_accept(struct ff_arch_tcp *tcp, struct ff_arch_tcp_addr *remote_addr)
+struct ff_arch_tcp *ff_arch_tcp_accept(struct ff_arch_tcp *tcp, struct ff_arch_net_addr *remote_addr)
 {
 	WSAOVERLAPPED overlapped;
 	struct ff_arch_tcp *remote_tcp;

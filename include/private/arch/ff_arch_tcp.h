@@ -2,6 +2,7 @@
 #define FF_ARCH_TCP_PRIVATE
 
 #include "private/arch/ff_arch_completion_port.h"
+#include "private/arch/ff_arch_net_addr.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -9,25 +10,17 @@ extern "C" {
 
 struct ff_arch_tcp;
 
-struct ff_arch_tcp_addr;
-
-struct ff_arch_tcp_addr *ff_arch_tcp_addr_create();
-
-void ff_arch_tcp_addr_delete(struct ff_arch_tcp_addr *addr);
-
-int ff_arch_tcp_addr_resolve(struct ff_arch_tcp_addr *addr, const wchar_t *host, int port);
-
 struct ff_arch_tcp *ff_arch_tcp_create();
 
 void ff_arch_tcp_delete(struct ff_arch_tcp *tcp);
 
-int ff_arch_tcp_bind(struct ff_arch_tcp *tcp, const struct ff_arch_tcp_addr *addr);
+int ff_arch_tcp_bind(struct ff_arch_tcp *tcp, const struct ff_arch_net_addr *addr);
 
 void ff_arch_tcp_enable_listening_mode(struct ff_arch_tcp *tcp);
 
-int ff_arch_tcp_connect(struct ff_arch_tcp *tcp, const struct ff_arch_tcp_addr *addr);
+int ff_arch_tcp_connect(struct ff_arch_tcp *tcp, const struct ff_arch_net_addr *addr);
 
-struct ff_arch_tcp *ff_arch_tcp_accept(struct ff_arch_tcp *tcp, struct ff_arch_tcp_addr *remote_addr);
+struct ff_arch_tcp *ff_arch_tcp_accept(struct ff_arch_tcp *tcp, struct ff_arch_net_addr *remote_addr);
 
 int ff_arch_tcp_read(struct ff_arch_tcp *tcp, void *buf, int len);
 

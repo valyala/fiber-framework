@@ -295,6 +295,8 @@
 							<Tool
 								Name="VCCLCompilerTool"
 								DisableLanguageExtensions="false"
+								UsePrecompiledHeader="2"
+								PrecompiledHeaderThrough="ff_win_stdafx.h"
 							/>
 						</FileConfiguration>
 						<FileConfiguration
@@ -303,6 +305,8 @@
 							<Tool
 								Name="VCCLCompilerTool"
 								DisableLanguageExtensions="false"
+								UsePrecompiledHeader="2"
+								PrecompiledHeaderThrough="ff_win_stdafx.h"
 							/>
 						</FileConfiguration>
 					</File>
@@ -332,6 +336,30 @@
 					</File>
 					<File
 						RelativePath=".\src\arch\win\ff_arch_mutex.c"
+						>
+						<FileConfiguration
+							Name="Debug|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								DisableLanguageExtensions="false"
+								UsePrecompiledHeader="2"
+								PrecompiledHeaderThrough="ff_win_stdafx.h"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								DisableLanguageExtensions="false"
+								UsePrecompiledHeader="2"
+								PrecompiledHeaderThrough="ff_win_stdafx.h"
+							/>
+						</FileConfiguration>
+					</File>
+					<File
+						RelativePath=".\src\arch\win\ff_arch_net_addr.c"
 						>
 						<FileConfiguration
 							Name="Debug|Win32"
@@ -412,6 +440,10 @@
 					</File>
 					<File
 						RelativePath=".\src\arch\win\ff_win_file.h"
+						>
+					</File>
+					<File
+						RelativePath=".\src\arch\win\ff_win_net_addr.h"
 						>
 					</File>
 					<File
@@ -535,6 +567,10 @@
 						>
 					</File>
 					<File
+						RelativePath=".\include\private\arch\ff_arch_net_addr.h"
+						>
+					</File>
+					<File
 						RelativePath=".\include\private\arch\ff_arch_tcp.h"
 						>
 					</File>
@@ -571,6 +607,14 @@
 					RelativePath=".\include\public\ff_semaphore.h"
 					>
 				</File>
+				<Filter
+					Name="arch"
+					>
+					<File
+						RelativePath=".\include\public\arch\ff_arch_net_addr.h"
+						>
+					</File>
+				</Filter>
 			</Filter>
 		</Filter>
 	</Files>

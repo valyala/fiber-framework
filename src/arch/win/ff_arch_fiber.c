@@ -1,7 +1,6 @@
 #include "ff_win_stdafx.h"
 
 #include "private/arch/ff_arch_fiber.h"
-#include "ff_win_error_check.h"
 
 struct ff_arch_fiber
 {
