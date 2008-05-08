@@ -20,8 +20,13 @@ struct ff_arch_tcp_addr
 	struct sockaddr_in addr;
 };
 
-static LPFN_CONNECTEX connect_ex = NULL;
-static struct ff_arch_completion_port *win_completion_port = NULL;
+struct tcp_data
+{
+	LPFN_CONNECTEX connect_ex;
+	struct ff_arch_completion_port *completion_port;
+};
+
+static struct tcp_data tcp_ctx;
 
 static void cancel_io_operation(struct ff_fiber *fiber, void *ctx)
 {
@@ -38,9 +43,9 @@ static int complete_overlapped_io(struct ff_arch_tcp *tcp, WSAOVERLAPPED *overla
 	int is_success;
 
 	current_fiber = ff_core_get_current_fiber();
-	ff_win_completion_port_register_overlapped_data(win_completion_port, overlapped, current_fiber);
+	ff_win_completion_port_register_overlapped_data(tcp_ctx.completion_port, overlapped, current_fiber);
 	is_success = ff_core_do_timeout_operation(timeout, cancel_io_operation, tcp);
-	ff_win_completion_port_deregister_overlapped_data(win_completion_port, overlapped);
+	ff_win_completion_port_deregister_overlapped_data(tcp_ctx.completion_port, overlapped);
 	if (is_success)
 	{
 		BOOL result;
@@ -63,7 +68,7 @@ void ff_win_tcp_initialize(struct ff_arch_completion_port *completion_port)
 	WORD version;
 	struct WSAData wsa;
 
-	win_completion_port = completion_port;
+	tcp_ctx.completion_port = completion_port;
 	version = MAKEWORD(2, 2);
 	rv = WSAStartup(version, &wsa);
 	ff_winsock_fatal_error_check(rv == 0, "cannot initialize winsock");
@@ -88,7 +93,7 @@ struct ff_arch_tcp *ff_arch_tcp_create()
 	tcp->is_disconnected = 0;
 
 	handle = (HANDLE) tcp->handle;
-	ff_win_completion_port_register_handle(win_completion_port, handle);
+	ff_win_completion_port_register_handle(tcp_ctx.completion_port, handle);
 
 	return tcp;
 }
@@ -110,7 +115,7 @@ int ff_arch_tcp_connect(struct ff_arch_tcp *tcp, const struct ff_arch_tcp_addr *
 	int bytes_transferred;
 
 	memset(&overlapped, 0, sizeof(overlapped));
-	result = connect_ex(tcp->handle, (struct sockaddr *) &addr->addr, sizeof(addr->addr), NULL, 0, NULL, &overlapped);
+	result = tcp_ctx.connect_ex(tcp->handle, (struct sockaddr *) &addr->addr, sizeof(addr->addr), NULL, 0, NULL, &overlapped);
 	if (result == FALSE)
 	{
 		int last_error;
