@@ -431,6 +431,30 @@
 						</FileConfiguration>
 					</File>
 					<File
+						RelativePath=".\src\arch\win\ff_arch_udp.c"
+						>
+						<FileConfiguration
+							Name="Debug|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								DisableLanguageExtensions="false"
+								UsePrecompiledHeader="2"
+								PrecompiledHeaderThrough="ff_win_stdafx.h"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								DisableLanguageExtensions="false"
+								UsePrecompiledHeader="2"
+								PrecompiledHeaderThrough="ff_win_stdafx.h"
+							/>
+						</FileConfiguration>
+					</File>
+					<File
 						RelativePath=".\src\arch\win\ff_win_completion_port.h"
 						>
 					</File>
@@ -576,6 +600,10 @@
 					</File>
 					<File
 						RelativePath=".\include\private\arch\ff_arch_thread.h"
+						>
+					</File>
+					<File
+						RelativePath=".\include\private\arch\ff_arch_udp.h"
 						>
 					</File>
 				</Filter>

@@ -9,7 +9,6 @@
 struct ff_arch_tcp
 {
 	SOCKET handle;
-	int is_disconnected;
 };
 
 struct tcp_data
@@ -122,7 +121,6 @@ struct ff_arch_tcp *ff_arch_tcp_create()
 
 	tcp = (struct ff_arch_tcp *) ff_malloc(sizeof(*tcp));
 	tcp->handle = create_tcp_socket();
-	tcp->is_disconnected = 0;
 
 	handle = (HANDLE) tcp->handle;
 	ff_win_completion_port_register_handle(tcp_ctx.completion_port, handle);
@@ -139,7 +137,7 @@ void ff_arch_tcp_delete(struct ff_arch_tcp *tcp)
 	ff_free(tcp);
 }
 
-int ff_arch_tcp_bind(struct ff_arch_tcp *tcp, const struct ff_arch_net_addr *addr)
+int ff_arch_tcp_bind(struct ff_arch_tcp *tcp, const struct ff_arch_net_addr *addr, int is_listening)
 {
 	int rv;
 	int is_success = 0;
@@ -150,15 +148,13 @@ int ff_arch_tcp_bind(struct ff_arch_tcp *tcp, const struct ff_arch_net_addr *add
 		is_success = 1;
 	}
 
+	if (is_listening)
+	{
+		rv = listen(tcp->handle, SOMAXCONN);
+		ff_winsock_fatal_error_check(rv != SOCKET_ERROR, L"cannot enable listening mode for the tcp socket");
+	}
+
 	return is_success;
-}
-
-void ff_arch_tcp_enable_listening_mode(struct ff_arch_tcp *tcp)
-{
-	int rv;
-
-	rv = listen(tcp->handle, SOMAXCONN);
-	ff_winsock_fatal_error_check(rv != SOCKET_ERROR, L"cannot enable listening mode for the tcp socket");
 }
 
 int ff_arch_tcp_connect(struct ff_arch_tcp *tcp, const struct ff_arch_net_addr *addr)
@@ -278,11 +274,6 @@ int ff_arch_tcp_read_with_timeout(struct ff_arch_tcp *tcp, void *buf, int len, i
 
 	ff_assert(len >= 0);
 
-	if (tcp->is_disconnected)
-	{
-		goto end;
-	}
-
 	wsa_buf.len = (u_long) len;
 	wsa_buf.buf = (char *) buf;
 	memset(&overlapped, 0, sizeof(overlapped));
@@ -324,11 +315,6 @@ int ff_arch_tcp_write_with_timeout(struct ff_arch_tcp *tcp, const void *buf, int
 
 	ff_assert(len >= 0);
 
-	if (tcp->is_disconnected)
-	{
-		goto end;
-	}
-
 	wsa_buf.len = len;
 	wsa_buf.buf = (char *) buf;
 	memset(&overlapped, 0, sizeof(overlapped));
@@ -352,12 +338,12 @@ end:
 
 void ff_arch_tcp_disconnect(struct ff_arch_tcp *tcp)
 {
-	if (!tcp->is_disconnected)
-	{
-		BOOL result;
+	BOOL result;
+	int rv;
 
-		result = CancelIo((HANDLE) tcp->handle);
-		ff_assert(result != FALSE);
-		tcp->is_disconnected = 1;
-	}
+	rv = shutdown(tcp->handle, SD_BOTH);
+	ff_assert(rv == 0);
+
+	result = CancelIo((HANDLE) tcp->handle);
+	ff_assert(result != FALSE);
 }
