@@ -18,21 +18,21 @@ struct ff_tcp
 
 static int read_func(void *ctx, void *buf, int len)
 {
-	struct ff_arch_tcp *tcp;
+	struct ff_tcp *tcp;
 	int bytes_read;
 
-	tcp = (struct ff_arch_tcp *) ctx;
-	bytes_read = ff_arch_tcp_read(tcp, buf, len);
+	tcp = (struct ff_tcp *) ctx;
+	bytes_read = ff_arch_tcp_read(tcp->tcp, buf, len);
 	return bytes_read;
 }
 
 static int write_func(void *ctx, const void *buf, int len)
 {
-	struct ff_arch_tcp *tcp;
+	struct ff_tcp *tcp;
 	int bytes_written;
 
-	tcp = (struct ff_arch_tcp *) ctx;
-	bytes_written = ff_arch_tcp_write(tcp, buf, len);
+	tcp = (struct ff_tcp *) ctx;
+	bytes_written = ff_arch_tcp_write(tcp->tcp, buf, len);
 	return bytes_written;
 }
 
@@ -42,8 +42,8 @@ static struct ff_tcp *create_from_arch_tcp(struct ff_arch_tcp *arch_tcp)
 
 	tcp = (struct ff_tcp *) ff_malloc(sizeof(*tcp));
 	tcp->tcp = arch_tcp;
-	tcp->read_buffer = ff_read_stream_buffer_create(read_func, tcp->tcp, READ_BUFFER_SIZE);
-	tcp->write_buffer = ff_write_stream_buffer_create(write_func, tcp->tcp, WRITE_BUFFER_SIZE);
+	tcp->read_buffer = ff_read_stream_buffer_create(read_func, tcp, READ_BUFFER_SIZE);
+	tcp->write_buffer = ff_write_stream_buffer_create(write_func, tcp, WRITE_BUFFER_SIZE);
 
 	return tcp;
 }
