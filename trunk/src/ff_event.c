@@ -88,13 +88,24 @@ int ff_event_wait_with_timeout(struct ff_event *event, int timeout)
 {
 	int is_success = 1;
 
+	ff_assert(timeout >= 0);
+
 	if (!event->is_set)
 	{
 		struct ff_fiber *current_fiber;
+		struct ff_core_timeout_operation_data *timeout_operation_data;
 
 		current_fiber = ff_core_get_current_fiber();
 		ff_stack_push(event->pending_fibers, current_fiber);
-		is_success = ff_core_do_timeout_operation(timeout, cancel_event_wait, event);
+		if (timeout > 0)
+		{
+			timeout_operation_data = ff_core_register_timeout_operation(timeout, cancel_event_wait, event);
+		}
+		ff_core_yield_fiber();
+		if (timeout > 0)
+		{
+			is_success = ff_core_deregister_timeout_operation(timeout_operation_data);
+		}
 	}
 	return is_success;
 }

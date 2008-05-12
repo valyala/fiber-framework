@@ -233,6 +233,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\ff_tcp.c"
+				>
+			</File>
+			<File
 				RelativePath=".\src\ff_threadpool.c"
 				>
 			</File>
@@ -576,6 +580,10 @@
 					>
 				</File>
 				<File
+					RelativePath=".\include\private\ff_tcp.h"
+					>
+				</File>
+				<File
 					RelativePath=".\include\private\ff_threadpool.h"
 					>
 				</File>
@@ -649,6 +657,10 @@
 				</File>
 				<File
 					RelativePath=".\include\public\ff_semaphore.h"
+					>
+				</File>
+				<File
+					RelativePath=".\include\public\ff_tcp.h"
 					>
 				</File>
 				<Filter
