@@ -239,6 +239,10 @@
 			<Filter
 				Name="arch"
 				>
+				<File
+					RelativePath=".\src\ff_write_stream_buffer.c"
+					>
+				</File>
 				<Filter
 					Name="win"
 					>
@@ -573,6 +577,10 @@
 				</File>
 				<File
 					RelativePath=".\include\private\ff_threadpool.h"
+					>
+				</File>
+				<File
+					RelativePath=".\include\private\ff_write_stream_buffer.h"
 					>
 				</File>
 				<Filter
