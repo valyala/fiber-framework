@@ -221,6 +221,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\ff_read_stream_buffer.c"
+				>
+			</File>
+			<File
 				RelativePath=".\src\ff_semaphore.c"
 				>
 			</File>
@@ -553,6 +557,10 @@
 				</File>
 				<File
 					RelativePath=".\include\private\ff_queue.h"
+					>
+				</File>
+				<File
+					RelativePath=".\include\private\ff_read_stream_buffer.h"
 					>
 				</File>
 				<File
