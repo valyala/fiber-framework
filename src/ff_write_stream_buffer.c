@@ -45,11 +45,10 @@ int ff_write_stream_buffer_write(struct ff_write_stream_buffer *buffer, const vo
 
 		if (buffer->capacity == buffer->start_pos)
 		{
-			int is_success;
-
-			is_success = ff_write_stream_buffer_flush(buffer);
-			if (!is_success)
+			bytes_written = ff_write_stream_buffer_flush(buffer);
+			if (bytes_written == -1)
 			{
+				total_bytes_written = -1;
 				goto end;
 			}
 			ff_assert(buffer->start_pos == 0);
@@ -90,7 +89,6 @@ end:
 
 int ff_write_stream_buffer_flush(struct ff_write_stream_buffer *buffer)
 {
-	int is_success = -1;
 	int total_bytes_written = 0;
 
 	while (buffer->start_pos > 0)
@@ -100,14 +98,15 @@ int ff_write_stream_buffer_flush(struct ff_write_stream_buffer *buffer)
 		bytes_written = buffer->write_func(buffer->func_ctx, buffer->buf + total_bytes_written, buffer->start_pos);
 		if (bytes_written == -1)
 		{
+			total_bytes_written = -1;
 			goto end;
 		}
 
 		buffer->start_pos -= bytes_written;
+
 		total_bytes_written += bytes_written;
 	}
-	is_success = 0;
 
 end:
-	return is_success;
+	return total_bytes_written;
 }
