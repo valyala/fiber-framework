@@ -37,9 +37,10 @@ void ff_read_stream_buffer_delete(struct ff_read_stream_buffer *buffer)
 
 int ff_read_stream_buffer_read(struct ff_read_stream_buffer *buffer, void *buf, int len)
 {
-	char *char_buf = (char *) buf;
+	char *char_buf;
 	int total_bytes_read = 0;
 
+	char_buf = (char *) buf;
 	for (;;)
 	{
 		int bytes_read;
@@ -82,13 +83,13 @@ int ff_read_stream_buffer_read(struct ff_read_stream_buffer *buffer, void *buf, 
 			buffer->size = bytes_read;
 			buffer->start_pos = 0;
 		}
-
-		bytes_read = len > buffer->size ? buffer->size : len;
-		if (bytes_read == 0)
+		if (len == 0)
 		{
 			goto end;
 		}
 
+		bytes_read = len > buffer->size ? buffer->size : len;
+		ff_assert(bytes_read > 0);
 		memcpy(char_buf, buffer->buf + buffer->start_pos, bytes_read);
 
 		buffer->start_pos += bytes_read;
