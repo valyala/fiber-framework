@@ -5,14 +5,17 @@
 #include "private/ff_read_stream_buffer.h"
 #include "private/ff_write_stream_buffer.h"
 
-static const int READ_BUFFER_SIZE = 0x10000;
-static const int WRITE_BUFFER_SIZE = 0x10000;
+static const int BUFFER_SIZE = 0x10000;
 
 struct ff_file
 {
 	struct ff_arch_file *file;
-	struct ff_read_stream_buffer *read_buffer;
-	struct ff_write_stream_buffer *write_buffer;
+	union
+	{
+		struct ff_read_stream_buffer *read_buffer;
+		struct ff_write_stream_buffer *write_buffer;
+	} buffers;
+	enum ff_file_access_mode access_mode;
 };
 
 static int read_func(void *ctx, void *buf, int len)
@@ -44,16 +47,29 @@ struct ff_file *ff_file_open(const wchar_t *path, enum ff_file_access_mode acces
 
 	file = (struct ff_file *) ff_malloc(sizeof(*file));
 	file->file = ff_arch_file_open(path, arch_access_mode);
-	file->read_buffer = ff_read_stream_buffer_create(read_func, file, READ_BUFFER_SIZE);
-	file->write_buffer = ff_write_stream_buffer_create(write_func, file, WRITE_BUFFER_SIZE);
+	if (access_mode == FF_FILE_READ)
+	{
+		file->buffers.read_buffer = ff_read_stream_buffer_create(read_func, file, BUFFER_SIZE);
+	}
+	else
+	{
+		file->buffers.write_buffer = ff_write_stream_buffer_create(write_func, file, BUFFER_SIZE);
+	}
+	file->access_mode = access_mode;
 
 	return file;
 }
 
 void ff_file_close(struct ff_file *file)
 {
-	ff_write_stream_buffer_delete(file->write_buffer);
-	ff_read_stream_buffer_delete(file->read_buffer);
+	if (file->access_mode == FF_FILE_READ)
+	{
+		ff_read_stream_buffer_delete(file->buffers.read_buffer);
+	}
+	else
+	{
+		ff_write_stream_buffer_delete(file->buffers.write_buffer);
+	}
 	ff_arch_file_close(file->file);
 	ff_free(file);
 }
@@ -62,7 +78,9 @@ int ff_file_read(struct ff_file *file, void *buf, int len)
 {
 	int bytes_read;
 
-	bytes_read = ff_read_stream_buffer_read(file->read_buffer, buf, len);
+	ff_assert(file->access_mode == FF_FILE_READ);
+
+	bytes_read = ff_read_stream_buffer_read(file->buffers.read_buffer, buf, len);
 	return bytes_read;
 }
 
@@ -70,7 +88,9 @@ int ff_file_write(struct ff_file *file, const void *buf, int len)
 {
 	int bytes_written;
 
-	bytes_written = ff_write_stream_buffer_write(file->write_buffer, buf, len);
+	ff_assert(file->access_mode == FF_FILE_WRITE);
+
+	bytes_written = ff_write_stream_buffer_write(file->buffers.write_buffer, buf, len);
 	return bytes_written;
 }
 
