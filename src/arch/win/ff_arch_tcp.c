@@ -32,35 +32,23 @@ static SOCKET create_tcp_socket()
 	return socket;
 }
 
-static void cancel_io_operation(struct ff_fiber *fiber, void *ctx)
-{
-	struct ff_arch_tcp *tcp;
-
-	tcp = (struct ff_arch_tcp *) ctx;
-	ff_arch_tcp_disconnect(tcp);
-}
-
-static int complete_overlapped_io(struct ff_arch_tcp *tcp, WSAOVERLAPPED *overlapped, int timeout)
+static int complete_overlapped_io(struct ff_arch_tcp *tcp, WSAOVERLAPPED *overlapped)
 {
 	struct ff_fiber *current_fiber;
 	int int_bytes_transferred = -1;
-	int is_success;
+	BOOL result;
+	DWORD flags;
+	DWORD bytes_transferred;
 
 	current_fiber = ff_core_get_current_fiber();
 	ff_win_completion_port_register_overlapped_data(tcp_ctx.completion_port, overlapped, current_fiber);
-	is_success = ff_core_do_timeout_operation(timeout, cancel_io_operation, tcp);
+	ff_core_yield_fiber();
 	ff_win_completion_port_deregister_overlapped_data(tcp_ctx.completion_port, overlapped);
-	if (is_success)
-	{
-		BOOL result;
-		DWORD flags;
-		DWORD bytes_transferred;
 
-		result = WSAGetOverlappedResult(tcp->handle, overlapped, &bytes_transferred, FALSE, &flags);
-		if (result != FALSE)
-		{
-			int_bytes_transferred = (int) bytes_transferred;
-		}
+	result = WSAGetOverlappedResult(tcp->handle, overlapped, &bytes_transferred, FALSE, &flags);
+	if (result != FALSE)
+	{
+		int_bytes_transferred = (int) bytes_transferred;
 	}
 
 	return int_bytes_transferred;
@@ -186,7 +174,7 @@ int ff_arch_tcp_connect(struct ff_arch_tcp *tcp, const struct ff_arch_net_addr *
 		}
 	}
 
-	bytes_transferred = complete_overlapped_io(tcp, &overlapped, 0);
+	bytes_transferred = complete_overlapped_io(tcp, &overlapped);
 	if (bytes_transferred == -1)
 	{
 		goto end;
@@ -235,7 +223,7 @@ struct ff_arch_tcp *ff_arch_tcp_accept(struct ff_arch_tcp *tcp, struct ff_arch_n
 		}
 	}
 
-	bytes_transferred = complete_overlapped_io(tcp, &overlapped, 0);
+	bytes_transferred = complete_overlapped_io(tcp, &overlapped);
 	if (bytes_transferred == -1)
 	{
 		ff_arch_tcp_delete(remote_tcp);
@@ -255,16 +243,6 @@ end:
 }
 
 int ff_arch_tcp_read(struct ff_arch_tcp *tcp, void *buf, int len)
-{
-	int bytes_read;
-
-	ff_assert(len >= 0);
-
-	bytes_read = ff_arch_tcp_read_with_timeout(tcp, buf, len, 0);
-	return bytes_read;
-}
-
-int ff_arch_tcp_read_with_timeout(struct ff_arch_tcp *tcp, void *buf, int len, int timeout)
 {
 	int rv;
 	WSAOVERLAPPED overlapped;
@@ -289,23 +267,13 @@ int ff_arch_tcp_read_with_timeout(struct ff_arch_tcp *tcp, void *buf, int len, i
 		}
 	}
 
-	int_bytes_read = complete_overlapped_io(tcp, &overlapped, timeout);
+	int_bytes_read = complete_overlapped_io(tcp, &overlapped);
 
 end:
 	return int_bytes_read;
 }
 
 int ff_arch_tcp_write(struct ff_arch_tcp *tcp, const void *buf, int len)
-{
-	int bytes_written;
-
-	ff_assert(len >= 0);
-
-	bytes_written = ff_arch_tcp_write_with_timeout(tcp, buf, len, 0);
-	return bytes_written;
-}
-
-int ff_arch_tcp_write_with_timeout(struct ff_arch_tcp *tcp, const void *buf, int len, int timeout)
 {
 	int rv;
 	WSAOVERLAPPED overlapped;
@@ -330,7 +298,7 @@ int ff_arch_tcp_write_with_timeout(struct ff_arch_tcp *tcp, const void *buf, int
 		}
 	}
 
-	int_bytes_written = complete_overlapped_io(tcp, &overlapped, timeout);
+	int_bytes_written = complete_overlapped_io(tcp, &overlapped);
 
 end:
 	return int_bytes_written;

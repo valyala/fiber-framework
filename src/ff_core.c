@@ -15,7 +15,7 @@ static const int MAX_THREADPOOL_SIZE = 100;
 static const int MAX_FIBERPOOL_SIZE = 100;
 static const int TIMEOUT_CHECKER_INTERVAL = 100;
 
-struct cancel_timeout_data
+struct ff_core_timeout_operation_data
 {
 	int64_t expiration_time;
 	ff_core_cancel_timeout_func cancel_timeout_func;
@@ -88,17 +88,17 @@ static void sleep_timeout_func(struct ff_fiber *fiber, void *ctx)
 
 static void timeout_operations_visitor_func(void *data, void *ctx)
 {
-	struct cancel_timeout_data *cancel_timeout_data;
+	struct ff_core_timeout_operation_data *timeout_operation_data;
 	struct timeout_checker_data *timeout_checker_data;
 	
-	cancel_timeout_data = (struct cancel_timeout_data *) data;
+	timeout_operation_data = (struct ff_core_timeout_operation_data *) data;
 	timeout_checker_data = (struct timeout_checker_data *) ctx;
-	if (!cancel_timeout_data->is_expired)
+	if (!timeout_operation_data->is_expired)
 	{
-		if (timeout_checker_data->current_time > cancel_timeout_data->expiration_time)
+		if (timeout_checker_data->current_time > timeout_operation_data->expiration_time)
 		{
-			cancel_timeout_data->cancel_timeout_func(cancel_timeout_data->fiber, cancel_timeout_data->ctx);
-			cancel_timeout_data->is_expired = 1;
+			timeout_operation_data->cancel_timeout_func(timeout_operation_data->fiber, timeout_operation_data->ctx);
+			timeout_operation_data->is_expired = 1;
 		}
 	}
 }
@@ -159,9 +159,13 @@ void ff_core_shutdown()
 
 void ff_core_sleep(int interval)
 {
+	struct ff_core_timeout_operation_data *timeout_operation_data;
+
 	ff_assert(interval > 0);
 
-	ff_core_do_timeout_operation(interval, sleep_timeout_func, NULL);
+	timeout_operation_data = ff_core_register_timeout_operation(interval, sleep_timeout_func, NULL);
+	ff_core_yield_fiber();
+	ff_core_deregister_timeout_operation(timeout_operation_data);
 }
 
 void ff_core_threadpool_execute(ff_core_threadpool_func func, void *ctx)
@@ -180,42 +184,43 @@ void ff_core_fiberpool_begin_execute(ff_core_fiberpool_func func, void *ctx)
 	ff_fiberpool_execute(core_ctx.fiberpool, func, ctx);
 }
 
-int ff_core_do_timeout_operation(int timeout, ff_core_cancel_timeout_func cancel_timeout_func, void *ctx)
+struct ff_core_timeout_operation_data *ff_core_register_timeout_operation(int timeout, ff_core_cancel_timeout_func cancel_timeout_func, void *ctx)
 {
 	int is_success = 1;
-	struct cancel_timeout_data cancel_timeout_data;
+	struct ff_core_timeout_operation_data *timeout_operation_data;
+	int64_t current_time;
 
-	ff_assert(timeout >= 0);
+	ff_assert(timeout > 0);
 
-	if (timeout > 0)
-	{
-		int64_t current_time;
+	timeout_operation_data = (struct ff_core_timeout_operation_data *) ff_malloc(sizeof(*timeout_operation_data));
+	current_time = ff_arch_misc_get_current_time();
+	timeout_operation_data->expiration_time = current_time + timeout;
+	timeout_operation_data->cancel_timeout_func = cancel_timeout_func;
+	timeout_operation_data->fiber = core_ctx.current_fiber;
+	timeout_operation_data->ctx = ctx;
+	timeout_operation_data->is_expired = 0;
 
-		current_time = ff_arch_misc_get_current_time();
-		cancel_timeout_data.expiration_time = current_time + timeout;
-		cancel_timeout_data.cancel_timeout_func = cancel_timeout_func;
-		cancel_timeout_data.fiber = core_ctx.current_fiber;
-		cancel_timeout_data.ctx = ctx;
-		cancel_timeout_data.is_expired = 0;
+	ff_semaphore_up(core_ctx.timeout_operations_semaphore);
+	ff_mutex_lock(core_ctx.timeout_operations_mutex);
+	ff_queue_push(core_ctx.timeout_operations, timeout_operation_data);
+	ff_mutex_unlock(core_ctx.timeout_operations_mutex);
 
-		ff_semaphore_up(core_ctx.timeout_operations_semaphore);
-		ff_mutex_lock(core_ctx.timeout_operations_mutex);
-		ff_queue_push(core_ctx.timeout_operations, &cancel_timeout_data);
-		ff_mutex_unlock(core_ctx.timeout_operations_mutex);
-	}
-	ff_core_yield_fiber();
-	if (timeout > 0)
-	{
-		int is_removed;
+	return timeout_operation_data;
+}
 
-		ff_mutex_lock(core_ctx.timeout_operations_mutex);
-		is_removed = ff_queue_remove_entry(core_ctx.timeout_operations, &cancel_timeout_data);
-		ff_assert(is_removed);
-		ff_mutex_unlock(core_ctx.timeout_operations_mutex);
-		ff_semaphore_down(core_ctx.timeout_operations_semaphore);
+int ff_core_deregister_timeout_operation(struct ff_core_timeout_operation_data *timeout_operation_data)
+{
+	int is_success;
+	int is_removed;
 
-		is_success = !cancel_timeout_data.is_expired;
-	}
+	ff_mutex_lock(core_ctx.timeout_operations_mutex);
+	is_removed = ff_queue_remove_entry(core_ctx.timeout_operations, timeout_operation_data);
+	ff_assert(is_removed);
+	ff_mutex_unlock(core_ctx.timeout_operations_mutex);
+	ff_semaphore_down(core_ctx.timeout_operations_semaphore);
+
+	is_success = !timeout_operation_data->is_expired;
+	ff_free(timeout_operation_data);
 	return is_success;
 }
 

@@ -27,12 +27,27 @@ void ff_core_yield_fiber();
  */
 typedef void (*ff_core_cancel_timeout_func)(struct ff_fiber *fiber, void *ctx);
 
+
 /**
  * @public
- * performs timeout operation.
- * Returns 0 if the operation was timed out, otherwise returns 0
+ * Represents opaque data, associated with current timeout operation
  */
-int ff_core_do_timeout_operation(int timeout, ff_core_cancel_timeout_func cancel_timeout_func, void *ctx);
+struct ff_core_timeout_operation_data;
+
+/**
+ * @public
+ * Registers the timeout operation.
+ * Returns the data, which should be passed to ff_core_deregister_timeout_operation()
+ * after operation completion.
+ */
+struct ff_core_timeout_operation_data *ff_core_register_timeout_operation(int timeout, ff_core_cancel_timeout_func cancel_timeout_func, void *ctx);
+
+/**
+ * @public
+ * Deregisters the timeout operation, which was registered using ff_core_register_timeout_operation()
+ * Returns 1 on success, 0 on error.
+ */
+int ff_core_deregister_timeout_operation(struct ff_core_timeout_operation_data *timeout_operation_data);
 
 /**
  * @public
