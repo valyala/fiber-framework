@@ -244,6 +244,10 @@
 				Name="arch"
 				>
 				<File
+					RelativePath=".\src\ff_file.c"
+					>
+				</File>
+				<File
 					RelativePath=".\src\ff_write_stream_buffer.c"
 					>
 				</File>
@@ -556,6 +560,10 @@
 					>
 				</File>
 				<File
+					RelativePath=".\include\private\ff_file.h"
+					>
+				</File>
+				<File
 					RelativePath=".\include\private\ff_malloc.h"
 					>
 				</File>
@@ -649,6 +657,10 @@
 				</File>
 				<File
 					RelativePath=".\include\public\ff_fiber.h"
+					>
+				</File>
+				<File
+					RelativePath=".\include\public\ff_file.h"
 					>
 				</File>
 				<File
