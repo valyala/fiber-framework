@@ -245,6 +245,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\ff_udp.c"
+				>
+			</File>
+			<File
 				RelativePath=".\src\ff_write_stream_buffer.c"
 				>
 			</File>
@@ -620,6 +624,10 @@
 					>
 				</File>
 				<File
+					RelativePath=".\include\private\ff_udp.h"
+					>
+				</File>
+				<File
 					RelativePath=".\include\private\ff_write_stream_buffer.h"
 					>
 				</File>
@@ -697,6 +705,10 @@
 				</File>
 				<File
 					RelativePath=".\include\public\ff_tcp.h"
+					>
+				</File>
+				<File
+					RelativePath=".\include\public\ff_udp.h"
 					>
 				</File>
 				<Filter
