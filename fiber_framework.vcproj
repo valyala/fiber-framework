@@ -189,6 +189,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\ff_container.c"
+				>
+			</File>
+			<File
 				RelativePath=".\src\ff_core.c"
 				>
 			</File>
@@ -565,6 +569,10 @@
 				</File>
 				<File
 					RelativePath=".\include\private\ff_common.h"
+					>
+				</File>
+				<File
+					RelativePath=".\include\private\ff_container.h"
 					>
 				</File>
 				<File
