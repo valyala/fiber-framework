@@ -45,14 +45,6 @@ void ff_queue_push(struct ff_queue *queue, void *data)
 	queue->back_ptr = &entry->next;
 }
 
-int ff_queue_is_empty(struct ff_queue *queue)
-{
-	int is_empty;
-
-	is_empty = (queue->front == NULL) ? 1 : 0;
-	return is_empty;
-}
-
 void *ff_queue_front(struct ff_queue *queue)
 {
 	ff_assert(queue->front != NULL);
@@ -76,42 +68,10 @@ void ff_queue_pop(struct ff_queue *queue)
 	ff_free(entry);
 }
 
-int ff_queue_remove_entry(struct ff_queue *queue, void *data)
+int ff_queue_is_empty(struct ff_queue *queue)
 {
-	int is_removed = 0;
-	struct queue_entry **entry_ptr;
-	struct queue_entry *entry;
+	int is_empty;
 
-	entry_ptr = &queue->front;
-	entry = queue->front;
-	while (entry != NULL)
-	{
-		if (entry->data == data)
-		{
-			*entry_ptr = entry->next;
-			if (queue->back_ptr == &entry->next)
-			{
-				queue->back_ptr = entry_ptr;
-			}
-			ff_free(entry);
-			is_removed = 1;
-			break;
-		}
-		entry_ptr = &entry->next;
-		entry = entry->next;
-	}
-
-	return is_removed;
-}
-
-void ff_queue_for_each(struct ff_queue *queue, ff_queue_for_each_func for_each_func, void *ctx)
-{
-	struct queue_entry *entry;
-
-	entry = queue->front;
-	while (entry != NULL)
-	{
-		for_each_func(entry->data, ctx);
-		entry = entry->next;
-	}
+	is_empty = (queue->front == NULL) ? 1 : 0;
+	return is_empty;
 }
