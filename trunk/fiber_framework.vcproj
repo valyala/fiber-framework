@@ -225,6 +225,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\ff_pool.c"
+				>
+			</File>
+			<File
 				RelativePath=".\src\ff_queue.c"
 				>
 			</File>
@@ -608,6 +612,10 @@
 					>
 				</File>
 				<File
+					RelativePath=".\include\private\ff_pool.h"
+					>
+				</File>
+				<File
 					RelativePath=".\include\private\ff_queue.h"
 					>
 				</File>
@@ -705,6 +713,10 @@
 				</File>
 				<File
 					RelativePath=".\include\public\ff_mutex.h"
+					>
+				</File>
+				<File
+					RelativePath=".\include\public\ff_pool.h"
 					>
 				</File>
 				<File
