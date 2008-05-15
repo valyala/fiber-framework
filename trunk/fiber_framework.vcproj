@@ -519,6 +519,34 @@
 						>
 					</File>
 					<File
+						RelativePath=".\src\arch\win\ff_win_net.c"
+						>
+						<FileConfiguration
+							Name="Debug|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								DisableLanguageExtensions="false"
+								UsePrecompiledHeader="2"
+								PrecompiledHeaderThrough="ff_win_stdafx.h"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								DisableLanguageExtensions="false"
+								UsePrecompiledHeader="2"
+								PrecompiledHeaderThrough="ff_win_stdafx.h"
+							/>
+						</FileConfiguration>
+					</File>
+					<File
+						RelativePath=".\src\arch\win\ff_win_net.h"
+						>
+					</File>
+					<File
 						RelativePath=".\src\arch\win\ff_win_net_addr.h"
 						>
 					</File>
@@ -548,10 +576,6 @@
 					</File>
 					<File
 						RelativePath=".\src\arch\win\ff_win_stdafx.h"
-						>
-					</File>
-					<File
-						RelativePath=".\src\arch\win\ff_win_tcp.h"
 						>
 					</File>
 				</Filter>
