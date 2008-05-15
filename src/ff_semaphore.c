@@ -55,3 +55,27 @@ void ff_semaphore_down(struct ff_semaphore *semaphore)
 		ff_event_set(semaphore->event);
 	}
 }
+
+int ff_semaphore_down_with_timeout(struct ff_semaphore *semaphore, int timeout)
+{
+	int is_success;
+
+	ff_assert(semaphore->value >= 0);
+
+	while (semaphore->value == 0)
+	{
+		is_success = ff_event_wait_with_timeout(semaphore->event, timeout);
+		if (!is_success)
+		{
+			goto end;
+		}
+	}
+	semaphore->value--;
+	if (semaphore->value > 0)
+	{
+		ff_event_set(semaphore->event);
+	}
+
+end:
+	return is_success;
+}
