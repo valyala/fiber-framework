@@ -1,68 +1,13 @@
 #include "ff_win_stdafx.h"
 
 #include "private/arch/ff_arch_udp.h"
-#include "private/ff_core.h"
+#include "ff_win_net.h"
 #include "ff_win_net_addr.h"
 
 struct ff_arch_udp
 {
 	SOCKET handle;
 };
-
-struct threadpool_read_udp_data
-{
-	struct ff_arch_udp *udp;
-	struct ff_arch_net_addr *peer_addr;
-	void *buf;
-	int len;
-	int timeout;
-	int bytes_read;
-};
-
-struct threadpool_write_udp_data
-{
-	struct ff_arch_udp *udp;
-	const struct ff_arch_net_addr *addr;
-	const void *buf;
-	int len;
-	int timeout;
-	int bytes_written;
-};
-
-static void threadpool_read_udp_func(void *ctx)
-{
-	struct threadpool_read_udp_data *data;
-	int rv;
-	int peer_addr_len;
-
-	data = (struct threadpool_read_udp_data *) ctx;
-	rv = setsockopt(data->udp->handle, SOL_SOCKET, SO_RCVTIMEO, (char *) &data->timeout, sizeof(data->timeout));
-	ff_assert(rv == 0);
-
-	peer_addr_len = sizeof(data->peer_addr->addr);
-	data->bytes_read = recvfrom(data->udp->handle, (char *) data->buf, data->len, 0, (struct sockaddr *) &data->peer_addr->addr, &peer_addr_len);
-	ff_assert(peer_addr_len == sizeof(data->peer_addr->addr));
-	if (data->bytes_read == SOCKET_ERROR)
-	{
-		data->bytes_read = -1;
-	}
-}
-
-static void threadpool_write_udp_func(void *ctx)
-{
-	struct threadpool_write_udp_data *data;
-	int rv;
-
-	data = (struct threadpool_write_udp_data *) ctx;
-	rv = setsockopt(data->udp->handle, SOL_SOCKET, SO_SNDTIMEO, (char *) &data->timeout, sizeof(data->timeout));
-	ff_assert(rv == 0);
-
-	data->bytes_written = sendto(data->udp->handle, (char *) data->buf, data->len, 0, (struct sockaddr *) &data->addr->addr, sizeof(data->addr->addr));
-	if (data->bytes_written == SOCKET_ERROR)
-	{
-		data->bytes_written = -1;
-	}
-}
 
 struct ff_arch_udp *ff_arch_udp_create(int is_broadcast)
 {
@@ -108,34 +53,71 @@ int ff_arch_udp_bind(struct ff_arch_udp *udp, const struct ff_arch_net_addr *add
 	return is_success;
 }
 
-int ff_arch_udp_read(struct ff_arch_udp *udp, struct ff_arch_net_addr *peer_addr, void *buf, int len, int timeout)
+int ff_arch_udp_read(struct ff_arch_udp *udp, struct ff_arch_net_addr *peer_addr, void *buf, int len)
 {
-	struct threadpool_read_udp_data data;
+	int rv;
+	WSAOVERLAPPED overlapped;
+	WSABUF wsa_buf;
+	int int_bytes_read = -1;
+	DWORD flags = 0;
+	INT peer_addr_len;
 
-	data.udp = udp;
-	data.peer_addr = peer_addr;
-	data.buf = buf;
-	data.len = len;
-	data.timeout = timeout;
-	data.bytes_read = -1;
-	ff_core_threadpool_execute(threadpool_read_udp_func, &data);
+	ff_assert(len >= 0);
 
-	return data.bytes_read;
+	wsa_buf.len = (u_long) len;
+	wsa_buf.buf = (char *) buf;
+	peer_addr_len = sizeof(peer_addr->addr);
+	memset(&overlapped, 0, sizeof(overlapped));
+	rv = WSARecvFrom(udp->handle, &wsa_buf, 1, NULL, &flags, (struct sockaddr *) &peer_addr->addr, &peer_addr_len, &overlapped, NULL);
+	if (rv != 0)
+	{
+		int last_error;
+		
+		last_error = WSAGetLastError();
+		if (last_error != WSA_IO_PENDING)
+		{
+			goto end;
+		}
+	}
+	ff_assert(peer_addr_len == sizeof(peer_addr->addr));
+
+	int_bytes_read = ff_win_net_complete_overlapped_io(udp->handle, &overlapped);
+
+end:
+	return int_bytes_read;
 }
 
-int ff_arch_udp_write(struct ff_arch_udp *udp, const struct ff_arch_net_addr *addr, const void *buf, int len, int timeout)
+int ff_arch_udp_write(struct ff_arch_udp *udp, const struct ff_arch_net_addr *addr, const void *buf, int len)
 {
-	struct threadpool_write_udp_data data;
+	int rv;
+	WSAOVERLAPPED overlapped;
+	WSABUF wsa_buf;
+	int int_bytes_written = -1;
+	DWORD flags = 0;
+	INT addr_len;
 
-	data.udp = udp;
-	data.addr = addr;
-	data.buf = buf;
-	data.len = len;
-	data.timeout = timeout;
-	data.bytes_written = -1;
-	ff_core_threadpool_execute(threadpool_write_udp_func, &data);
+	ff_assert(len >= 0);
 
-	return data.bytes_written;
+	wsa_buf.len = len;
+	wsa_buf.buf = (char *) buf;
+	addr_len = sizeof(addr->addr);
+	memset(&overlapped, 0, sizeof(overlapped));
+	rv = WSASendTo(udp->handle, &wsa_buf, 1, NULL, flags, (struct sockaddr *) &addr->addr, addr_len, &overlapped, NULL);
+	if (rv != 0)
+	{
+		int last_error;
+		
+		last_error = WSAGetLastError();
+		if (last_error != WSA_IO_PENDING)
+		{
+			goto end;
+		}
+	}
+
+	int_bytes_written = ff_win_net_complete_overlapped_io(udp->handle, &overlapped);
+
+end:
+	return int_bytes_written;
 }
 
 void ff_arch_udp_disconnect(struct ff_arch_udp *udp)
