@@ -13,6 +13,8 @@ void ff_blocking_queue_delete(struct ff_blocking_queue *queue);
 
 void *ff_blocking_queue_get(struct ff_blocking_queue *queue);
 
+int ff_blocking_queue_get_with_timeout(struct ff_blocking_queue *queue, int timeout, void **data);
+
 void ff_blocking_queue_put(struct ff_blocking_queue *queue, void *data);
 
 #ifdef __cplusplus

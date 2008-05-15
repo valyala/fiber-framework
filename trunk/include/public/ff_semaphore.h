@@ -15,6 +15,8 @@ void ff_semaphore_up(struct ff_semaphore *semaphore);
 
 void ff_semaphore_down(struct ff_semaphore *semaphore);
 
+int ff_semaphore_down_with_timeout(struct ff_semaphore *semaphore, int timeout);
+
 #ifdef __cplusplus
 }
 #endif
