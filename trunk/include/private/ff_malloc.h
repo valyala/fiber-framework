@@ -1,5 +1,5 @@
-#ifndef FF_MALLOC_PUBLIC
-#define FF_MALLOC_PUBLIC
+#ifndef FF_MALLOC_PRIVATE
+#define FF_MALLOC_PRIVATE
 
 #include <stdlib.h> /* for size_t */
 

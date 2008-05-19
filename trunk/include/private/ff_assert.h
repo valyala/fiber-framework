@@ -1,5 +1,5 @@
-#ifndef FF_ASSERT_PUBLIC
-#define FF_ASSERT_PUBLIC
+#ifndef FF_ASSERT_PRIVATE
+#define FF_ASSERT_PRIVATE
 
 #include <assert.h>
 
