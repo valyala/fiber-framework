@@ -1,6 +1,8 @@
 #ifndef FF_FIBER_PUBLIC
 #define FF_FIBER_PUBLIC
 
+#include "public/ff_common.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -25,20 +27,20 @@ typedef void (*ff_fiber_func)(void *ctx);
  * then the stack size will be set automatically.
  * This function always returns correct result.
  */
-struct ff_fiber *ff_fiber_create(ff_fiber_func fiber_func, int stack_size);
+FF_API struct ff_fiber *ff_fiber_create(ff_fiber_func fiber_func, int stack_size);
 
 /**
  * @public
  * deletes the given fiber
  */
-void ff_fiber_delete(struct ff_fiber *fiber);
+FF_API void ff_fiber_delete(struct ff_fiber *fiber);
 
 /**
  * @public
  * schedules the given fiber for execution and passes the ctx to the fiber_func,
  * which has been set in the ff_fiber_create()
  */
-void ff_fiber_start(struct ff_fiber *fiber, void *ctx);
+FF_API void ff_fiber_start(struct ff_fiber *fiber, void *ctx);
 
 /**
  * @public
@@ -48,7 +50,7 @@ void ff_fiber_start(struct ff_fiber *fiber, void *ctx);
  *   1) if the fiber was created but wasn't yet started by calling the ff_fiber_start();
  *   2) if the fiber was already finished by leaving the fiber_func.
  */
-void ff_fiber_join(struct ff_fiber *fiber);
+FF_API void ff_fiber_join(struct ff_fiber *fiber);
 
 #ifdef __cplusplus
 }
