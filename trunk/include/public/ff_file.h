@@ -23,6 +23,8 @@ FF_API int ff_file_read(struct ff_file *file, void *buf, int len);
 
 FF_API int ff_file_write(struct ff_file *file, const void *buf, int len);
 
+FF_API int ff_file_flush(struct ff_file *file);
+
 FF_API int ff_file_erase(const wchar_t *path);
 
 FF_API int ff_file_copy(const wchar_t *src_path, const wchar_t *dst_path);

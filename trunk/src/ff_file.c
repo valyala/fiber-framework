@@ -94,6 +94,15 @@ int ff_file_write(struct ff_file *file, const void *buf, int len)
 	return bytes_written;
 }
 
+int ff_file_flush(struct ff_file *file)
+{
+	int bytes_written;
+
+	ff_assert(file->access_mode == FF_FILE_WRITE);
+	bytes_written = ff_write_stream_buffer_flush(file->buffers.write_buffer);
+	return bytes_written;
+}
+
 int ff_file_erase(const wchar_t *path)
 {
 	int is_success;

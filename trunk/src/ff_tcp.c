@@ -145,6 +145,14 @@ int ff_tcp_write_with_timeout(struct ff_tcp *tcp, const void *buf, int len, int 
 	return bytes_written;
 }
 
+int ff_tcp_flush(struct ff_tcp *tcp)
+{
+	int bytes_written;
+
+	bytes_written = ff_write_stream_buffer_flush(tcp->write_buffer);
+	return bytes_written;
+}
+
 void ff_tcp_disconnect(struct ff_tcp *tcp)
 {
 	ff_arch_tcp_disconnect(tcp->tcp);
