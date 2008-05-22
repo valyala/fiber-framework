@@ -28,6 +28,8 @@ FF_API int ff_tcp_write(struct ff_tcp *tcp, const void *buf, int len);
 
 FF_API int ff_tcp_write_with_timeout(struct ff_tcp *tcp, const void *buf, int len, int timeout);
 
+FF_API int ff_tcp_flush(struct ff_tcp *tcp);
+
 FF_API void ff_tcp_disconnect(struct ff_tcp *tcp);
 
 #ifdef __cplusplus
