@@ -217,6 +217,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\ff_hash.c"
+				>
+			</File>
+			<File
 				RelativePath=".\src\ff_malloc.c"
 				>
 			</File>
@@ -628,6 +632,10 @@
 					>
 				</File>
 				<File
+					RelativePath=".\include\private\ff_hash.h"
+					>
+				</File>
+				<File
 					RelativePath=".\include\private\ff_malloc.h"
 					>
 				</File>
@@ -737,6 +745,10 @@
 				</File>
 				<File
 					RelativePath=".\include\public\ff_file.h"
+					>
+				</File>
+				<File
+					RelativePath=".\include\public\ff_hash.h"
 					>
 				</File>
 				<File

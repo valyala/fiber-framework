@@ -9,7 +9,4 @@
 #include "private/ff_malloc.h"
 #include "private/ff_assert.h"
 
-
-typedef __int64 int64_t;
-
 #endif
