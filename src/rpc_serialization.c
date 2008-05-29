@@ -8,6 +8,9 @@ int rpc_stream_write(struct rpc_stream *stream, const void *buf, int len);
 #define U_FITS_IN_OCTETS(data, size) (((data) >> (7 * (size))) == 0)
 #define S_FITS_IN_OCTETS(data, size) (((data) >> (7 * (size) + 1)) == 0)
 
+#define MAX_BYTES_SIZE 0x10000
+#define MAX_STRING_SIZE 0x10000
+
 int uint32_serialize(uint32_t data, struct rpc_stream *stream)
 {
 	int bytes_written;
@@ -357,8 +360,13 @@ end:
 
 int string_serialize(const wchar_t *str, int str_len, struct rpc_stream *stream)
 {
-	int total_len;
+	int total_len = -1;
 	int i;
+
+	if (str_len > MAX_STRING_SIZE)
+	{
+		goto end;
+	}
 
 	total_len = uint32_serialize((uint32_t) str_len, stream);
 	if (total_len == -1)
@@ -397,19 +405,17 @@ int string_unserialize(wchar_t **str, int *str_len, struct rpc_stream *stream)
 	{
 		goto end;
 	}
+	if (u_str_len > MAX_STRING_SIZE)
+	{
+		total_len = -1;
+		goto end;
+	}
 	*str_len = u_str_len;
-	if (*str_len < 0)
-	{
-		total_len = -1;
-		goto end;
-	}
 
+	/* integer overflow is impossible here, because MAX_STRING_SIZE and, consequently,
+	 * u_str_len is guaranteed to be less than MAX_INT / sizeof(wchar_t)
+	 */
 	str_size = sizeof(wchar_t) * u_str_len;
-	if (str_size / sizeof(wchar_t) != u_str_len)
-	{
-		total_len = -1;
-		goto end;
-	}
 	*str = (wchar_t *) ff_malloc(str_size);
 
 	for (i = 0; i < *str_len; i++)
@@ -434,8 +440,13 @@ end:
 
 int bytes_serialize(const uint8_t *bytes, int bytes_len, struct rpc_stream *stream)
 {
-	int total_len;
+	int total_len = -1;
 	int len;
+
+	if (bytes_len > MAX_BYTES_SIZE)
+	{
+		goto end;
+	}
 
 	total_len = uint32_serialize((uint32_t) bytes_len, stream);
 	if (total_len == -1)
@@ -465,12 +476,12 @@ int bytes_unserialize(uint8_t **bytes, int *bytes_len, struct rpc_stream *stream
 	{
 		goto end;
 	}
-	*bytes_len = (int) u_bytes_len;
-	if (*bytes_len < 0)
+	if (u_bytes_len > MAX_BYTES_SIZE)
 	{
 		total_len = -1;
 		goto end;
 	}
+	*bytes_len = (int) u_bytes_len;
 
 	*bytes = (uint8_t *) ff_malloc(u_bytes_len);
 	len = rpc_stream_read(stream, *bytes, *bytes_len);
