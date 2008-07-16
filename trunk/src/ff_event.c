@@ -55,7 +55,6 @@ void ff_event_set(struct ff_event *event)
 			is_empty = ff_stack_is_empty(event->pending_fibers);
 			if (is_empty)
 			{
-				event->is_set = 1;
 				break;
 			}
 
@@ -64,10 +63,10 @@ void ff_event_set(struct ff_event *event)
 			ff_core_schedule_fiber(fiber);
 			if (event->event_type == FF_EVENT_AUTO)
 			{
-				/* event->is_set = 1 skipped here intentionally */
 				break;
 			}
 		}
+		event->is_set = 1;
 	}
 }
 
@@ -106,6 +105,11 @@ int ff_event_wait_with_timeout(struct ff_event *event, int timeout)
 		{
 			is_success = ff_core_deregister_timeout_operation(timeout_operation_data);
 		}
+	}
+	if (event->event_type == FF_EVENT_AUTO)
+	{
+		ff_assert(event->is_set);
+		event->is_set = 0;
 	}
 	return is_success;
 }
