@@ -4,7 +4,7 @@
 #include "private/ff_fiber.h"
 #include "private/ff_threadpool.h"
 #include "private/ff_fiberpool.h"
-#include "private/ff_queue.h"
+#include "private/ff_stack.h"
 #include "private/ff_container.h"
 #include "private/ff_mutex.h"
 #include "private/ff_semaphore.h"
@@ -47,7 +47,7 @@ struct core_data
 {
 	struct ff_fiber *current_fiber;
 	struct ff_arch_completion_port *completion_port;
-	struct ff_queue *pending_fibers;
+	struct ff_stack *pending_fibers;
 	struct ff_threadpool *threadpool;
 	struct ff_fiberpool *fiberpool;
 	struct ff_container *timeout_operations;
@@ -132,7 +132,7 @@ void ff_core_initialize()
 {
 	core_ctx.current_fiber = ff_fiber_initialize();
 	core_ctx.completion_port = ff_arch_completion_port_create(COMPLETION_PORT_CONCURRENCY);
-	core_ctx.pending_fibers = ff_queue_create();
+	core_ctx.pending_fibers = ff_stack_create();
 	core_ctx.threadpool = ff_threadpool_create(MAX_THREADPOOL_SIZE);
 	core_ctx.fiberpool = ff_fiberpool_create(MAX_FIBERPOOL_SIZE);
 	core_ctx.timeout_operations = ff_container_create();
@@ -154,7 +154,7 @@ void ff_core_shutdown()
 	ff_container_delete(core_ctx.timeout_operations);
 	ff_fiberpool_delete(core_ctx.fiberpool);
 	ff_threadpool_delete(core_ctx.threadpool);
-	ff_queue_delete(core_ctx.pending_fibers);
+	ff_stack_delete(core_ctx.pending_fibers);
 	ff_arch_completion_port_delete(core_ctx.completion_port);
 	ff_fiber_shutdown();
 }
@@ -226,19 +226,19 @@ int ff_core_deregister_timeout_operation(struct ff_core_timeout_operation_data *
 
 void ff_core_schedule_fiber(struct ff_fiber *fiber)
 {
-	ff_queue_push(core_ctx.pending_fibers, fiber);
+	ff_stack_push(core_ctx.pending_fibers, fiber);
 }
 
 void ff_core_yield_fiber()
 {
 	int is_empty;
 
-	is_empty = ff_queue_is_empty(core_ctx.pending_fibers);
+	is_empty = ff_stack_is_empty(core_ctx.pending_fibers);
 	if (!is_empty)
 	{
-		core_ctx.current_fiber = (struct ff_fiber *) ff_queue_front(core_ctx.pending_fibers);
+		core_ctx.current_fiber = (struct ff_fiber *) ff_stack_top(core_ctx.pending_fibers);
 		ff_assert(core_ctx.current_fiber != NULL);
-		ff_queue_pop(core_ctx.pending_fibers);
+		ff_stack_pop(core_ctx.pending_fibers);
 	}
 	else
 	{
