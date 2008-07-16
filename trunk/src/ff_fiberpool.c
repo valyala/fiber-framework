@@ -74,12 +74,14 @@ struct ff_fiberpool *ff_fiberpool_create(int max_fibers_cnt)
 void ff_fiberpool_delete(struct ff_fiberpool *fiberpool)
 {
 	int i;
+	int running_fibers_cnt;
 
-	for (i = 0; i < fiberpool->running_fibers_cnt; i++)
+	running_fibers_cnt = fiberpool->running_fibers_cnt;
+	for (i = 0; i < running_fibers_cnt; i++)
 	{
 		ff_blocking_queue_put(fiberpool->pending_tasks, NULL);
 	}
-	for (i = 0; i < fiberpool->running_fibers_cnt; i++)
+	for (i = 0; i < running_fibers_cnt; i++)
 	{
 		struct ff_fiber *fiber;
 

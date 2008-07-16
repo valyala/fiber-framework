@@ -86,12 +86,14 @@ struct ff_threadpool *ff_threadpool_create(int max_threads_cnt)
 void ff_threadpool_delete(struct ff_threadpool *threadpool)
 {
 	int i;
+	int running_threads_cnt;
 
-	for (i = 0; i < threadpool->running_threads_cnt; i++)
+	running_threads_cnt = threadpool->running_threads_cnt;
+	for (i = 0; i < running_threads_cnt; i++)
 	{
 		ff_arch_completion_port_put(threadpool->completion_port, NULL);
 	}
-	for (i = 0; i < threadpool->running_threads_cnt; i++)
+	for (i = 0; i < running_threads_cnt; i++)
 	{
 		struct ff_arch_thread *thread;
 
