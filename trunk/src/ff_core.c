@@ -58,7 +58,7 @@ struct core_data
 
 static struct core_data core_ctx;
 
-static void generic_threadpool_func(void *ctx)
+static void generic_core_threadpool_func(void *ctx)
 {
 	struct generic_threadpool_data *data;
 
@@ -177,7 +177,7 @@ void ff_core_threadpool_execute(ff_core_threadpool_func func, void *ctx)
 	data.fiber = core_ctx.current_fiber;
 	data.func = func;
 	data.ctx = ctx;
-	ff_threadpool_execute(core_ctx.threadpool, generic_threadpool_func, &data);
+	ff_threadpool_execute(core_ctx.threadpool, generic_core_threadpool_func, &data);
 	ff_core_yield_fiber();
 }
 
