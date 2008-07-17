@@ -63,7 +63,7 @@ void *ff_pool_acquire_entry(struct ff_pool *pool)
 	ff_mutex_lock(pool->mutex);
 	ff_assert(pool->current_size <= pool->max_size);
 	ff_assert(pool->busy_entries_cnt <= pool->current_size);
-	ff_assert(pool->busy_entries_cnt > pool->max_size);
+	ff_assert(pool->busy_entries_cnt < pool->max_size);
 	if (pool->busy_entries_cnt == pool->current_size)
 	{
 		entry = pool->entry_constructor(pool->entry_constructor_ctx);
