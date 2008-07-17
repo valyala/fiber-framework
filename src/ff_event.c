@@ -106,7 +106,7 @@ int ff_event_wait_with_timeout(struct ff_event *event, int timeout)
 			is_success = ff_core_deregister_timeout_operation(timeout_operation_data);
 		}
 	}
-	if (event->event_type == FF_EVENT_AUTO)
+	if (event->event_type == FF_EVENT_AUTO && is_success)
 	{
 		ff_assert(event->is_set);
 		event->is_set = 0;
