@@ -13,7 +13,7 @@ void ff_fiberpool_delete(struct ff_fiberpool *fiberpool);
 
 typedef void (*ff_fiberpool_func)(void *ctx);
 
-void ff_fiberpool_execute(struct ff_fiberpool *fiberpool, ff_fiberpool_func func, void *ctx);
+void ff_fiberpool_execute_async(struct ff_fiberpool *fiberpool, ff_fiberpool_func func, void *ctx);
 
 #ifdef __cplusplus
 }

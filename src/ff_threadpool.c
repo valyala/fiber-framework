@@ -110,7 +110,7 @@ void ff_threadpool_delete(struct ff_threadpool *threadpool)
 	ff_free(threadpool);
 }
 
-void ff_threadpool_execute(struct ff_threadpool *threadpool, ff_threadpool_func func, void *ctx)
+void ff_threadpool_execute_async(struct ff_threadpool *threadpool, ff_threadpool_func func, void *ctx)
 {
 	struct threadpool_task *task;
 

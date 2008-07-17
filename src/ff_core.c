@@ -177,13 +177,13 @@ void ff_core_threadpool_execute(ff_core_threadpool_func func, void *ctx)
 	data.fiber = core_ctx.current_fiber;
 	data.func = func;
 	data.ctx = ctx;
-	ff_threadpool_execute(core_ctx.threadpool, generic_core_threadpool_func, &data);
+	ff_threadpool_execute_async(core_ctx.threadpool, generic_core_threadpool_func, &data);
 	ff_core_yield_fiber();
 }
 
 void ff_core_fiberpool_execute_async(ff_core_fiberpool_func func, void *ctx)
 {
-	ff_fiberpool_execute(core_ctx.fiberpool, func, ctx);
+	ff_fiberpool_execute_async(core_ctx.fiberpool, func, ctx);
 }
 
 struct ff_core_timeout_operation_data *ff_core_register_timeout_operation(int timeout, ff_core_cancel_timeout_func cancel_timeout_func, void *ctx)
