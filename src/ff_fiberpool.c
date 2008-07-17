@@ -4,7 +4,7 @@
 #include "private/ff_blocking_queue.h"
 #include "private/ff_fiber.h"
 
-static const int PENDING_TASKS_QUEUE_MAX_SIZE = 1;
+static const int PENDING_TASKS_QUEUE_MAX_SIZE = 10;
 
 struct ff_fiberpool
 {
