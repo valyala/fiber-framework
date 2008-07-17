@@ -21,6 +21,10 @@ struct ff_pool *ff_pool_create(int max_size, ff_pool_entry_constructor entry_con
 {
 	struct ff_pool *pool;
 
+	ff_assert(max_size > 0);
+	ff_assert(entry_constructor != NULL);
+	ff_assert(entry_destructor != NULL);
+
 	pool = (struct ff_pool *) ff_malloc(sizeof(*pool));
 	pool->entry_constructor = entry_constructor;
 	pool->entry_destructor = entry_destructor;
