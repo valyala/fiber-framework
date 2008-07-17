@@ -189,6 +189,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\ff_blocking_stack.c"
+				>
+			</File>
+			<File
 				RelativePath=".\src\ff_container.c"
 				>
 			</File>
@@ -600,6 +604,10 @@
 					>
 				</File>
 				<File
+					RelativePath=".\include\private\ff_blocking_stack.h"
+					>
+				</File>
+				<File
 					RelativePath=".\include\private\ff_common.h"
 					>
 				</File>
@@ -725,6 +733,10 @@
 				>
 				<File
 					RelativePath=".\include\public\ff_blocking_queue.h"
+					>
+				</File>
+				<File
+					RelativePath=".\include\public\ff_blocking_stack.h"
 					>
 				</File>
 				<File
