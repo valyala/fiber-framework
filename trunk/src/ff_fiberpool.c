@@ -1,14 +1,14 @@
 #include "private/ff_common.h"
 
 #include "private/ff_fiberpool.h"
-#include "private/ff_blocking_queue.h"
+#include "private/ff_blocking_stack.h"
 #include "private/ff_fiber.h"
 
-static const int PENDING_TASKS_QUEUE_MAX_SIZE = 10;
+static const int PENDING_TASKS_MAX_SIZE = 10;
 
 struct ff_fiberpool
 {
-	struct ff_blocking_queue *pending_tasks;
+	struct ff_blocking_stack *pending_tasks;
 	struct ff_fiber **fibers;
 	int max_fibers_cnt;
 	int running_fibers_cnt;
@@ -31,7 +31,7 @@ static void generic_fiberpool_func(void *ctx)
 		struct fiberpool_task *task;
 
 		fiberpool->busy_fibers_cnt--;
-		ff_blocking_queue_get(fiberpool->pending_tasks, &task);
+		ff_blocking_stack_pop(fiberpool->pending_tasks, &task);
 		if (task == NULL)
 		{
 			break;
@@ -62,7 +62,7 @@ struct ff_fiberpool *ff_fiberpool_create(int max_fibers_cnt)
 	ff_assert(max_fibers_cnt > 0);
 
 	fiberpool = (struct ff_fiberpool *) ff_malloc(sizeof(*fiberpool));
-	fiberpool->pending_tasks = ff_blocking_queue_create(PENDING_TASKS_QUEUE_MAX_SIZE);
+	fiberpool->pending_tasks = ff_blocking_stack_create(PENDING_TASKS_MAX_SIZE);
 	fiberpool->fibers = (struct ff_fiber **) ff_malloc(sizeof(*fiberpool->fibers) * max_fibers_cnt);
 	fiberpool->max_fibers_cnt = max_fibers_cnt;
 	fiberpool->running_fibers_cnt = 0;
@@ -79,7 +79,7 @@ void ff_fiberpool_delete(struct ff_fiberpool *fiberpool)
 	running_fibers_cnt = fiberpool->running_fibers_cnt;
 	for (i = 0; i < running_fibers_cnt; i++)
 	{
-		ff_blocking_queue_put(fiberpool->pending_tasks, NULL);
+		ff_blocking_stack_push(fiberpool->pending_tasks, NULL);
 	}
 	for (i = 0; i < running_fibers_cnt; i++)
 	{
@@ -93,7 +93,7 @@ void ff_fiberpool_delete(struct ff_fiberpool *fiberpool)
 	ff_assert(fiberpool->running_fibers_cnt == 0);
 
 	ff_free(fiberpool->fibers);
-	ff_blocking_queue_delete(fiberpool->pending_tasks);
+	ff_blocking_stack_delete(fiberpool->pending_tasks);
 	ff_free(fiberpool);
 }
 
@@ -104,7 +104,7 @@ void ff_fiberpool_execute_async(struct ff_fiberpool *fiberpool, ff_fiberpool_fun
 	task = (struct fiberpool_task *) ff_malloc(sizeof(*task));
 	task->func = func;
 	task->ctx = ctx;
-	ff_blocking_queue_put(fiberpool->pending_tasks, task);
+	ff_blocking_stack_push(fiberpool->pending_tasks, task);
 
 	if (fiberpool->running_fibers_cnt < fiberpool->max_fibers_cnt)
 	{
