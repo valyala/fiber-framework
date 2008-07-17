@@ -88,11 +88,11 @@ static void sleep_timeout_func(struct ff_fiber *fiber, void *ctx)
 	ff_core_schedule_fiber(fiber);
 }
 
-static void timeout_operations_visitor_func(void *data, void *ctx)
+static void timeout_operations_visitor_func(const void *data, void *ctx)
 {
 	struct ff_core_timeout_operation_data *timeout_operation_data;
 	struct timeout_checker_data *timeout_checker_data;
-	
+
 	timeout_operation_data = (struct ff_core_timeout_operation_data *) data;
 	timeout_checker_data = (struct timeout_checker_data *) ctx;
 	if (!timeout_operation_data->is_expired)
@@ -236,7 +236,7 @@ void ff_core_yield_fiber()
 	is_empty = ff_stack_is_empty(core_ctx.pending_fibers);
 	if (!is_empty)
 	{
-		core_ctx.current_fiber = (struct ff_fiber *) ff_stack_top(core_ctx.pending_fibers);
+		ff_stack_top(core_ctx.pending_fibers, &core_ctx.current_fiber);
 		ff_assert(core_ctx.current_fiber != NULL);
 		ff_stack_pop(core_ctx.pending_fibers);
 	}

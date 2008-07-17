@@ -5,8 +5,8 @@
 struct dictionary_entry
 {
 	struct dictionary_entry *next;
-	void *key;
-	void *value;
+	const void *key;
+	const void *value;
 };
 
 struct ff_dictionary
@@ -31,7 +31,7 @@ void ff_dictionary_delete(struct ff_dictionary *dictionary)
 	ff_free(dictionary);
 }
 
-void ff_dictionary_put(struct ff_dictionary *dictionary, void *key, void *value)
+void ff_dictionary_put(struct ff_dictionary *dictionary, const void *key, const void *value)
 {
 	struct dictionary_entry *entry;
 
@@ -42,7 +42,7 @@ void ff_dictionary_put(struct ff_dictionary *dictionary, void *key, void *value)
 	dictionary->head = entry;
 }
 
-int ff_dictionary_get(struct ff_dictionary *dictionary, void *key, void **value)
+int ff_dictionary_get(struct ff_dictionary *dictionary, const void *key, const void **value)
 {
 	int is_found = 0;
 	struct dictionary_entry *entry;
@@ -61,7 +61,7 @@ int ff_dictionary_get(struct ff_dictionary *dictionary, void *key, void **value)
 	return is_found;
 }
 
-int ff_dictionary_remove_entry(struct ff_dictionary *dictionary, void *key, void **value)
+int ff_dictionary_remove_entry(struct ff_dictionary *dictionary, const void *key, const void **value)
 {
 	int is_removed = 0;
 	struct dictionary_entry **entry_ptr;

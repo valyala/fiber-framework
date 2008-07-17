@@ -5,7 +5,7 @@
 struct queue_entry
 {
 	struct queue_entry *next;
-	void *data;
+	const void *data;
 };
 
 struct ff_queue
@@ -33,7 +33,7 @@ void ff_queue_delete(struct ff_queue *queue)
 	ff_free(queue);
 }
 
-void ff_queue_push(struct ff_queue *queue, void *data)
+void ff_queue_push(struct ff_queue *queue, const void *data)
 {
 	struct queue_entry *entry;
 
@@ -45,11 +45,11 @@ void ff_queue_push(struct ff_queue *queue, void *data)
 	queue->back_ptr = &entry->next;
 }
 
-void *ff_queue_front(struct ff_queue *queue)
+void ff_queue_front(struct ff_queue *queue, const void **data)
 {
 	ff_assert(queue->front != NULL);
 
-	return queue->front->data;
+	*data = queue->front->data;
 }
 
 void ff_queue_pop(struct ff_queue *queue)
