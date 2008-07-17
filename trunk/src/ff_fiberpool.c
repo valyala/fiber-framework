@@ -97,7 +97,7 @@ void ff_fiberpool_delete(struct ff_fiberpool *fiberpool)
 	ff_free(fiberpool);
 }
 
-void ff_fiberpool_execute(struct ff_fiberpool *fiberpool, ff_fiberpool_func func, void *ctx)
+void ff_fiberpool_execute_async(struct ff_fiberpool *fiberpool, ff_fiberpool_func func, void *ctx)
 {
 	struct fiberpool_task *task;
 
