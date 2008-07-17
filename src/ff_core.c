@@ -181,7 +181,7 @@ void ff_core_threadpool_execute(ff_core_threadpool_func func, void *ctx)
 	ff_core_yield_fiber();
 }
 
-void ff_core_fiberpool_begin_execute(ff_core_fiberpool_func func, void *ctx)
+void ff_core_fiberpool_execute_async(ff_core_fiberpool_func func, void *ctx)
 {
 	ff_fiberpool_execute(core_ctx.fiberpool, func, ctx);
 }

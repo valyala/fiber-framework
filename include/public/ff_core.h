@@ -40,7 +40,7 @@ typedef void (*ff_core_fiberpool_func)(void *ctx);
  * @public
  * Schedules the func for execution in the fiberpool
  */
-FF_API void ff_core_fiberpool_begin_execute(ff_core_fiberpool_func func, void *ctx);
+FF_API void ff_core_fiberpool_execute_async(ff_core_fiberpool_func func, void *ctx);
 
 #ifdef __cplusplus
 }
