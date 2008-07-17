@@ -58,7 +58,7 @@ void ff_event_set(struct ff_event *event)
 				break;
 			}
 
-			fiber = (struct ff_fiber *) ff_stack_top(event->pending_fibers);
+			ff_stack_top(event->pending_fibers, &fiber);
 			ff_stack_pop(event->pending_fibers);
 			ff_core_schedule_fiber(fiber);
 			if (event->event_type == FF_EVENT_AUTO)

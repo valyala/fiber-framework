@@ -6,7 +6,7 @@ struct ff_container_entry
 {
 	struct ff_container_entry *next;
 	struct ff_container_entry **prev_ptr;
-	void *data;
+	const void *data;
 };
 
 struct ff_container
@@ -31,7 +31,7 @@ void ff_container_delete(struct ff_container *container)
 	ff_free(container);
 }
 
-struct ff_container_entry *ff_container_add_entry(struct ff_container *container, void *data)
+struct ff_container_entry *ff_container_add_entry(struct ff_container *container, const void *data)
 {
 	struct ff_container_entry *entry;
 

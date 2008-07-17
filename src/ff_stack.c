@@ -5,7 +5,7 @@
 struct stack_entry
 {
 	struct stack_entry *next;
-	void *data;
+	const void *data;
 };
 
 struct ff_stack
@@ -30,7 +30,7 @@ void ff_stack_delete(struct ff_stack *stack)
 	ff_free(stack);
 }
 
-void ff_stack_push(struct ff_stack *stack, void *data)
+void ff_stack_push(struct ff_stack *stack, const void *data)
 {
 	struct stack_entry *entry;
 
@@ -48,11 +48,11 @@ int ff_stack_is_empty(struct ff_stack *stack)
 	return is_empty;
 }
 
-void *ff_stack_top(struct ff_stack *stack)
+void ff_stack_top(struct ff_stack *stack, const void **data)
 {
 	ff_assert(stack->top != NULL);
 
-	return stack->top->data;
+	*data = stack->top->data;
 }
 
 void ff_stack_pop(struct ff_stack *stack)
@@ -66,7 +66,7 @@ void ff_stack_pop(struct ff_stack *stack)
 	ff_free(entry);
 }
 
-int ff_stack_remove_entry(struct ff_stack *stack, void *data)
+int ff_stack_remove_entry(struct ff_stack *stack, const void *data)
 {
 	int is_removed = 0;
 	struct stack_entry **entry_ptr;
