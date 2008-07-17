@@ -31,7 +31,7 @@ static void generic_fiberpool_func(void *ctx)
 		struct fiberpool_task *task;
 
 		fiberpool->busy_fibers_cnt--;
-		task = (struct fiberpool_task *) ff_blocking_queue_get(fiberpool->pending_tasks);
+		ff_blocking_queue_get(fiberpool->pending_tasks, &task);
 		if (task == NULL)
 		{
 			break;
