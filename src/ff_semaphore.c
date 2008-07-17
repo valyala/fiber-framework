@@ -58,7 +58,7 @@ void ff_semaphore_down(struct ff_semaphore *semaphore)
 
 int ff_semaphore_down_with_timeout(struct ff_semaphore *semaphore, int timeout)
 {
-	int is_success;
+	int is_success = 1;
 
 	ff_assert(semaphore->value >= 0);
 
