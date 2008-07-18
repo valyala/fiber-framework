@@ -7,8 +7,10 @@
 #include "public/ff_blocking_queue.h"
 #include "public/ff_blocking_stack.h"
 #include "public/ff_pool.h"
+#include "public/ff_file.h"
 
 #include <stdio.h>
+#include <string.h>
 
 #define ASSERT(expr, msg) \
 	do \
@@ -864,6 +866,111 @@ DECLARE_TEST(pool_all)
 /* end of ff_pool tests */
 #pragma endregion
 
+#pragma region ff_file tests
+
+DECLARE_TEST(file_open_read_fail)
+{
+	struct ff_file *file;
+
+	ff_core_initialize();
+	file = ff_file_open(L"unexpected_file.txt", FF_FILE_READ);
+	ASSERT(file == NULL, "unexpected file couldn't be opened");
+	ff_core_shutdown();
+	return NULL;
+}
+
+DECLARE_TEST(file_create_delete)
+{
+	struct ff_file *file;
+	int is_success;
+
+	ff_core_initialize();
+
+	file = ff_file_open(L"test.txt", FF_FILE_WRITE);
+	ASSERT(file != NULL, "file should be created");
+	ff_file_close(file);
+	is_success = ff_file_erase(L"test.txt");
+	ASSERT(is_success, "file should be deleted");
+	is_success = ff_file_erase(L"test.txt");
+	ASSERT(!is_success, "file already deleted");
+
+	ff_core_shutdown();
+	return NULL;
+}
+
+DECLARE_TEST(file_basic)
+{
+	struct ff_file *file;
+	int64_t size;
+	uint8_t data[] = "hello, world!\n";
+	uint8_t buf[sizeof(data) - 1];
+	int len;
+	int is_equal;
+	int is_success;
+
+	ff_core_initialize();
+
+	file = ff_file_open(L"test.txt", FF_FILE_WRITE);
+	ASSERT(file != NULL, "file should be created");
+	size = ff_file_get_size(file);
+	ASSERT(size == 0, "file should be empty");
+	len = ff_file_write(file, data, sizeof(data) - 1);
+	ASSERT(len == sizeof(data) - 1, "all the data should be written to the file");
+	ff_file_close(file);
+
+	file = ff_file_open(L"test.txt", FF_FILE_READ);
+	ASSERT(file != NULL, "file should exist");
+	size = ff_file_get_size(file);
+	ASSERT(size == sizeof(data) - 1, "wrong file size");
+	len = ff_file_read(file, buf, sizeof(data) - 1);
+	ASSERT(len == sizeof(data) - 1, "unexpected length of data read from the file");
+	is_equal = (memcmp(data, buf, sizeof(data) - 1) == 0);
+	ASSERT(is_equal, "wrong data read from the file");
+	ff_file_close(file);
+
+	is_success = ff_file_copy(L"test.txt", L"test1.txt");
+	ASSERT(is_success, "file should be copied");
+	is_success = ff_file_copy(L"test.txt", L"test1.txt");
+	ASSERT(!is_success, "cannot copy to existing file");
+	is_success = ff_file_move(L"test.txt", L"test2.txt");
+	ASSERT(is_success, "file should be moved");
+	is_success = ff_file_move(L"test.txt", L"test2.txt");
+	ASSERT(!is_success, "cannot move to existing file");
+
+	file = ff_file_open(L"test1.txt", FF_FILE_READ);
+	ASSERT(file != NULL, "file copy should exist");
+	len = ff_file_read(file, buf, sizeof(data) - 1);
+	ASSERT(len = sizeof(data) - 1, "unexpected length of file copy");
+	is_equal = (memcmp(data, buf, sizeof(data) - 1) == 0);
+	ASSERT(is_equal, "wrong contents of the file copy");
+	ff_file_close(file);
+
+	file = ff_file_open(L"test1.txt", FF_FILE_WRITE);
+	ASSERT(file != NULL, "file should be truncated");
+	size = ff_file_get_size(file);
+	ASSERT(size == 0, "truncated file should be empty");
+	ff_file_close(file);
+
+	is_success = ff_file_erase(L"test1.txt");
+	ASSERT(is_success, "file1 should be deleted");
+	is_success = ff_file_erase(L"test2.txt");
+	ASSERT(is_success, "file2 should be deleted");
+
+	ff_core_shutdown();
+	return NULL;
+}
+
+DECLARE_TEST(file_all)
+{
+	RUN_TEST(file_open_read_fail);
+	RUN_TEST(file_create_delete);
+	RUN_TEST(file_basic);
+	return NULL;
+}
+
+/* end of ff_file tests */
+#pragma endregion
+
 static char *run_all_tests()
 {
 	RUN_TEST(core_all);
@@ -874,6 +981,7 @@ static char *run_all_tests()
 	RUN_TEST(blocking_queue_all);
 	RUN_TEST(blocking_stack_all);
 	RUN_TEST(pool_all);
+	RUN_TEST(file_all);
 	return NULL;
 }
 
