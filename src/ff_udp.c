@@ -9,7 +9,7 @@ struct ff_udp
 	struct ff_arch_udp *udp;
 };
 
-static void cancel_io_operation(struct ff_fiber *fiber, void *ctx)
+static void cancel_udp_operation(struct ff_fiber *fiber, void *ctx)
 {
 	struct ff_udp *udp;
 
@@ -56,7 +56,7 @@ int ff_udp_read_with_timeout(struct ff_udp *udp, struct ff_arch_net_addr *peer_a
 
 	ff_assert(timeout > 0);
 
-	timeout_operation_data = ff_core_register_timeout_operation(timeout, cancel_io_operation, udp);
+	timeout_operation_data = ff_core_register_timeout_operation(timeout, cancel_udp_operation, udp);
 	bytes_read = ff_udp_read(udp, peer_addr, buf, len);
 	ff_core_deregister_timeout_operation(timeout_operation_data);
 
@@ -78,7 +78,7 @@ int ff_udp_write_with_timeout(struct ff_udp *udp, const struct ff_arch_net_addr 
 
 	ff_assert(timeout > 0);
 
-	timeout_operation_data = ff_core_register_timeout_operation(timeout, cancel_io_operation, udp);
+	timeout_operation_data = ff_core_register_timeout_operation(timeout, cancel_udp_operation, udp);
 	bytes_written = ff_udp_write(udp, addr, buf, len);
 	ff_core_deregister_timeout_operation(timeout_operation_data);
 
