@@ -76,7 +76,6 @@ void ff_file_close(struct ff_file *file)
 	}
 	else
 	{
-		ff_file_flush(file);
 		ff_write_stream_buffer_delete(file->buffers.write_buffer);
 	}
 	ff_arch_file_close(file->file);
