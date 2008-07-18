@@ -132,6 +132,7 @@ void ff_core_initialize()
 {
 	core_ctx.current_fiber = ff_fiber_initialize();
 	core_ctx.completion_port = ff_arch_completion_port_create(COMPLETION_PORT_CONCURRENCY);
+	ff_arch_misc_initialize(core_ctx.completion_port);
 	core_ctx.pending_fibers = ff_stack_create();
 	core_ctx.threadpool = ff_threadpool_create(MAX_THREADPOOL_SIZE);
 	core_ctx.fiberpool = ff_fiberpool_create(MAX_FIBERPOOL_SIZE);
@@ -140,12 +141,10 @@ void ff_core_initialize()
 	core_ctx.timeout_operations_semaphore = ff_semaphore_create(0);
 	core_ctx.timeout_checker_fiber = ff_fiber_create(timeout_checker_func, 0);
 	ff_fiber_start(core_ctx.timeout_checker_fiber, NULL);
-	ff_arch_misc_initialize(core_ctx.completion_port);
 }
 
 void ff_core_shutdown()
 {
-	ff_arch_misc_shutdown();
 	ff_semaphore_up(core_ctx.timeout_operations_semaphore);
 	ff_fiber_join(core_ctx.timeout_checker_fiber);
 	ff_fiber_delete(core_ctx.timeout_checker_fiber);
@@ -155,6 +154,7 @@ void ff_core_shutdown()
 	ff_fiberpool_delete(core_ctx.fiberpool);
 	ff_threadpool_delete(core_ctx.threadpool);
 	ff_stack_delete(core_ctx.pending_fibers);
+	ff_arch_misc_shutdown();
 	ff_arch_completion_port_delete(core_ctx.completion_port);
 	ff_fiber_shutdown();
 }
