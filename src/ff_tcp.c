@@ -69,7 +69,6 @@ struct ff_tcp *ff_tcp_create()
 
 void ff_tcp_delete(struct ff_tcp *tcp)
 {
-	ff_tcp_flush(tcp);
 	ff_write_stream_buffer_delete(tcp->write_buffer);
 	ff_read_stream_buffer_delete(tcp->read_buffer);
 	ff_arch_tcp_delete(tcp->tcp);
@@ -154,8 +153,20 @@ int ff_tcp_flush(struct ff_tcp *tcp)
 	return bytes_written;
 }
 
+int ff_tcp_flush_with_timeout(struct ff_tcp *tcp, int timeout)
+{
+	struct ff_core_timeout_operation_data *timeout_operation_data;
+	int bytes_written;
+
+	ff_assert(timeout > 0);
+	timeout_operation_data = ff_core_register_timeout_operation(timeout, cancel_tcp_operation, tcp);
+	bytes_written = ff_tcp_flush(tcp);
+	ff_core_deregister_timeout_operation(timeout_operation_data);
+
+	return bytes_written;
+}
+
 void ff_tcp_disconnect(struct ff_tcp *tcp)
 {
-	ff_tcp_flush(tcp);
 	ff_arch_tcp_disconnect(tcp->tcp);
 }
