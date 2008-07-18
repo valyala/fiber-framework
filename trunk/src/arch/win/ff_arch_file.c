@@ -137,6 +137,8 @@ struct ff_arch_file *ff_arch_file_open(const wchar_t *path, enum ff_arch_file_ac
 	file->handle = data.handle;
 	file->curr_pos = 0;
 
+	ff_win_completion_port_register_handle(file_ctx.completion_port, file->handle);
+
 end:
 	return file;
 }

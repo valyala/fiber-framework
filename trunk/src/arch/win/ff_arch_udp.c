@@ -27,6 +27,8 @@ struct ff_arch_udp *ff_arch_udp_create(int is_broadcast)
 		ff_assert(rv == 0);
 	}
 
+	ff_win_net_register_socket(udp->handle);
+
 	return udp;
 }
 
