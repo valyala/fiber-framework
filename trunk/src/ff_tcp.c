@@ -16,7 +16,7 @@ struct ff_tcp
 	struct ff_write_stream_buffer *write_buffer;
 };
 
-static int read_func(void *ctx, void *buf, int len)
+static int tcp_read_func(void *ctx, void *buf, int len)
 {
 	struct ff_tcp *tcp;
 	int bytes_read;
@@ -26,7 +26,7 @@ static int read_func(void *ctx, void *buf, int len)
 	return bytes_read;
 }
 
-static int write_func(void *ctx, const void *buf, int len)
+static int tcp_write_func(void *ctx, const void *buf, int len)
 {
 	struct ff_tcp *tcp;
 	int bytes_written;
@@ -42,13 +42,13 @@ static struct ff_tcp *create_from_arch_tcp(struct ff_arch_tcp *arch_tcp)
 
 	tcp = (struct ff_tcp *) ff_malloc(sizeof(*tcp));
 	tcp->tcp = arch_tcp;
-	tcp->read_buffer = ff_read_stream_buffer_create(read_func, tcp, READ_BUFFER_SIZE);
-	tcp->write_buffer = ff_write_stream_buffer_create(write_func, tcp, WRITE_BUFFER_SIZE);
+	tcp->read_buffer = ff_read_stream_buffer_create(tcp_read_func, tcp, READ_BUFFER_SIZE);
+	tcp->write_buffer = ff_write_stream_buffer_create(tcp_write_func, tcp, WRITE_BUFFER_SIZE);
 
 	return tcp;
 }
 
-static void cancel_io_operation(struct ff_fiber *fiber, void *ctx)
+static void cancel_tcp_operation(struct ff_fiber *fiber, void *ctx)
 {
 	struct ff_tcp *tcp;
 
@@ -69,6 +69,7 @@ struct ff_tcp *ff_tcp_create()
 
 void ff_tcp_delete(struct ff_tcp *tcp)
 {
+	ff_tcp_flush(tcp);
 	ff_write_stream_buffer_delete(tcp->write_buffer);
 	ff_read_stream_buffer_delete(tcp->read_buffer);
 	ff_arch_tcp_delete(tcp->tcp);
@@ -116,7 +117,7 @@ int ff_tcp_read_with_timeout(struct ff_tcp *tcp, void *buf, int len, int timeout
 
 	ff_assert(timeout > 0);
 
-	timeout_operation_data = ff_core_register_timeout_operation(timeout, cancel_io_operation, tcp);
+	timeout_operation_data = ff_core_register_timeout_operation(timeout, cancel_tcp_operation, tcp);
 	bytes_read = ff_tcp_read(tcp, buf, len);
 	ff_core_deregister_timeout_operation(timeout_operation_data);
 
@@ -138,7 +139,7 @@ int ff_tcp_write_with_timeout(struct ff_tcp *tcp, const void *buf, int len, int 
 
 	ff_assert(timeout > 0);
 
-	timeout_operation_data = ff_core_register_timeout_operation(timeout, cancel_io_operation, tcp);
+	timeout_operation_data = ff_core_register_timeout_operation(timeout, cancel_tcp_operation, tcp);
 	bytes_written = ff_tcp_write(tcp, buf, len);
 	ff_core_deregister_timeout_operation(timeout_operation_data);
 
@@ -155,5 +156,6 @@ int ff_tcp_flush(struct ff_tcp *tcp)
 
 void ff_tcp_disconnect(struct ff_tcp *tcp)
 {
+	ff_tcp_flush(tcp);
 	ff_arch_tcp_disconnect(tcp->tcp);
 }
