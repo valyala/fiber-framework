@@ -103,6 +103,7 @@ int ff_write_stream_buffer_flush(struct ff_write_stream_buffer *buffer)
 		}
 
 		buffer->start_pos -= bytes_written;
+		ff_assert(buffer->start_pos >= 0);
 
 		total_bytes_written += bytes_written;
 	}
