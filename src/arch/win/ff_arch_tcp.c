@@ -7,6 +7,7 @@
 struct ff_arch_tcp
 {
 	SOCKET handle;
+	int is_connected;
 };
 
 struct ff_arch_tcp *ff_arch_tcp_create()
@@ -16,6 +17,7 @@ struct ff_arch_tcp *ff_arch_tcp_create()
 	tcp = (struct ff_arch_tcp *) ff_malloc(sizeof(*tcp));
 	tcp->handle = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0, WSA_FLAG_OVERLAPPED);
 	ff_winsock_fatal_error_check(tcp->handle != INVALID_SOCKET, L"cannot create tcp socket");
+	tcp->is_connected = 0;
 
 	ff_win_net_register_socket(tcp->handle);
 
@@ -56,6 +58,7 @@ int ff_arch_tcp_connect(struct ff_arch_tcp *tcp, const struct ff_arch_net_addr *
 	int is_connected;
 
 	is_connected = ff_win_net_connect(tcp->handle, &addr->addr);
+	tcp->is_connected = is_connected;
 	return is_connected;
 }
 
@@ -71,6 +74,10 @@ struct ff_arch_tcp *ff_arch_tcp_accept(struct ff_arch_tcp *tcp, struct ff_arch_n
 		ff_arch_tcp_delete(remote_tcp);
 		remote_tcp = NULL;
 	}
+	else
+	{
+		remote_tcp->is_connected = 1;
+	}
 
 	return remote_tcp;
 }
@@ -84,6 +91,11 @@ int ff_arch_tcp_read(struct ff_arch_tcp *tcp, void *buf, int len)
 	DWORD flags = 0;
 
 	ff_assert(len >= 0);
+
+	if (!tcp->is_connected)
+	{
+		goto end;
+	}
 
 	wsa_buf.len = (u_long) len;
 	wsa_buf.buf = (char *) buf;
@@ -116,6 +128,11 @@ int ff_arch_tcp_write(struct ff_arch_tcp *tcp, const void *buf, int len)
 
 	ff_assert(len >= 0);
 
+	if (!tcp->is_connected)
+	{
+		goto end;
+	}
+
 	wsa_buf.len = len;
 	wsa_buf.buf = (char *) buf;
 	memset(&overlapped, 0, sizeof(overlapped));
@@ -140,11 +157,10 @@ end:
 void ff_arch_tcp_disconnect(struct ff_arch_tcp *tcp)
 {
 	BOOL result;
-	int rv;
 
-	rv = shutdown(tcp->handle, SD_BOTH);
-	ff_assert(rv == 0);
+	ff_assert(tcp->is_connected);
 
 	result = CancelIo((HANDLE) tcp->handle);
 	ff_assert(result != FALSE);
+	tcp->is_connected = 0;
 }

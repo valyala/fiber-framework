@@ -7,6 +7,7 @@
 struct ff_arch_udp
 {
 	SOCKET handle;
+	int is_working;
 };
 
 struct ff_arch_udp *ff_arch_udp_create(int is_broadcast)
@@ -16,6 +17,7 @@ struct ff_arch_udp *ff_arch_udp_create(int is_broadcast)
 	udp = (struct ff_arch_udp *) ff_malloc(sizeof(*udp));
 	udp->handle = WSASocket(AF_INET, SOCK_DGRAM, IPPROTO_UDP, NULL, 0, WSA_FLAG_OVERLAPPED);
 	ff_winsock_fatal_error_check(udp->handle != INVALID_SOCKET, L"cannot create udp socket");
+	udp->is_working = 1;
 
 	if (is_broadcast)
 	{
@@ -66,6 +68,11 @@ int ff_arch_udp_read(struct ff_arch_udp *udp, struct ff_arch_net_addr *peer_addr
 
 	ff_assert(len >= 0);
 
+	if (!udp->is_working)
+	{
+		goto end;
+	}
+
 	wsa_buf.len = (u_long) len;
 	wsa_buf.buf = (char *) buf;
 	peer_addr_len = sizeof(peer_addr->addr);
@@ -100,6 +107,11 @@ int ff_arch_udp_write(struct ff_arch_udp *udp, const struct ff_arch_net_addr *ad
 
 	ff_assert(len >= 0);
 
+	if (!udp->is_working)
+	{
+		goto end;
+	}
+
 	wsa_buf.len = len;
 	wsa_buf.buf = (char *) buf;
 	addr_len = sizeof(addr->addr);
@@ -125,11 +137,10 @@ end:
 void ff_arch_udp_disconnect(struct ff_arch_udp *udp)
 {
 	BOOL result;
-	int rv;
 
-	rv = shutdown(udp->handle, SD_BOTH);
-	ff_assert(rv == 0);
+	assert(udp->is_working);
 
 	result = CancelIo((HANDLE) udp->handle);
 	ff_assert(result != FALSE);
+	udp->is_working = 0;
 }
