@@ -8,6 +8,8 @@
 #include "public/ff_blocking_stack.h"
 #include "public/ff_pool.h"
 #include "public/ff_file.h"
+#include "public/arch/ff_arch_net_addr.h"
+#include "public/ff_tcp.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -916,6 +918,8 @@ DECLARE_TEST(file_basic)
 	ASSERT(size == 0, "file should be empty");
 	len = ff_file_write(file, data, sizeof(data) - 1);
 	ASSERT(len == sizeof(data) - 1, "all the data should be written to the file");
+	len = ff_file_flush(file);
+	ASSERT(len != -1, "file should be flushed successfully");
 	ff_file_close(file);
 
 	file = ff_file_open(L"test.txt", FF_FILE_READ);
@@ -971,6 +975,145 @@ DECLARE_TEST(file_all)
 /* end of ff_file tests */
 #pragma endregion
 
+#pragma region ff_arch_net_addr tests
+
+DECLARE_TEST(arch_net_addr_create_delete)
+{
+	struct ff_arch_net_addr *addr;
+
+	ff_core_initialize();
+	addr = ff_arch_net_addr_create();
+	ASSERT(addr != NULL, "addr should be created");
+	ff_arch_net_addr_delete(addr);
+	ff_core_shutdown();
+	return NULL;
+}
+
+DECLARE_TEST(arch_net_addr_resolve_success)
+{
+	struct ff_arch_net_addr *addr;
+	int is_success;
+
+	ff_core_initialize();
+	addr = ff_arch_net_addr_create();
+	is_success = ff_arch_net_addr_resolve(addr, L"localhost", 80);
+	ASSERT(is_success, "localhost address should be resolved successfully");
+	is_success = ff_arch_net_addr_resolve(addr, L"123.45.1.1", 0);
+	ASSERT(is_success, "numeric address should be resolved successfully");
+	ff_arch_net_addr_delete(addr);
+	ff_core_shutdown();
+	return NULL;
+}
+
+DECLARE_TEST(arch_net_addr_resolve_fail)
+{
+	struct ff_arch_net_addr *addr;
+	int is_success;
+
+	ff_core_initialize();
+	addr = ff_arch_net_addr_create();
+	is_success = ff_arch_net_addr_resolve(addr, L"non.existant,address", 123);
+	ASSERT(!is_success, "address shouldn't be resolved");
+	ff_arch_net_addr_delete(addr);
+	ff_core_shutdown();
+	return NULL;
+}
+
+DECLARE_TEST(arch_net_addr_all)
+{
+	RUN_TEST(arch_net_addr_create_delete);
+	RUN_TEST(arch_net_addr_resolve_success);
+	RUN_TEST(arch_net_addr_resolve_fail);
+	return NULL;
+}
+
+/* end of ff_arch_net_addr tests */
+#pragma endregion
+
+#pragma region ff_tcp tests
+
+DECLARE_TEST(tcp_create_delete)
+{
+	struct ff_tcp *tcp;
+
+	ff_core_initialize();
+	tcp = ff_tcp_create();
+	ASSERT(tcp != NULL, "tcp should be created");
+	ff_tcp_delete(tcp);
+	ff_core_shutdown();
+	return NULL;
+}
+
+static void fiberpool_tcp_func(void *ctx)
+{
+	struct ff_tcp *tcp_server, *tcp_client;
+	struct ff_arch_net_addr *client_addr;
+	int len;
+	uint8_t buf[4];
+
+	tcp_server = (struct ff_tcp *) ctx;
+	client_addr = ff_arch_net_addr_create();
+	tcp_client = ff_tcp_accept(tcp_server, client_addr);
+	len = ff_tcp_write(tcp_client, "test", 4);
+	len = ff_tcp_flush(tcp_client);
+	if (len != -1)
+	{
+		len = ff_tcp_read(tcp_client, buf, 4);
+		if (len == 4)
+		{
+			int is_equal;
+			is_equal = (memcmp("test", buf, 4) == 0);
+		}
+	}
+	ff_tcp_delete(tcp_client);
+	ff_arch_net_addr_delete(client_addr);
+}
+
+DECLARE_TEST(tcp_basic)
+{
+	struct ff_tcp *tcp_server, *tcp_client;
+	struct ff_arch_net_addr *addr;
+	int is_success;
+	int len;
+	uint8_t buf[4];
+
+	ff_core_initialize();
+	addr = ff_arch_net_addr_create();
+	is_success = ff_arch_net_addr_resolve(addr, L"127.0.0.1", 4321);
+	ASSERT(is_success, "localhost address should be resolved successfully");
+	tcp_server = ff_tcp_create();
+	ASSERT(tcp_server != NULL, "server should be created");
+	is_success = ff_tcp_bind(tcp_server, addr, 1);
+	ASSERT(is_success, "server should be bound to local address");
+	ff_core_fiberpool_execute_async(fiberpool_tcp_func, tcp_server);
+
+	tcp_client = ff_tcp_create();
+	ASSERT(tcp_client != NULL, "client should be created");
+	is_success = ff_tcp_connect(tcp_client, addr);
+	ASSERT(is_success, "client should connect to the server");
+	len = ff_tcp_read_with_timeout(tcp_client, buf, 4, 100000);
+	ASSERT(len == 4, "unexpected data received from the server");
+	len = ff_tcp_write_with_timeout(tcp_client, buf, 4, 100);
+	ASSERT(len == 4, "written all data to the server");
+	len = ff_tcp_flush_with_timeout(tcp_client, 100);
+	ASSERT(len != -1, "data should be flushed");
+	ff_tcp_delete(tcp_client);
+	ff_tcp_delete(tcp_server);
+	ff_arch_net_addr_delete(addr);
+	ff_core_shutdown();
+	return NULL;
+}
+
+DECLARE_TEST(tcp_all)
+{
+	RUN_TEST(tcp_create_delete);
+	RUN_TEST(tcp_basic);
+	return NULL;
+}
+
+/* end of ff_tcp tests */
+#pragma endregion
+
 static char *run_all_tests()
 {
 	RUN_TEST(core_all);
@@ -982,6 +1125,8 @@ static char *run_all_tests()
 	RUN_TEST(blocking_stack_all);
 	RUN_TEST(pool_all);
 	RUN_TEST(file_all);
+	RUN_TEST(arch_net_addr_all);
+	RUN_TEST(tcp_all);
 	return NULL;
 }
 
