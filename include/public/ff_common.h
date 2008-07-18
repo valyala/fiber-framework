@@ -9,6 +9,8 @@
 	#define FF_API extern
 #endif
 
+#include <wchar.h>
+
 #ifdef HAS_STDINT_H
 #include <stdint.h>
 #else
