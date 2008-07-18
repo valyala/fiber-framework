@@ -18,7 +18,7 @@ struct ff_file
 	enum ff_file_access_mode access_mode;
 };
 
-static int read_func(void *ctx, void *buf, int len)
+static int file_read_func(void *ctx, void *buf, int len)
 {
 	struct ff_file *file;
 	int bytes_read;
@@ -28,7 +28,7 @@ static int read_func(void *ctx, void *buf, int len)
 	return bytes_read;
 }
 
-static int write_func(void *ctx, const void *buf, int len)
+static int file_write_func(void *ctx, const void *buf, int len)
 {
 	struct ff_file *file;
 	int bytes_written;
@@ -41,22 +41,30 @@ static int write_func(void *ctx, const void *buf, int len)
 struct ff_file *ff_file_open(const wchar_t *path, enum ff_file_access_mode access_mode)
 {
 	struct ff_file *file;
+	struct ff_arch_file *arch_file;
 	enum ff_arch_file_access_mode arch_access_mode;
 
+	file = NULL;
 	arch_access_mode = access_mode == FF_FILE_READ ? FF_ARCH_FILE_READ : FF_ARCH_FILE_WRITE;
+	arch_file = ff_arch_file_open(path, arch_access_mode);
+	if (arch_file == NULL)
+	{
+		goto end;
+	}
 
 	file = (struct ff_file *) ff_malloc(sizeof(*file));
-	file->file = ff_arch_file_open(path, arch_access_mode);
+	file->file = arch_file;
+	file->access_mode = access_mode;
 	if (access_mode == FF_FILE_READ)
 	{
-		file->buffers.read_buffer = ff_read_stream_buffer_create(read_func, file, BUFFER_SIZE);
+		file->buffers.read_buffer = ff_read_stream_buffer_create(file_read_func, file, BUFFER_SIZE);
 	}
 	else
 	{
-		file->buffers.write_buffer = ff_write_stream_buffer_create(write_func, file, BUFFER_SIZE);
+		file->buffers.write_buffer = ff_write_stream_buffer_create(file_write_func, file, BUFFER_SIZE);
 	}
-	file->access_mode = access_mode;
 
+end:
 	return file;
 }
 
@@ -68,6 +76,7 @@ void ff_file_close(struct ff_file *file)
 	}
 	else
 	{
+		ff_file_flush(file);
 		ff_write_stream_buffer_delete(file->buffers.write_buffer);
 	}
 	ff_arch_file_close(file->file);
