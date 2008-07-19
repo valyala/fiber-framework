@@ -17,10 +17,12 @@ static void cancel_udp_operation(struct ff_fiber *fiber, void *ctx)
 	ff_udp_disconnect(udp);
 }
 
-struct ff_udp *ff_udp_create(int is_broadcast)
+struct ff_udp *ff_udp_create(enum ff_udp_type type)
 {
 	struct ff_udp *udp;
+	int is_broadcast;
 
+	is_broadcast = ((type == FF_UDP_BROADCAST) ? 1 : 0);
 	udp = (struct ff_udp *) ff_malloc(sizeof(*udp));
 	udp->udp = ff_arch_udp_create(is_broadcast);
 
