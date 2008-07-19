@@ -631,18 +631,18 @@ DECLARE_TEST(blocking_queue_create_delete)
 
 DECLARE_TEST(blocking_queue_basic)
 {
-	int i;
+	int64_t i;
 	int is_success;
-	int data;
+	int64_t data = 0;
 	struct ff_blocking_queue *queue;
 
 	ff_core_initialize();
 	queue = ff_blocking_queue_create(10);
 	for (i = 0; i < 10; i++)
 	{
-		ff_blocking_queue_put(queue, (void *) i);
+		ff_blocking_queue_put(queue, (void *)i);
 	}
-	is_success = ff_blocking_queue_put_with_timeout(queue, (void *) 123, 1);
+	is_success = ff_blocking_queue_put_with_timeout(queue, (void *)123, 1);
 	ASSERT(!is_success, "queue should be full");
 	for (i = 0; i < 10; i++)
 	{
@@ -666,7 +666,7 @@ static void fiberpool_blocking_queue_func(void *ctx)
 
 DECLARE_TEST(blocking_queue_fiberpool)
 {
-	int data;
+	int64_t data = 0;
 	int is_success;
 	struct ff_blocking_queue *queue;
 
@@ -711,18 +711,18 @@ DECLARE_TEST(blocking_stack_create_delete)
 
 DECLARE_TEST(blocking_stack_basic)
 {
-	int i;
+	int64_t i;
 	int is_success;
-	int data;
+	int64_t data = 0;
 	struct ff_blocking_stack *stack;
 
 	ff_core_initialize();
 	stack = ff_blocking_stack_create(10);
 	for (i = 0; i < 10; i++)
 	{
-		ff_blocking_stack_push(stack, (void *) i);
+		ff_blocking_stack_push(stack, (void *)i);
 	}
-	is_success = ff_blocking_stack_push_with_timeout(stack, (void *) 1234, 1);
+	is_success = ff_blocking_stack_push_with_timeout(stack, (void *)1234, 1);
 	ASSERT(!is_success, "stack should be fulll");
 	for (i = 9; i >= 0; i--)
 	{
@@ -746,7 +746,7 @@ static void fiberpool_blocking_stack_func(void *ctx)
 
 DECLARE_TEST(blocking_stack_fiberpool)
 {
-	int data;
+	int64_t data = 0;
 	int is_success;
 	struct ff_blocking_stack *stack;
 
