@@ -10,7 +10,13 @@ extern "C" {
 
 struct ff_udp;
 
-FF_API struct ff_udp *ff_udp_create(int is_broadcast);
+enum ff_udp_type
+{
+	FF_UDP_BROADCAST,
+	FF_UDP_UNICAST
+};
+
+FF_API struct ff_udp *ff_udp_create(enum ff_udp_type type);
 
 FF_API void ff_udp_delete(struct ff_udp *udp);
 
