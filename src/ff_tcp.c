@@ -75,10 +75,12 @@ void ff_tcp_delete(struct ff_tcp *tcp)
 	ff_free(tcp);
 }
 
-int ff_tcp_bind(struct ff_tcp *tcp, const struct ff_arch_net_addr *addr, int is_listening)
+int ff_tcp_bind(struct ff_tcp *tcp, const struct ff_arch_net_addr *addr, enum ff_tcp_type type)
 {
 	int is_success;
+	int is_listening;
 
+	is_listening = ((type == FF_TCP_SERVER) ? 1 : 0);
 	is_success = ff_arch_tcp_bind(tcp->tcp, addr, is_listening);
 	return is_success;
 }

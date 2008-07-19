@@ -10,11 +10,17 @@ extern "C" {
 
 struct ff_tcp;
 
+enum ff_tcp_type
+{
+	FF_TCP_SERVER,
+	FF_TCP_CLIENT
+};
+
 FF_API struct ff_tcp *ff_tcp_create();
 
 FF_API void ff_tcp_delete(struct ff_tcp *tcp);
 
-FF_API int ff_tcp_bind(struct ff_tcp *tcp, const struct ff_arch_net_addr *addr, int is_listening);
+FF_API int ff_tcp_bind(struct ff_tcp *tcp, const struct ff_arch_net_addr *addr, enum ff_tcp_type type);
 
 FF_API int ff_tcp_connect(struct ff_tcp *tcp, const struct ff_arch_net_addr *addr);
 
