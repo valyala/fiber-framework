@@ -10,6 +10,7 @@
 #include "public/ff_file.h"
 #include "public/arch/ff_arch_net_addr.h"
 #include "public/ff_tcp.h"
+#include "public/ff_udp.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -991,16 +992,25 @@ DECLARE_TEST(arch_net_addr_create_delete)
 
 DECLARE_TEST(arch_net_addr_resolve_success)
 {
-	struct ff_arch_net_addr *addr;
+	struct ff_arch_net_addr *addr1, *addr2;
 	int is_success;
+	int is_equal;
 
 	ff_core_initialize();
-	addr = ff_arch_net_addr_create();
-	is_success = ff_arch_net_addr_resolve(addr, L"localhost", 80);
+	addr1 = ff_arch_net_addr_create();
+	addr2 = ff_arch_net_addr_create();
+	is_success = ff_arch_net_addr_resolve(addr1, L"localhost", 80);
 	ASSERT(is_success, "localhost address should be resolved successfully");
-	is_success = ff_arch_net_addr_resolve(addr, L"123.45.1.1", 0);
+	is_success = ff_arch_net_addr_resolve(addr2, L"127.0.0.1", 80);
+	ASSERT(is_success, "127.0.0.1 address should be resolved successfully");
+	is_equal = ff_arch_net_addr_is_equal(addr1, addr2);
+	ASSERT(is_equal, "addresses should be equal");
+	is_success = ff_arch_net_addr_resolve(addr2, L"123.45.1.1", 0);
 	ASSERT(is_success, "numeric address should be resolved successfully");
-	ff_arch_net_addr_delete(addr);
+	is_equal = ff_arch_net_addr_is_equal(addr1, addr2);
+	ASSERT(!is_equal, "addresses shouldn't be equivalent");
+	ff_arch_net_addr_delete(addr1);
+	ff_arch_net_addr_delete(addr2);
 	ff_core_shutdown();
 	return NULL;
 }
@@ -1019,11 +1029,40 @@ DECLARE_TEST(arch_net_addr_resolve_fail)
 	return NULL;
 }
 
+DECLARE_TEST(arch_net_addr_broadcast)
+{
+	struct ff_arch_net_addr *addr, *net_mask, *broadcast_addr;
+	int is_success;
+	int is_equal;
+
+	ff_core_initialize();
+	addr = ff_arch_net_addr_create();
+	net_mask = ff_arch_net_addr_create();
+	broadcast_addr = ff_arch_net_addr_create();
+
+	is_success = ff_arch_net_addr_resolve(addr, L"123.45.67.89", 123);
+	ASSERT(is_success, "address should be resolved");
+	is_success = ff_arch_net_addr_resolve(net_mask, L"255.255.0.0", 0);
+	ASSERT(is_success, "net mask should be resolved");
+	ff_arch_net_addr_get_broadcast_addr(addr, net_mask, broadcast_addr);
+	is_success = ff_arch_net_addr_resolve(addr, L"123.45.255.255", 123);
+	ASSERT(is_success, "broadcast address should be resolved");
+	is_equal = ff_arch_net_addr_is_equal(addr, broadcast_addr);
+	ASSERT(is_equal, "addresses should be equal");
+
+	ff_arch_net_addr_delete(addr);
+	ff_arch_net_addr_delete(net_mask);
+	ff_arch_net_addr_delete(broadcast_addr);
+	ff_core_shutdown();
+	return NULL;
+}
+
 DECLARE_TEST(arch_net_addr_all)
 {
 	RUN_TEST(arch_net_addr_create_delete);
 	RUN_TEST(arch_net_addr_resolve_success);
 	RUN_TEST(arch_net_addr_resolve_fail);
+	RUN_TEST(arch_net_addr_broadcast);
 	return NULL;
 }
 
@@ -1075,6 +1114,7 @@ DECLARE_TEST(tcp_basic)
 	struct ff_arch_net_addr *addr;
 	int is_success;
 	int len;
+	int is_equal;
 	uint8_t buf[4];
 
 	ff_core_initialize();
@@ -1083,7 +1123,7 @@ DECLARE_TEST(tcp_basic)
 	ASSERT(is_success, "localhost address should be resolved successfully");
 	tcp_server = ff_tcp_create();
 	ASSERT(tcp_server != NULL, "server should be created");
-	is_success = ff_tcp_bind(tcp_server, addr, 1);
+	is_success = ff_tcp_bind(tcp_server, addr, FF_TCP_SERVER);
 	ASSERT(is_success, "server should be bound to local address");
 	ff_core_fiberpool_execute_async(fiberpool_tcp_func, tcp_server);
 
@@ -1093,6 +1133,8 @@ DECLARE_TEST(tcp_basic)
 	ASSERT(is_success, "client should connect to the server");
 	len = ff_tcp_read_with_timeout(tcp_client, buf, 4, 100000);
 	ASSERT(len == 4, "unexpected data received from the server");
+	is_equal = (memcmp(buf, "test", 4) == 0);
+	ASSERT(is_equal, "wrong data received from the server");
 	len = ff_tcp_write_with_timeout(tcp_client, buf, 4, 100);
 	ASSERT(len == 4, "written all data to the server");
 	len = ff_tcp_flush_with_timeout(tcp_client, 100);
@@ -1114,6 +1156,123 @@ DECLARE_TEST(tcp_all)
 /* end of ff_tcp tests */
 #pragma endregion
 
+#pragma region ff_udp tests
+
+DECLARE_TEST(udp_create_delete)
+{
+	struct ff_udp *udp;
+
+	ff_core_initialize();
+
+	udp = ff_udp_create(FF_UDP_BROADCAST);
+	ASSERT(udp != NULL, "broadcast udp should be created");
+	ff_udp_delete(udp);
+
+	udp = ff_udp_create(FF_UDP_UNICAST);
+	ASSERT(udp != NULL, "unicast udp should be created");
+	ff_udp_delete(udp);
+
+	ff_core_shutdown();
+	return NULL;
+}
+
+static void fiberpool_udp_func(void *ctx)
+{
+	struct ff_udp *udp_server;
+	int len;
+	uint8_t buf[10];
+	struct ff_arch_net_addr *client_addr;
+
+	udp_server = (struct ff_udp *) ctx;
+	client_addr = ff_arch_net_addr_create();
+	len = ff_udp_read(udp_server, client_addr, buf, 10);
+	if (len == 4)
+	{
+		int is_equal;
+
+		is_equal = (memcmp(buf, "test", 4) == 0);
+		if (is_equal)
+		{
+			len = ff_udp_write(udp_server, client_addr, buf, 4);
+			if (len == 4)
+			{
+				len = ff_udp_read(udp_server, client_addr, buf, 10);
+				if (len == 9)
+				{
+					len = ff_udp_write(udp_server, client_addr, buf, 9);
+					if (len == 9)
+					{
+						ff_arch_net_addr_delete(client_addr);
+					}
+				}
+			}
+		}
+	}
+}
+
+DECLARE_TEST(udp_basic)
+{
+	struct ff_udp *udp_client, *udp_server;
+	int is_success;
+	int len;
+	int is_equal;
+	struct ff_arch_net_addr *server_addr, *client_addr, *net_mask;
+	uint8_t buf[10];
+
+	ff_core_initialize();
+	server_addr = ff_arch_net_addr_create();
+	client_addr = ff_arch_net_addr_create();
+	net_mask = ff_arch_net_addr_create();
+	is_success = ff_arch_net_addr_resolve(net_mask, L"255.0.0.0", 0);
+	ASSERT(is_success, "network mask should be resolved");
+	is_success = ff_arch_net_addr_resolve(server_addr, L"127.0.0.1", 5432);
+	ASSERT(is_success, "localhost address should be resolved");
+	udp_server = ff_udp_create(FF_UDP_UNICAST);
+	is_success = ff_udp_bind(udp_server, server_addr);
+	ff_core_fiberpool_execute_async(fiberpool_udp_func, udp_server);
+
+	udp_client = ff_udp_create(FF_UDP_UNICAST);
+	len = ff_udp_write_with_timeout(udp_client, server_addr, "test", 4, 100);
+	ASSERT(len == 4, "data should be sent to server");
+	len = ff_udp_read(udp_client, client_addr, buf, 10);
+	is_equal = ff_arch_net_addr_is_equal(server_addr, client_addr);
+	ASSERT(is_equal, "server address should be eqaul to the client address");
+	ASSERT(len == 4, "data should be read from the server");
+	is_equal = (memcmp(buf, "test", 4) == 0);
+	ASSERT(is_equal, "wrong data received from the server");
+	len = ff_udp_read_with_timeout(udp_client, client_addr, buf, 10, 100);
+	ASSERT(len == -1, "server shouldn't send data to client");
+	ff_udp_delete(udp_client);
+
+	udp_client = ff_udp_create(FF_UDP_BROADCAST);
+	ff_arch_net_addr_get_broadcast_addr(server_addr, net_mask, server_addr);
+	ASSERT(is_success, "broadcast address should be resolved");
+	len = ff_udp_write(udp_client, server_addr, "broadcast", 9);
+	ASSERT(len == 9, "broadcast data should be sent");
+	len = ff_udp_read(udp_client, client_addr, buf, 10);
+	ASSERT(len == 9, "server should send response with the given length");
+	is_equal = (memcmp(buf, "broadcast", 9) == 0);
+	ASSERT(is_equal, "server sent wrong data");
+	ff_udp_delete(udp_client);
+
+	ff_udp_delete(udp_server);
+	ff_arch_net_addr_delete(net_mask);
+	ff_arch_net_addr_delete(client_addr);
+	ff_arch_net_addr_delete(server_addr);
+	ff_core_shutdown();
+	return NULL;
+}
+
+DECLARE_TEST(udp_all)
+{
+	RUN_TEST(udp_create_delete);
+	RUN_TEST(udp_basic);
+	return NULL;
+}
+
+/* end of ff_udp tests */
+#pragma endregion
+
 static char *run_all_tests()
 {
 	RUN_TEST(core_all);
@@ -1127,6 +1286,7 @@ static char *run_all_tests()
 	RUN_TEST(file_all);
 	RUN_TEST(arch_net_addr_all);
 	RUN_TEST(tcp_all);
+	RUN_TEST(udp_all);
 	return NULL;
 }
 
