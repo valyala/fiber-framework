@@ -149,6 +149,7 @@ void ff_arch_file_close(struct ff_arch_file *file)
 
 	result = CloseHandle(file->handle);
 	ff_assert(result != FALSE);
+	ff_free(file);
 }
 
 int ff_arch_file_read(struct ff_arch_file *file, void *buf, int len)
