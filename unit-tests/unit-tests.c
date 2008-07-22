@@ -1246,7 +1246,6 @@ DECLARE_TEST(udp_basic)
 
 	udp_client = ff_udp_create(FF_UDP_BROADCAST);
 	ff_arch_net_addr_get_broadcast_addr(server_addr, net_mask, server_addr);
-	ASSERT(is_success, "broadcast address should be resolved");
 	len = ff_udp_write(udp_client, server_addr, "broadcast", 9);
 	ASSERT(len == 9, "broadcast data should be sent");
 	len = ff_udp_read(udp_client, client_addr, buf, 10);
