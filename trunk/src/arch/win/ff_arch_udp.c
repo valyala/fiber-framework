@@ -140,7 +140,7 @@ void ff_arch_udp_disconnect(struct ff_arch_udp *udp)
 
 	assert(udp->is_working);
 
+	udp->is_working = 0;
 	result = CancelIo((HANDLE) udp->handle);
 	ff_assert(result != FALSE);
-	udp->is_working = 0;
 }

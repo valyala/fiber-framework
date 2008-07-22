@@ -160,7 +160,7 @@ void ff_arch_tcp_disconnect(struct ff_arch_tcp *tcp)
 
 	ff_assert(tcp->is_connected);
 
+	tcp->is_connected = 0;
 	result = CancelIo((HANDLE) tcp->handle);
 	ff_assert(result != FALSE);
-	tcp->is_connected = 0;
 }
