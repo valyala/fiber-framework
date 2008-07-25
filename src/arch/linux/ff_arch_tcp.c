@@ -1,0 +1,43 @@
+#include "private/arch/ff_arch_tcp.h"
+#include "ff_linux_net_addr.h"
+#include "ff_linux_error_check.h"
+
+#include <sys/types.h>
+#include <sys/socket.h>
+
+struct ff_arch_tcp
+{
+	int sd;
+};
+
+struct ff_arch_tcp *ff_arch_tcp_create()
+{
+}
+
+void ff_arch_tcp_delete(struct ff_arch_tcp *tcp)
+{
+}
+
+int ff_arch_tcp_bind(struct ff_arch_tcp *tcp, const struct ff_arch_net_addr *addr, int is_listening)
+{
+}
+
+int ff_arch_tcp_connect(struct ff_arch_tcp *tcp, const struct ff_arch_net_addr *addr)
+{
+}
+
+struct ff_arch_tcp *ff_arch_tcp_accept(struct ff_arch_tcp *tcp, struct ff_arch_net_addr *remote_addr)
+{
+}
+
+int ff_arch_tcp_read(struct ff_arch_tcp *tcp, void *buf, int len)
+{
+}
+
+int ff_arch_tcp_write(struct ff_arch_tcp *tcp, const void *buf, int len)
+{
+}
+
+void ff_arch_tcp_disconnect(struct ff_arch_tcp *tcp)
+{
+}
