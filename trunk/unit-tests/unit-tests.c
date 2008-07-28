@@ -1119,7 +1119,7 @@ DECLARE_TEST(tcp_basic)
 
 	ff_core_initialize();
 	addr = ff_arch_net_addr_create();
-	is_success = ff_arch_net_addr_resolve(addr, L"127.0.0.1", 4321);
+	is_success = ff_arch_net_addr_resolve(addr, L"127.0.0.1", 43210);
 	ASSERT(is_success, "localhost address should be resolved successfully");
 	tcp_server = ff_tcp_create();
 	ASSERT(tcp_server != NULL, "server should be created");
