@@ -1,7 +1,11 @@
+#include "private/ff_common.h"
+
 #include "private/arch/ff_arch_fiber.h"
 
 #include <ucontext.h>
 #include <string.h>
+
+static const int DEFAULT_STACK_SIZE = 0x10000;
 
 struct ff_arch_fiber
 {
@@ -47,8 +51,8 @@ struct ff_arch_fiber *ff_arch_fiber_create(ff_arch_fiber_func arch_fiber_func, v
 	getcontext(&fiber->context);
 	fiber->context.uc_stack.ss_sp = fiber->stack;
 	fiber->context.uc_stack.ss_size = stack_size;
-	fiber->context.us_link = NULL;
-	makecontext(&fiber->context, arch_fiber_func, 1, ctx);
+	fiber->context.uc_link = NULL;
+	makecontext(&fiber->context, (void (*)()) arch_fiber_func, 1, ctx);
 
 	return fiber;
 }
