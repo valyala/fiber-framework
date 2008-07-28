@@ -1,3 +1,5 @@
+#include "private/ff_common.h"
+
 #include "private/arch/ff_arch_completion_port.h"
 #include "private/ff_stack.h"
 #include "private/arch/ff_arch_mutex.h"
