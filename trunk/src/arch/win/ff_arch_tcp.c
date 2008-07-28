@@ -41,13 +41,12 @@ int ff_arch_tcp_bind(struct ff_arch_tcp *tcp, const struct ff_arch_net_addr *add
 	rv = bind(tcp->handle, (struct sockaddr *) &addr->addr, sizeof(addr->addr));
 	if (rv != SOCKET_ERROR)
 	{
+		if (is_listening)
+		{
+			rv = listen(tcp->handle, SOMAXCONN);
+			ff_winsock_fatal_error_check(rv != SOCKET_ERROR, L"cannot enable listening mode for the tcp socket");
+		}
 		is_success = 1;
-	}
-
-	if (is_listening)
-	{
-		rv = listen(tcp->handle, SOMAXCONN);
-		ff_winsock_fatal_error_check(rv != SOCKET_ERROR, L"cannot enable listening mode for the tcp socket");
 	}
 
 	return is_success;
