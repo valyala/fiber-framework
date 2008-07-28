@@ -1,4 +1,5 @@
 #include "private/arch/ff_arch_thread.h"
+#include "ff_linux_error_check.h"
 
 #include <pthread.h>
 
@@ -31,7 +32,7 @@ struct ff_arch_thread *ff_arch_thread_create(ff_arch_thread_func func, int stack
 	memset(&thread->tid, 0, sizeof(thread->tid));
 
 	rv = pthread_attr_init(&thread->attr);
-	ff_linux_fatal_error_check(rv == 0, "cannot initialize thread attributes");
+	ff_linux_fatal_error_check(rv == 0, L"cannot initialize thread attributes");
 
 	if (stack_size < PTHREAD_STACK_MIN)
 	{
@@ -62,7 +63,7 @@ void ff_arch_thread_start(struct ff_arch_thread *thread, void *ctx)
 
 	thread->ctx = ctx;
 	rv = pthread_create(&thread->tid, &thread->attr, generic_thread_func, thread);
-	ff_linux_fatal_error_check(rv ==0, "cannot start the thread");
+	ff_linux_fatal_error_check(rv ==0, L"cannot start the thread");
 }
 
 void ff_arch_thread_join(struct ff_arch_thread *thread)
