@@ -6,7 +6,7 @@
 
 void fatal_error(wchar_t *format, ...)
 {
-	wchar_t error_message[ERROR_MESSAGE_MAX_SIZE];
+	static wchar_t error_message[ERROR_MESSAGE_MAX_SIZE];
 	int len;
 
 	va_list args_ptr;
