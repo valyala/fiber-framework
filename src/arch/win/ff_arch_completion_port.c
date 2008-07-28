@@ -31,10 +31,9 @@ void ff_arch_completion_port_delete(struct ff_arch_completion_port *completion_p
 	ff_free(completion_port);
 }
 
-void *ff_arch_completion_port_get(struct ff_arch_completion_port *completion_port)
+void ff_arch_completion_port_get(struct ff_arch_completion_port *completion_port, const void **data)
 {
 	DWORD bytes_transferred;
-	void *data;
 	ULONG_PTR key;
 	LPOVERLAPPED overlapped;
 	BOOL result;
@@ -47,33 +46,30 @@ void *ff_arch_completion_port_get(struct ff_arch_completion_port *completion_por
 		INFINITE
 	);
 
-	data = (void *) key;
-	if (data == NULL)
+	if (overlapped != NULL)
 	{
 		int is_found;
 
-		ff_assert(overlapped != NULL);
-
-		is_found = ff_dictionary_get(completion_port->overlapped_dictionary, overlapped, &data);
+		is_found = ff_dictionary_get(completion_port->overlapped_dictionary, overlapped, data);
 		ff_assert(is_found);
 	}
-
-	return data;
+	else
+	{
+		*data = (const void *) key;
+	}
 }
 
-void ff_arch_completion_port_put(struct ff_arch_completion_port *completion_port, void *data)
+void ff_arch_completion_port_put(struct ff_arch_completion_port *completion_port, const void *data)
 {
 	ULONG_PTR key;
 	BOOL result;
-
-	ff_assert(data != NULL);
 
 	key = (ULONG_PTR) data;
 	result = PostQueuedCompletionStatus(completion_port->handle, 0, key, NULL);
 	ff_assert(result != FALSE);
 }
 
-void ff_win_completion_port_register_overlapped_data(struct ff_arch_completion_port *completion_port, LPOVERLAPPED overlapped, void *data)
+void ff_win_completion_port_register_overlapped_data(struct ff_arch_completion_port *completion_port, LPOVERLAPPED overlapped, const void *data)
 {
 	ff_dictionary_put(completion_port->overlapped_dictionary, overlapped, data);
 }

@@ -242,7 +242,7 @@ void ff_core_yield_fiber()
 	}
 	else
 	{
-		core_ctx.current_fiber = (struct ff_fiber *) ff_arch_completion_port_get(core_ctx.completion_port);
+		ff_arch_completion_port_get(core_ctx.completion_port, &core_ctx.current_fiber);
 		ff_assert(core_ctx.current_fiber != NULL);
 	}
 	ff_fiber_switch(core_ctx.current_fiber);
