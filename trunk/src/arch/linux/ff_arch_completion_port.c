@@ -31,11 +31,11 @@ struct ff_arch_completion_port *ff_arch_completion_port_create(int concurrency)
 	struct epoll_event event;
 
 	rv = pipe(pipe_fds);
-	ff_linux_fatal_error_check(rv != -1, "cannot create pipe");
+	ff_linux_fatal_error_check(rv != -1, L"cannot create pipe");
 
 	completion_port = (struct ff_arch_completion_port *) ff_malloc(sizeof(*completion_port));
 	completion_port->epoll_fd = epoll_create(EPOLL_CAPACITY);
-	ff_linux_fatal_error_check(completion_port->epoll_fd != -1, "cannot create epoll file descriptor");
+	ff_linux_fatal_error_check(completion_port->epoll_fd != -1, L"cannot create epoll file descriptor");
 	completion_port->rd_pipe = pipe_fds[0];
 	completion_port->wr_pipe = pipe_fds[1];
 	completion_port->pending_events = ff_stack_create();
@@ -44,7 +44,7 @@ struct ff_arch_completion_port *ff_arch_completion_port_create(int concurrency)
 	event.data.ptr = completion_port;
 	event.events = EPOLLIN;
 	rv = epoll_ctl(completion_port->epoll_fd, EPOLL_CTL_ADD, completion_port->rd_pipe, &event);
-	ff_linux_fatal_error_check(rv != -1, "epoll_ctl(rd_pipe) failed");
+	ff_linux_fatal_error_check(rv != -1, L"epoll_ctl(rd_pipe) failed");
 
 	return completion_port;
 }
@@ -84,9 +84,9 @@ void ff_arch_completion_port_get(struct ff_arch_completion_port *completion_port
 	    	{
 	    		break;
 	    	}
-    		ff_linux_fatal_error_check(errno == EINTR, "epoll_wait() failed");
+    		ff_linux_fatal_error_check(errno == EINTR, L"epoll_wait() failed");
     	}
-    	ff_linux_fatal_error_check(events_cnt > 0, "epoll_wait() unexpectedly returned 0");
+    	ff_linux_fatal_error_check(events_cnt > 0, L"epoll_wait() unexpectedly returned 0");
 
     	ff_arch_mutex_lock(completion_port->pending_events_mutex);
     	for (i = 0; i < events_cnt; i++)
@@ -106,9 +106,9 @@ void ff_arch_completion_port_get(struct ff_arch_completion_port *completion_port
 					{
 						break;
 					}
-					ff_linux_fatal_error_check(errno == EINTR, "read(rd_pipe) failed");
+					ff_linux_fatal_error_check(errno == EINTR, L"read(rd_pipe) failed");
 				}
-				ff_linux_fatal_error_check(bytes_read == sizeof(tmp), "error when reading from the pipe");
+				ff_linux_fatal_error_check(bytes_read == sizeof(tmp), L"error when reading from the pipe");
     		}
     		ff_stack_push(completion_port->pending_events, tmp);
     	}
@@ -130,9 +130,9 @@ void ff_arch_completion_port_put(struct ff_arch_completion_port *completion_port
 		{
 			break;
 		}
-		ff_lunux_fatal_error_check(errno == EINTR, "write(wr_pipe) failed");
+		ff_lunux_fatal_error_check(errno == EINTR, L"write(wr_pipe) failed");
 	}
-	ff_linux_fatal_error_check(bytes_written == sizeof(data), "error when writing to pipe");
+	ff_linux_fatal_error_check(bytes_written == sizeof(data), L"error when writing to wr_pipe");
 }
 
 void ff_linux_completion_port_register_operation(struct ff_arch_completion_port *completion_port, int fd, enum ff_linux_completion_port_operation_type operation_type, const void *data)
@@ -146,5 +146,5 @@ void ff_linux_completion_port_register_operation(struct ff_arch_completion_port 
 	event.data.ptr = (void *) data;
 
 	rv = epoll_ctl(completion_port->epoll_fd, EPOLL_CTL_ADD, fd, &event);
-	ff_linux_fatal_error_check(rv != -1, "epoll_ctl() failed");
+	ff_linux_fatal_error_check(rv != -1, L"epoll_ctl() failed");
 }
