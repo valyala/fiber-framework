@@ -36,7 +36,7 @@ static void generic_threadpool_func(void *ctx)
 		ff_arch_mutex_lock(threadpool->mutex);
 		threadpool->busy_threads_cnt--;
 		ff_arch_mutex_unlock(threadpool->mutex);
-		task = (struct threadpool_task *) ff_arch_completion_port_get(threadpool->completion_port);
+		ff_arch_completion_port_get(threadpool->completion_port, &task);
 		if (task == NULL)
 		{
 			break;

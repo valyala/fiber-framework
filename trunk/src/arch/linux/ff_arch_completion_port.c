@@ -7,6 +7,11 @@
 #include <sys/epoll.h>
 #include <unistd.h>
 
+/* workaround of debian bug #261541 (missing EPOLLONESHOT declaration in sys/epoll.h) */
+#ifndef EPOLLONESHOT
+#	define EPOLLONESHOT (1 << 30)
+#endif
+
 static const int EPOLL_CAPACITY = 10;
 
 struct ff_arch_completion_port
@@ -36,7 +41,7 @@ struct ff_arch_completion_port *ff_arch_completion_port_create(int concurrency)
 	completion_port->pending_events = ff_stack_create();
 	completion_port->pending_events_mutex = ff_arch_mutex_create();
 
-	event.data.ptr = NULL;
+	event.data.ptr = completion_port;
 	event.events = EPOLLIN;
 	rv = epoll_ctl(completion_port->epoll_fd, EPOLL_CTL_ADD, completion_port->rd_pipe, &event);
 	ff_linux_fatal_error_check(rv != -1, "epoll_ctl(rd_pipe) failed");
@@ -59,9 +64,8 @@ void ff_arch_completion_port_delete(struct ff_arch_completion_port *completion_p
 	ff_free(completion_port);
 }
 
-void *ff_arch_completion_port_get(struct ff_arch_completion_port *completion_port)
+void ff_arch_completion_port_get(struct ff_arch_completion_port *completion_port, const void **data)
 {
-	void *data;
 	int is_empty;
 
 	ff_arch_mutex_lock(completion_port->pending_events_mutex);
@@ -87,39 +91,37 @@ void *ff_arch_completion_port_get(struct ff_arch_completion_port *completion_por
     	ff_arch_mutex_lock(completion_port->pending_events_mutex);
     	for (i = 0; i < events_cnt; i++)
     	{
-    		data = events[i].data.ptr;
-    		if (data == NULL)
+    		const void *tmp;
+
+    		tmp = events[i].data.ptr;
+    		if (tmp == completion_port)
     		{
     			/* read data from pipe */
 				ssize_t bytes_read;
 
 				for (;;)
 				{
-					bytes_read = read(completion_port->rd_pipe, &data, sizeof(data));
+					bytes_read = read(completion_port->rd_pipe, &tmp, sizeof(tmp));
 					if (bytes_read != -1)
 					{
 						break;
 					}
 					ff_linux_fatal_error_check(errno == EINTR, "read(rd_pipe) failed");
 				}
-				ff_linux_fatal_error_check(bytes_read == sizeof(data), "error when reading from the pipe");
+				ff_linux_fatal_error_check(bytes_read == sizeof(tmp), "error when reading from the pipe");
     		}
-    		ff_stack_push(completion_port->pending_events, data);
+    		ff_stack_push(completion_port->pending_events, tmp);
     	}
     }
 
-	ff_stack_top(completion_port->pending_events, &data);
+	ff_stack_top(completion_port->pending_events, data);
 	ff_stack_pop(completion_port->pending_events);
 	ff_arch_mutex_unlock(completion_port->pending_events_mutex);
-
-	return data;
 }
 
-void ff_arch_completion_port_put(struct ff_arch_completion_port *completion_port, void *data)
+void ff_arch_completion_port_put(struct ff_arch_completion_port *completion_port, const void *data)
 {
 	ssize_t bytes_written;
-
-	ff_assert(data != NULL);
 
 	for (;;)
 	{
@@ -130,10 +132,10 @@ void ff_arch_completion_port_put(struct ff_arch_completion_port *completion_port
 		}
 		ff_lunux_fatal_error_check(errno == EINTR, "write(wr_pipe) failed");
 	}
-	ff_linux_fatal_error_check(bytes_written == sizeof(data));
+	ff_linux_fatal_error_check(bytes_written == sizeof(data), "error when writing to pipe");
 }
 
-void ff_linux_completion_port_register_operation(struct ff_arch_completion_port *completion_port, int fd, enum ff_linux_completion_port_operation_type operation_type, void *data)
+void ff_linux_completion_port_register_operation(struct ff_arch_completion_port *completion_port, int fd, enum ff_linux_completion_port_operation_type operation_type, const void *data)
 {
 	int rv;
 	struct epoll_event event;
@@ -141,7 +143,7 @@ void ff_linux_completion_port_register_operation(struct ff_arch_completion_port 
 
 	epoll_operation = (operation_type == FF_COMPLETION_PORT_OPERATION_READ) ? EPOLLIN : EPOLLOUT;
 	event.events = EPOLLET | EPOLLONESHOT | epoll_operation;
-	event.data = data;
+	event.data.ptr = (void *) data;
 
 	rv = epoll_ctl(completion_port->epoll_fd, EPOLL_CTL_ADD, fd, &event);
 	ff_linux_fatal_error_check(rv != -1, "epoll_ctl() failed");

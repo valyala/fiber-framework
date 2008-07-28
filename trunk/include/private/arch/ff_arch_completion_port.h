@@ -11,9 +11,9 @@ struct ff_arch_completion_port *ff_arch_completion_port_create(int concurrency);
 
 void ff_arch_completion_port_delete(struct ff_arch_completion_port *completion_port);
 
-void *ff_arch_completion_port_get(struct ff_arch_completion_port *completion_port);
+void ff_arch_completion_port_get(struct ff_arch_completion_port *completion_port, const void **data);
 
-void ff_arch_completion_port_put(struct ff_arch_completion_port *completion_port, void *data);
+void ff_arch_completion_port_put(struct ff_arch_completion_port *completion_port, const void *data);
 
 #ifdef __cplusplus
 }
