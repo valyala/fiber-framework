@@ -50,13 +50,12 @@ void *ff_arch_completion_port_get(struct ff_arch_completion_port *completion_por
 	data = (void *) key;
 	if (data == NULL)
 	{
-		if (overlapped != NULL)
-		{
-			int is_found;
-			
-			is_found = ff_dictionary_get(completion_port->overlapped_dictionary, overlapped, &data);
-			ff_assert(is_found);
-		}
+		int is_found;
+
+		ff_assert(overlapped != NULL);
+
+		is_found = ff_dictionary_get(completion_port->overlapped_dictionary, overlapped, &data);
+		ff_assert(is_found);
 	}
 
 	return data;
@@ -66,6 +65,8 @@ void ff_arch_completion_port_put(struct ff_arch_completion_port *completion_port
 {
 	ULONG_PTR key;
 	BOOL result;
+
+	ff_assert(data != NULL);
 
 	key = (ULONG_PTR) data;
 	result = PostQueuedCompletionStatus(completion_port->handle, 0, key, NULL);
