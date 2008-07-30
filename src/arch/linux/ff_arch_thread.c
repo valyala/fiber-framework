@@ -3,6 +3,10 @@
 
 #include <pthread.h>
 
+#ifndef PTHREAD_STACK_MIN
+#	define PTHREAD_STACK_MIN 0x10000
+#endif
+
 struct ff_arch_thread
 {
 	pthread_t tid;
@@ -71,6 +75,6 @@ void ff_arch_thread_join(struct ff_arch_thread *thread)
 	int rv;
 	void *data;
 
-	rv = pthread_join(&thread->tid, &data);
+	rv = pthread_join(thread->tid, &data);
 	assert(rv == 0);
 }
