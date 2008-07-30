@@ -7,23 +7,24 @@ struct ff_arch_fiber
 	LPVOID handle;
 };
 
+static struct ff_arch_fiber main_fiber;
+
 struct ff_arch_fiber *ff_arch_fiber_initialize()
 {
-	struct ff_arch_fiber *fiber;
+	main_fiber.handle = ConvertThreadToFiber((LPVOID) NULL);
+	ff_assert(main_fiber.handle != NULL);
 
-	fiber = (struct ff_arch_fiber *) ff_malloc(sizeof(*fiber));
-	fiber->handle = ConvertThreadToFiber((LPVOID) NULL);
-	ff_assert(fiber->handle != NULL);
-	return fiber;
+	return &main_fiber;
 }
 
 void ff_arch_fiber_shutdown(struct ff_arch_fiber *fiber)
 {
 	BOOL rv;
 
+	ff_assert(fiber == &main_fiber);
+
 	rv = ConvertFiberToThread();
 	ff_assert(rv != FALSE);
-	ff_free(fiber);
 }
 
 struct ff_arch_fiber *ff_arch_fiber_create(ff_arch_fiber_func arch_fiber_func, void *ctx, int stack_size)
