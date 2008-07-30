@@ -156,7 +156,7 @@ void ff_core_shutdown()
 	ff_stack_delete(core_ctx.pending_fibers);
 	ff_arch_misc_shutdown();
 	ff_arch_completion_port_delete(core_ctx.completion_port);
-	ff_fiber_shutdown();
+	ff_fiber_shutdown(core_ctx.current_fiber);
 }
 
 void ff_core_sleep(int interval)
@@ -232,7 +232,9 @@ void ff_core_schedule_fiber(struct ff_fiber *fiber)
 void ff_core_yield_fiber()
 {
 	int is_empty;
+	struct ff_fiber *prev_fiber;
 
+	prev_fiber = core_ctx.current_fiber;
 	is_empty = ff_stack_is_empty(core_ctx.pending_fibers);
 	if (!is_empty)
 	{
@@ -245,7 +247,10 @@ void ff_core_yield_fiber()
 		ff_arch_completion_port_get(core_ctx.completion_port, &core_ctx.current_fiber);
 		ff_assert(core_ctx.current_fiber != NULL);
 	}
-	ff_fiber_switch(core_ctx.current_fiber);
+	if (core_ctx.current_fiber != prev_fiber)
+	{
+		ff_fiber_switch(core_ctx.current_fiber);
+	}
 }
 
 struct ff_fiber *ff_core_get_current_fiber()
