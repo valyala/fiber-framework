@@ -18,6 +18,7 @@
 struct ff_arch_file
 {
 	int fd;
+	enum ff_arch_file_access_mode access_mode;
 };
 
 struct threadpool_open_file_data
@@ -164,11 +165,13 @@ static void threadpool_move_file_func(void *ctx)
 	data->is_success = (rv == -1) ? 0 : 1;
 }
 
-static void wait_for_file_io(struct ff_arch_file *file, enum ff_linux_completion_port_operation_type operation_type)
+static void wait_for_file_io(struct ff_arch_file *file)
 {
 	struct ff_fiber *current_fiber;
+	enum ff_linux_completion_port_operation_type operation_type;
 
 	current_fiber = ff_fiber_get_current();
+	operation_type = (file->access_mode == FF_ARCH_FILE_READ) ? FF_COMPLETION_PORT_OPERATION_READ : FF_COMPLETION_PORT_OPERATION_WRITE;
 	ff_linux_completion_port_register_operation(file_ctx.completion_port, file->fd, operation_type, current_fiber);
 	ff_core_yield_fiber();
 }
@@ -199,6 +202,7 @@ struct ff_arch_file *ff_arch_file_open(const wchar_t *path, enum ff_arch_file_ac
 	{
 		file = (struct ff_arch_file *) ff_malloc(sizeof(*file));
 		file->fd = data.fd;
+		file->access_mode = access_mode;
 	}
 
 	return file;
@@ -218,6 +222,7 @@ int ff_arch_file_read(struct ff_arch_file *file, void *buf, int len)
 	int bytes_read_int;
 
 	ff_assert(len > 0);
+	ff_assert(file->access_mode == FF_ARCH_FILE_READ);
 
 again:
 	bytes_read = read(file->fd, buf, len);
@@ -229,7 +234,7 @@ again:
 		}
 		if (errno == EAGAIN)
 		{
-			wait_for_file_io(file, FF_COMPLETION_PORT_OPERATION_READ);
+			wait_for_file_io(file);
 			goto again;
 		}
 	}
@@ -244,6 +249,7 @@ int ff_arch_file_write(struct ff_arch_file *file, const void *buf, int len)
 	int bytes_written_int;
 
 	ff_assert(len > 0);
+	ff_assert(file->access_mode == FF_ARCH_FILE_WRITE);
 
 again:
 	bytes_written = write(file->fd, buf, len);
@@ -255,7 +261,7 @@ again:
 		}
 		if (errno == EAGAIN)
 		{
-			wait_for_file_io(file, FF_COMPLETION_PORT_OPERATION_WRITE);
+			wait_for_file_io(file);
 			goto again;
 		}
 	}
