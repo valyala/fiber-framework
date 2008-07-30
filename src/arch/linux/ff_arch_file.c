@@ -164,7 +164,7 @@ static void threadpool_move_file_func(void *ctx)
 	data->is_success = (rv == -1) ? 0 : 1;
 }
 
-static void wait_for_io(struct ff_arch_file *file, enum ff_linux_completion_port_operation_type operation_type)
+static void wait_for_file_io(struct ff_arch_file *file, enum ff_linux_completion_port_operation_type operation_type)
 {
 	struct ff_fiber *current_fiber;
 
@@ -229,7 +229,7 @@ again:
 		}
 		if (errno == EAGAIN)
 		{
-			wait_for_io(file, FF_COMPLETION_PORT_OPERATION_READ);
+			wait_for_file_io(file, FF_COMPLETION_PORT_OPERATION_READ);
 			goto again;
 		}
 	}
@@ -255,7 +255,7 @@ again:
 		}
 		if (errno == EAGAIN)
 		{
-			wait_for_io(file, FF_COMPLETION_PORT_OPERATION_WRITE);
+			wait_for_file_io(file, FF_COMPLETION_PORT_OPERATION_WRITE);
 			goto again;
 		}
 	}
