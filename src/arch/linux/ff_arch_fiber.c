@@ -3,7 +3,6 @@
 #include "private/arch/ff_arch_fiber.h"
 
 #include <ucontext.h>
-#include <string.h>
 
 static const int DEFAULT_STACK_SIZE = 0x10000;
 
