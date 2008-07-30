@@ -4,6 +4,7 @@
 #include "private/arch/ff_arch_completion_port.h"
 #include "ff_win_completion_port.h"
 #include "private/ff_core.h"
+#include "private/ff_fiber.h"
 
 struct net_data
 {
@@ -78,7 +79,7 @@ int ff_win_net_complete_overlapped_io(SOCKET socket, WSAOVERLAPPED *overlapped)
 	DWORD flags;
 	DWORD bytes_transferred;
 
-	current_fiber = ff_core_get_current_fiber();
+	current_fiber = ff_fiber_get_current();
 	ff_win_completion_port_register_overlapped_data(net_ctx.completion_port, overlapped, current_fiber);
 	ff_core_yield_fiber();
 	ff_win_completion_port_deregister_overlapped_data(net_ctx.completion_port, overlapped);

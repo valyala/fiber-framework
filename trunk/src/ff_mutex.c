@@ -3,6 +3,7 @@
 #include "private/ff_mutex.h"
 #include "private/ff_stack.h"
 #include "private/ff_core.h"
+#include "private/ff_fiber.h"
 
 struct ff_mutex
 {
@@ -34,7 +35,7 @@ void ff_mutex_lock(struct ff_mutex *mutex)
 	{
 		struct ff_fiber *current_fiber;
 
-		current_fiber = ff_core_get_current_fiber();
+		current_fiber = ff_fiber_get_current();
 		ff_stack_push(mutex->pending_fibers, current_fiber);
 		ff_core_yield_fiber();
 	}

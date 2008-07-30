@@ -45,7 +45,6 @@ struct generic_threadpool_data
 
 struct core_data
 {
-	struct ff_fiber *current_fiber;
 	struct ff_arch_completion_port *completion_port;
 	struct ff_stack *pending_fibers;
 	struct ff_threadpool *threadpool;
@@ -130,7 +129,7 @@ static void timeout_checker_func(void *ctx)
 
 void ff_core_initialize()
 {
-	core_ctx.current_fiber = ff_fiber_initialize();
+	ff_fiber_initialize();
 	core_ctx.completion_port = ff_arch_completion_port_create(COMPLETION_PORT_CONCURRENCY);
 	ff_arch_misc_initialize(core_ctx.completion_port);
 	core_ctx.pending_fibers = ff_stack_create();
@@ -156,7 +155,7 @@ void ff_core_shutdown()
 	ff_stack_delete(core_ctx.pending_fibers);
 	ff_arch_misc_shutdown();
 	ff_arch_completion_port_delete(core_ctx.completion_port);
-	ff_fiber_shutdown(core_ctx.current_fiber);
+	ff_fiber_shutdown();
 }
 
 void ff_core_sleep(int interval)
@@ -174,7 +173,7 @@ void ff_core_threadpool_execute(ff_core_threadpool_func func, void *ctx)
 {
 	struct generic_threadpool_data data;
 
-	data.fiber = core_ctx.current_fiber;
+	data.fiber = ff_fiber_get_current();
 	data.func = func;
 	data.ctx = ctx;
 	ff_threadpool_execute_async(core_ctx.threadpool, generic_core_threadpool_func, &data);
@@ -198,7 +197,7 @@ struct ff_core_timeout_operation_data *ff_core_register_timeout_operation(int ti
 	current_time = ff_arch_misc_get_current_time();
 	timeout_operation_data->expiration_time = current_time + timeout;
 	timeout_operation_data->cancel_timeout_func = cancel_timeout_func;
-	timeout_operation_data->fiber = core_ctx.current_fiber;
+	timeout_operation_data->fiber = ff_fiber_get_current();
 	timeout_operation_data->ctx = ctx;
 	timeout_operation_data->is_expired = 0;
 
@@ -232,28 +231,19 @@ void ff_core_schedule_fiber(struct ff_fiber *fiber)
 void ff_core_yield_fiber()
 {
 	int is_empty;
-	struct ff_fiber *prev_fiber;
+	struct ff_fiber *next_fiber = NULL;
 
-	prev_fiber = core_ctx.current_fiber;
 	is_empty = ff_stack_is_empty(core_ctx.pending_fibers);
 	if (!is_empty)
 	{
-		ff_stack_top(core_ctx.pending_fibers, &core_ctx.current_fiber);
-		ff_assert(core_ctx.current_fiber != NULL);
+		ff_stack_top(core_ctx.pending_fibers, &next_fiber);
+		ff_assert(next_fiber != NULL);
 		ff_stack_pop(core_ctx.pending_fibers);
 	}
 	else
 	{
-		ff_arch_completion_port_get(core_ctx.completion_port, &core_ctx.current_fiber);
-		ff_assert(core_ctx.current_fiber != NULL);
+		ff_arch_completion_port_get(core_ctx.completion_port, &next_fiber);
+		ff_assert(next_fiber != NULL);
 	}
-	if (core_ctx.current_fiber != prev_fiber)
-	{
-		ff_fiber_switch(core_ctx.current_fiber);
-	}
-}
-
-struct ff_fiber *ff_core_get_current_fiber()
-{
-	return core_ctx.current_fiber;
+	ff_fiber_switch(next_fiber);
 }

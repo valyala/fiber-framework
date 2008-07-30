@@ -10,15 +10,14 @@ extern "C" {
 /**
  * @public
  * Initializes the fiber framework.
- * Returns the pointer to the first fiber.
  */
-struct ff_fiber *ff_fiber_initialize();
+void ff_fiber_initialize();
 
 /**
  * @public
  * Shutdowns the fiber framework
  */
-void ff_fiber_shutdown(struct ff_fiber *fiber);
+void ff_fiber_shutdown();
 
 /**
  * @public
