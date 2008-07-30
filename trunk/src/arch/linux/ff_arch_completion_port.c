@@ -132,7 +132,7 @@ void ff_arch_completion_port_put(struct ff_arch_completion_port *completion_port
 		{
 			break;
 		}
-		ff_lunux_fatal_error_check(errno == EINTR, L"write(wr_pipe) failed");
+		ff_linux_fatal_error_check(errno == EINTR, L"write(wr_pipe) failed");
 	}
 	ff_linux_fatal_error_check(bytes_written == sizeof(data), L"error when writing to wr_pipe");
 }
