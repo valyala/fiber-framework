@@ -2,6 +2,7 @@
 
 #include "private/arch/ff_arch_file.h"
 #include "private/ff_core.h"
+#include "ff_linux_file.h"
 #include "ff_linux_completion_port.h"
 #include "ff_linux_error_check.h"
 
