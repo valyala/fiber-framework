@@ -4,7 +4,7 @@
 
 #define ERROR_MESSAGE_MAX_SIZE 4096
 
-void fatal_error(wchar_t *format, ...)
+void fatal_error(const wchar_t *format, ...)
 {
 	static wchar_t error_message[ERROR_MESSAGE_MAX_SIZE];
 	int len;
