@@ -2,6 +2,7 @@
 
 #include "private/arch/ff_arch_file.h"
 #include "private/ff_core.h"
+#include "private/ff_fiber.h"
 #include "ff_linux_file.h"
 #include "ff_linux_completion_port.h"
 #include "ff_linux_error_check.h"
@@ -181,7 +182,7 @@ static void wait_for_io(struct ff_arch_file *file, enum ff_linux_completion_port
 {
 	struct ff_fiber *current_fiber;
 
-	current_fiber = ff_core_get_current_fiber();
+	current_fiber = ff_fiber_get_current();
 	ff_linux_completion_port_register_operation(file_ctx.completion_port, file->fd, operation_type, current_fiber);
 	ff_core_yield_fiber();
 }
