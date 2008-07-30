@@ -2,6 +2,7 @@
 
 #include "private/arch/ff_arch_file.h"
 #include "private/ff_core.h"
+#include "private/ff_fiber.h"
 #include "ff_win_completion_port.h"
 
 struct ff_arch_file
@@ -94,7 +95,7 @@ static int complete_overlapped_io(struct ff_arch_file *file, OVERLAPPED *overlap
 	BOOL result;
 	DWORD bytes_transferred;
 
-	current_fiber = ff_core_get_current_fiber();
+	current_fiber = ff_fiber_get_current();
 	ff_win_completion_port_register_overlapped_data(file_ctx.completion_port, overlapped, current_fiber);
 	ff_core_yield_fiber();
 	ff_win_completion_port_deregister_overlapped_data(file_ctx.completion_port, overlapped);

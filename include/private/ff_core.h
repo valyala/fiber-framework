@@ -49,12 +49,6 @@ struct ff_core_timeout_operation_data *ff_core_register_timeout_operation(int ti
  */
 int ff_core_deregister_timeout_operation(struct ff_core_timeout_operation_data *timeout_operation_data);
 
-/**
- * @public
- * Returns the current fiber
- */
-struct ff_fiber *ff_core_get_current_fiber();
-
 #ifdef __cplusplus
 }
 #endif

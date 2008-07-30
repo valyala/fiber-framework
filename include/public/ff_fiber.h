@@ -52,6 +52,12 @@ FF_API void ff_fiber_start(struct ff_fiber *fiber, void *ctx);
  */
 FF_API void ff_fiber_join(struct ff_fiber *fiber);
 
+/**
+ * @public
+ * Returns the current fiber
+ */
+FF_API struct ff_fiber *ff_fiber_get_current();
+
 #ifdef __cplusplus
 }
 #endif

@@ -23,6 +23,7 @@ struct ff_fiber
 };
 
 static struct ff_fiber main_fiber;
+static struct ff_fiber *current_fiber;
 
 /**
  * @private
@@ -39,26 +40,29 @@ static void generic_arch_fiber_func(void *ctx)
 	ff_assert(0);
 }
 
-struct ff_fiber *ff_fiber_initialize()
+void ff_fiber_initialize()
 {
 	main_fiber.ctx = NULL;
 	main_fiber.func = NULL;
 	main_fiber.stop_event = NULL;
 	main_fiber.arch_fiber = ff_arch_fiber_initialize();
-
-	return &main_fiber;
+	current_fiber = &main_fiber;
 }
 
-void ff_fiber_shutdown(struct ff_fiber *fiber)
+void ff_fiber_shutdown()
 {
-	ff_assert(fiber == &main_fiber);
+	ff_assert(current_fiber == &main_fiber);
 
-	ff_arch_fiber_shutdown(fiber->arch_fiber);
+	ff_arch_fiber_shutdown(main_fiber.arch_fiber);
 }
 
 void ff_fiber_switch(struct ff_fiber *fiber)
 {
-	ff_arch_fiber_switch(fiber->arch_fiber);
+	if (fiber != current_fiber)
+	{
+		current_fiber = fiber;
+		ff_arch_fiber_switch(fiber->arch_fiber);
+	}
 }
 
 struct ff_fiber *ff_fiber_create(ff_fiber_func fiber_func, int stack_size)
@@ -83,6 +87,9 @@ struct ff_fiber *ff_fiber_create(ff_fiber_func fiber_func, int stack_size)
 
 void ff_fiber_delete(struct ff_fiber *fiber)
 {
+	ff_assert(fiber != current_fiber);
+	ff_assert(fiber != &main_fiber);
+
 	ff_arch_fiber_delete(fiber->arch_fiber);
 	ff_event_delete(fiber->stop_event);
 	ff_free(fiber);
@@ -90,11 +97,22 @@ void ff_fiber_delete(struct ff_fiber *fiber)
 
 void ff_fiber_start(struct ff_fiber *fiber, void *ctx)
 {
+	ff_assert(fiber != current_fiber);
+	ff_assert(fiber != &main_fiber);
+
 	fiber->ctx = ctx;
 	ff_core_schedule_fiber(fiber);
 }
 
 void ff_fiber_join(struct ff_fiber *fiber)
 {
+	ff_assert(fiber != current_fiber);
+	ff_assert(fiber != &main_fiber);
+
 	ff_event_wait(fiber->stop_event);
+}
+
+struct ff_fiber *ff_fiber_get_current()
+{
+	return current_fiber;
 }
