@@ -67,6 +67,9 @@ void ff_arch_fiber_delete(struct ff_arch_fiber *fiber)
 
 void ff_arch_fiber_switch(struct ff_arch_fiber *fiber)
 {
-	swapcontext(&current_fiber->context, &fiber->context);
+	struct ucontext_t *current_context;
+
+	current_context = &current_fiber->context;
 	current_fiber = fiber;
+	swapcontext(&current_context, &fiber->context);
 }
