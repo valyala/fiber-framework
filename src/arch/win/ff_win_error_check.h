@@ -7,7 +7,7 @@
 extern "C" {
 #endif
 
-void fatal_error(wchar_t *format, ...);
+void fatal_error(const wchar_t *format, ...);
 
 #define ff_winapi_fatal_error_check(expression, format, ...) \
 	do { \
