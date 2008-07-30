@@ -22,6 +22,8 @@ struct ff_fiber
 	struct ff_arch_fiber *arch_fiber;
 };
 
+static struct ff_fiber main_fiber;
+
 /**
  * @private
  * The entry point for arch_fiber
@@ -39,24 +41,19 @@ static void generic_arch_fiber_func(void *ctx)
 
 struct ff_fiber *ff_fiber_initialize()
 {
-	struct ff_fiber *fiber;
+	main_fiber.ctx = NULL;
+	main_fiber.func = NULL;
+	main_fiber.stop_event = NULL;
+	main_fiber.arch_fiber = ff_arch_fiber_initialize();
 
-	fiber = (struct ff_fiber *) ff_malloc(sizeof(*fiber));
-	fiber->ctx = NULL;
-	fiber->func = NULL;
-	fiber->stop_event = NULL;
-	fiber->arch_fiber = ff_arch_fiber_initialize();
-
-	return fiber;
+	return &main_fiber;
 }
 
-void ff_fiber_shutdown()
+void ff_fiber_shutdown(struct ff_fiber *fiber)
 {
-	struct ff_fiber *current_fiber;
-	
-	current_fiber = ff_core_get_current_fiber();
-	ff_arch_fiber_shutdown(current_fiber->arch_fiber);
-	ff_free(current_fiber);
+	ff_assert(fiber == &main_fiber);
+
+	ff_arch_fiber_shutdown(fiber->arch_fiber);
 }
 
 void ff_fiber_switch(struct ff_fiber *fiber)

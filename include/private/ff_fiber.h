@@ -18,7 +18,7 @@ struct ff_fiber *ff_fiber_initialize();
  * @public
  * Shutdowns the fiber framework
  */
-void ff_fiber_shutdown();
+void ff_fiber_shutdown(struct ff_fiber *fiber);
 
 /**
  * @public
