@@ -6,6 +6,7 @@
 #include "ff_linux_file.h"
 #include "ff_linux_completion_port.h"
 #include "ff_linux_error_check.h"
+#include "ff_linux_misc.h"
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -52,21 +53,6 @@ struct file_data
 };
 
 static struct file_data file_ctx;
-
-static char *wide_to_multibyte_string(const wchar_t *wide_str)
-{
-	size_t mb_str_len;
-	size_t len;
-	char *mb_str;
-
-	mb_str_len = wcstombs(NULL, wide_str, 0) + 1;
-	ff_assert(mb_str_len != 0);
-	mb_str = (char *) ff_malloc(mb_str_len);
-	len = wcstombs(mb_str, wide_str, mb_str_len);
-	ff_assert(len + 1 == mb_str_len);
-
-	return mb_str;
-}
 
 static void threadpool_open_file_func(void *ctx)
 {
@@ -203,7 +189,7 @@ struct ff_arch_file *ff_arch_file_open(const wchar_t *path, enum ff_arch_file_ac
 	char *mb_path;
 	struct threadpool_open_file_data data;
 
-	mb_path = wide_to_multibyte_string(path);
+	mb_path = ff_linux_misc_wide_to_multibyte_string(path);
 	data.path = mb_path;
 	data.access_mode = access_mode;
 	data.fd = -1;
@@ -283,7 +269,7 @@ int ff_arch_file_erase(const wchar_t *path)
 	char *mb_path;
 	struct threadpool_erase_file_data data;
 
-	mb_path = wide_to_multibyte_string(path);
+	mb_path = ff_linux_misc_wide_to_multibyte_string(path);
 	data.path = mb_path;
 	data.is_success = 0;
 	ff_core_threadpool_execute(threadpool_erase_file_func, &data);
@@ -298,8 +284,8 @@ int ff_arch_file_copy(const wchar_t *src_path, const wchar_t *dst_path)
 	char *mb_dst_path;
 	struct threadpool_copy_file_data data;
 
-	mb_src_path = wide_to_multibyte_string(src_path);
-	mb_dst_path = wide_to_multibyte_string(dst_path);
+	mb_src_path = ff_linux_misc_wide_to_multibyte_string(src_path);
+	mb_dst_path = ff_linux_misc_wide_to_multibyte_string(dst_path);
 	data.src_path = mb_src_path;
 	data.dst_path = mb_dst_path;
 	data.is_success = 0;
@@ -316,8 +302,8 @@ int ff_arch_file_move(const wchar_t *src_path, const wchar_t *dst_path)
 	char *mb_dst_path;
 	struct threadpool_move_file_data data;
 
-	mb_src_path = wide_to_multibyte_string(src_path);
-	mb_dst_path = wide_to_multibyte_string(dst_path);
+	mb_src_path = ff_linux_misc_wide_to_multibyte_string(src_path);
+	mb_dst_path = ff_linux_misc_wide_to_multibyte_string(dst_path);
 	data.src_path = mb_src_path;
 	data.dst_path = mb_dst_path;
 	data.is_success = 0;

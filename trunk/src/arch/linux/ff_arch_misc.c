@@ -3,6 +3,7 @@
 #include "ff_linux_file.h"
 #include "ff_linux_net.h"
 #include "ff_linux_error_check.h"
+#include "ff_linux_misc.h"
 
 #include <time.h>
 #include <sys/time.h>
@@ -54,4 +55,19 @@ void ff_arch_misc_sleep(int interval)
 int ff_arch_misc_get_cpus_cnt()
 {
 	return 1;
+}
+
+char *ff_linux_misc_wide_to_multibyte_string(const wchar_t *wide_str)
+{
+	size_t mb_str_len;
+	size_t len;
+	char *mb_str;
+
+	mb_str_len = wcstombs(NULL, wide_str, 0) + 1;
+	ff_assert(mb_str_len != 0);
+	mb_str = (char *) ff_malloc(mb_str_len);
+	len = wcstombs(mb_str, wide_str, mb_str_len);
+	ff_assert(len + 1 == mb_str_len);
+
+	return mb_str;
 }
