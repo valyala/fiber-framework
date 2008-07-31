@@ -96,10 +96,13 @@ int ff_tcp_connect(struct ff_tcp *tcp, const struct ff_arch_net_addr *addr)
 struct ff_tcp *ff_tcp_accept(struct ff_tcp *tcp, struct ff_arch_net_addr *remote_addr)
 {
 	struct ff_arch_tcp *remote_arch_tcp;
-	struct ff_tcp *remote_tcp;
+	struct ff_tcp *remote_tcp = NULL;
 
 	remote_arch_tcp = ff_arch_tcp_accept(tcp->tcp, remote_addr);
-	remote_tcp = create_from_arch_tcp(remote_arch_tcp);
+	if (remote_arch_tcp != NULL)
+	{
+		remote_tcp = create_from_arch_tcp(remote_arch_tcp);
+	}
 	return remote_tcp;
 }
 
