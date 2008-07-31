@@ -1093,18 +1093,21 @@ static void fiberpool_tcp_func(void *ctx)
 	tcp_server = (struct ff_tcp *) ctx;
 	client_addr = ff_arch_net_addr_create();
 	tcp_client = ff_tcp_accept(tcp_server, client_addr);
-	len = ff_tcp_write(tcp_client, "test", 4);
-	len = ff_tcp_flush(tcp_client);
-	if (len != -1)
+	if (tcp_client != NULL)
 	{
-		len = ff_tcp_read(tcp_client, buf, 4);
-		if (len == 4)
+		len = ff_tcp_write(tcp_client, "test", 4);
+		len = ff_tcp_flush(tcp_client);
+		if (len != -1)
 		{
-			int is_equal;
-			is_equal = (memcmp("test", buf, 4) == 0);
+			len = ff_tcp_read(tcp_client, buf, 4);
+			if (len == 4)
+			{
+				int is_equal;
+				is_equal = (memcmp("test", buf, 4) == 0);
+			}
 		}
+		ff_tcp_delete(tcp_client);
 	}
-	ff_tcp_delete(tcp_client);
 	ff_arch_net_addr_delete(client_addr);
 }
 
