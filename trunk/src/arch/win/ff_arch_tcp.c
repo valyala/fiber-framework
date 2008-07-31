@@ -54,11 +54,8 @@ int ff_arch_tcp_bind(struct ff_arch_tcp *tcp, const struct ff_arch_net_addr *add
 
 int ff_arch_tcp_connect(struct ff_arch_tcp *tcp, const struct ff_arch_net_addr *addr)
 {
-	int is_connected;
-
-	is_connected = ff_win_net_connect(tcp->handle, &addr->addr);
-	tcp->is_connected = is_connected;
-	return is_connected;
+	tcp->is_connected = ff_win_net_connect(tcp->handle, &addr->addr);
+	return tcp->is_connected;
 }
 
 struct ff_arch_tcp *ff_arch_tcp_accept(struct ff_arch_tcp *tcp, struct ff_arch_net_addr *remote_addr)
