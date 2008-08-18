@@ -65,8 +65,11 @@ static void threadpool_open_file_func(void *ctx)
 	flags = ((data->access_mode == FF_ARCH_FILE_READ) ? O_RDONLY : (O_WRONLY | O_CREAT | O_TRUNC));
 	flags |= O_LARGEFILE;
 	data->fd = open(data->path, flags, S_IREAD | S_IWRITE);
-	rv = fcntl(data->fd, F_SETFL, O_NONBLOCK);
-	ff_linux_fatal_error_check(rv != -1, L"cannot set nonblocking mode for the file descriptor");
+	if (data->fd != -1)
+	{
+		rv = fcntl(data->fd, F_SETFL, O_NONBLOCK);
+		ff_linux_fatal_error_check(rv != -1, L"cannot set nonblocking mode for the file descriptor");
+	}
 }
 
 static void threadpool_erase_file_func(void *ctx)
