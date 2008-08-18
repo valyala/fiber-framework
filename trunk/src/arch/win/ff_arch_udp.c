@@ -48,12 +48,18 @@ int ff_arch_udp_bind(struct ff_arch_udp *udp, const struct ff_arch_net_addr *add
 	int rv;
 	int is_success = 0;
 
+	if (!udp->is_working)
+	{
+		goto end;
+	}
+
 	rv = bind(udp->handle, (struct sockaddr *) &addr->addr, sizeof(addr->addr));
 	if (rv != SOCKET_ERROR)
 	{
 		is_success = 1;
 	}
 
+end:
 	return is_success;
 }
 
@@ -136,11 +142,12 @@ end:
 
 void ff_arch_udp_disconnect(struct ff_arch_udp *udp)
 {
-	BOOL result;
+	if (udp->is_working)
+	{
+		BOOL result;
 
-	assert(udp->is_working);
-
-	udp->is_working = 0;
-	result = CancelIo((HANDLE) udp->handle);
-	ff_assert(result != FALSE);
+		udp->is_working = 0;
+		result = CancelIo((HANDLE) udp->handle);
+		ff_assert(result != FALSE);
+	}
 }
