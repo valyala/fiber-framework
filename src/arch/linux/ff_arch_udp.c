@@ -129,8 +129,6 @@ void ff_arch_udp_disconnect(struct ff_arch_udp *udp)
 {
 	int rv;
 
-	rv = shutdown(udp->sd_rd, SHUT_RD);
-	ff_assert(rv != -1);
-	rv = shutdown(udp->sd_wr, SHUT_WR);
+	rv = shutdown(udp->sd_rd, SHUT_RDWR);
 	ff_assert(rv != -1);
 }
