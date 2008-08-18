@@ -7,7 +7,7 @@
 struct ff_arch_tcp
 {
 	SOCKET handle;
-	int is_connected;
+	int is_working;
 };
 
 struct ff_arch_tcp *ff_arch_tcp_create()
@@ -17,7 +17,7 @@ struct ff_arch_tcp *ff_arch_tcp_create()
 	tcp = (struct ff_arch_tcp *) ff_malloc(sizeof(*tcp));
 	tcp->handle = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0, WSA_FLAG_OVERLAPPED);
 	ff_winsock_fatal_error_check(tcp->handle != INVALID_SOCKET, L"cannot create tcp socket");
-	tcp->is_connected = 0;
+	tcp->is_working = 1;
 
 	ff_win_net_register_socket(tcp->handle);
 
@@ -38,6 +38,11 @@ int ff_arch_tcp_bind(struct ff_arch_tcp *tcp, const struct ff_arch_net_addr *add
 	int rv;
 	int is_success = 0;
 
+	if (!tcp->is_working)
+	{
+		goto end;
+	}
+
 	rv = bind(tcp->handle, (struct sockaddr *) &addr->addr, sizeof(addr->addr));
 	if (rv != SOCKET_ERROR)
 	{
@@ -49,19 +54,30 @@ int ff_arch_tcp_bind(struct ff_arch_tcp *tcp, const struct ff_arch_net_addr *add
 		is_success = 1;
 	}
 
+end:
 	return is_success;
 }
 
 int ff_arch_tcp_connect(struct ff_arch_tcp *tcp, const struct ff_arch_net_addr *addr)
 {
-	tcp->is_connected = ff_win_net_connect(tcp->handle, &addr->addr);
-	return tcp->is_connected;
+	int is_connected = 0;
+	
+	if (tcp->is_working)
+	{
+		is_connected = ff_win_net_connect(tcp->handle, &addr->addr);
+	}
+	return is_connected;
 }
 
 struct ff_arch_tcp *ff_arch_tcp_accept(struct ff_arch_tcp *tcp, struct ff_arch_net_addr *remote_addr)
 {
-	struct ff_arch_tcp *remote_tcp;
+	struct ff_arch_tcp *remote_tcp = NULL;
 	int is_success;
+
+	if (!tcp->is_working)
+	{
+		goto end;
+	}
 
 	remote_tcp = ff_arch_tcp_create();
 	is_success = ff_win_net_accept(tcp->handle, remote_tcp->handle, &remote_addr->addr);
@@ -70,11 +86,8 @@ struct ff_arch_tcp *ff_arch_tcp_accept(struct ff_arch_tcp *tcp, struct ff_arch_n
 		ff_arch_tcp_delete(remote_tcp);
 		remote_tcp = NULL;
 	}
-	else
-	{
-		remote_tcp->is_connected = 1;
-	}
 
+end:
 	return remote_tcp;
 }
 
@@ -88,7 +101,7 @@ int ff_arch_tcp_read(struct ff_arch_tcp *tcp, void *buf, int len)
 
 	ff_assert(len >= 0);
 
-	if (!tcp->is_connected)
+	if (!tcp->is_working)
 	{
 		goto end;
 	}
@@ -124,7 +137,7 @@ int ff_arch_tcp_write(struct ff_arch_tcp *tcp, const void *buf, int len)
 
 	ff_assert(len >= 0);
 
-	if (!tcp->is_connected)
+	if (!tcp->is_working)
 	{
 		goto end;
 	}
@@ -152,11 +165,12 @@ end:
 
 void ff_arch_tcp_disconnect(struct ff_arch_tcp *tcp)
 {
-	BOOL result;
+	if (tcp->is_working)
+	{
+		BOOL result;
 
-	ff_assert(tcp->is_connected);
-
-	tcp->is_connected = 0;
-	result = CancelIo((HANDLE) tcp->handle);
-	ff_assert(result != FALSE);
+		tcp->is_working = 0;
+		result = CancelIo((HANDLE) tcp->handle);
+		ff_assert(result != FALSE);
+	}
 }
