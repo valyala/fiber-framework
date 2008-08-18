@@ -81,7 +81,7 @@ int ff_arch_tcp_bind(struct ff_arch_tcp *tcp, const struct ff_arch_net_addr *add
 int ff_arch_tcp_connect(struct ff_arch_tcp *tcp, const struct ff_arch_net_addr *addr)
 {
 	int rv;
-	int is_success = 0;
+	int is_success = 1;
 
 again:
 	rv = connect(tcp->sd_wr, (struct sockaddr *) &addr->addr, sizeof(addr->addr));
@@ -91,6 +91,8 @@ again:
 		{
 			goto again;
 		}
+
+		is_success = 0;
 		if (errno == EINPROGRESS)
 		{
 			int err;
