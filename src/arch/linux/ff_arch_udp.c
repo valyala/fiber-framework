@@ -53,9 +53,9 @@ void ff_arch_udp_delete(struct ff_arch_udp *udp)
 	int rv;
 
 	rv = close(udp->sd_rd);
-	assert(rv != -1);
+	ff_assert(rv != -1);
 	rv = close(udp->sd_wr);
-	assert(rv != -1);
+	ff_assert(rv != -1);
 	ff_free(udp);
 }
 
@@ -130,5 +130,9 @@ void ff_arch_udp_disconnect(struct ff_arch_udp *udp)
 	int rv;
 
 	rv = shutdown(udp->sd_rd, SHUT_RDWR);
-	ff_assert(rv != -1);
+	if (rv == -1)
+	{
+		/* socket already has been shutdowned */
+		ff_assert(errno == ENOTCONN);
+	}
 }
