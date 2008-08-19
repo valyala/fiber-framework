@@ -20,14 +20,14 @@
 	{ \
 		if (!(expr)) \
 		{ \
-		return __FUNCTION__ ": ASSERT(" #expr ") failed: " msg; \
+			return "ASSERT(" #expr ") failed: " msg; \
 		} \
 	} while (0)
 
 #define RUN_TEST(test_name) \
 	do \
 	{ \
-		char *msg; \
+		const char *msg; \
 		msg = test_ ## test_name(); \
 		if (msg != NULL) \
 		{ \
@@ -35,7 +35,7 @@
 		} \
 	} while (0)
 
-#define DECLARE_TEST(test_name) static char *test_ ## test_name()
+#define DECLARE_TEST(test_name) static const char *test_ ## test_name()
 
 #pragma region ff_core_tests
 
@@ -641,16 +641,16 @@ DECLARE_TEST(blocking_queue_basic)
 	queue = ff_blocking_queue_create(10);
 	for (i = 0; i < 10; i++)
 	{
-		ff_blocking_queue_put(queue, (void *)i);
+		ff_blocking_queue_put(queue, *(void **)&i);
 	}
 	is_success = ff_blocking_queue_put_with_timeout(queue, (void *)123, 1);
 	ASSERT(!is_success, "queue should be full");
 	for (i = 0; i < 10; i++)
 	{
-		ff_blocking_queue_get(queue, &(void *)data);
+		ff_blocking_queue_get(queue, (const void **)&data);
 		ASSERT(data == i, "wrong value received from the queue");
 	}
-	is_success = ff_blocking_queue_get_with_timeout(queue, &(void *)data, 1);
+	is_success = ff_blocking_queue_get_with_timeout(queue, (const void **)&data, 1);
 	ASSERT(!is_success, "queue should be empty");
 	ff_blocking_queue_delete(queue);
 	ff_core_shutdown();
@@ -673,12 +673,12 @@ DECLARE_TEST(blocking_queue_fiberpool)
 
 	ff_core_initialize();
 	queue = ff_blocking_queue_create(1);
-	is_success = ff_blocking_queue_get_with_timeout(queue, &(void *)data, 1);
+	is_success = ff_blocking_queue_get_with_timeout(queue, (const void **)&data, 1);
 	ASSERT(!is_success, "queue should be empty");
 	ff_core_fiberpool_execute_async(fiberpool_blocking_queue_func, queue);
-	ff_blocking_queue_get(queue, &(void *)data);
+	ff_blocking_queue_get(queue, (const void **)&data);
 	ASSERT(data == 543, "unexpected value received from the queue");
-	is_success = ff_blocking_queue_get_with_timeout(queue, &(void *)data, 1);
+	is_success = ff_blocking_queue_get_with_timeout(queue, (const void **)&data, 1);
 	ASSERT(!is_success, "queue shouldn't have values");
 	ff_blocking_queue_delete(queue);
 	ff_core_shutdown();
@@ -721,16 +721,16 @@ DECLARE_TEST(blocking_stack_basic)
 	stack = ff_blocking_stack_create(10);
 	for (i = 0; i < 10; i++)
 	{
-		ff_blocking_stack_push(stack, (void *)i);
+		ff_blocking_stack_push(stack, *(void **)&i);
 	}
 	is_success = ff_blocking_stack_push_with_timeout(stack, (void *)1234, 1);
 	ASSERT(!is_success, "stack should be fulll");
 	for (i = 9; i >= 0; i--)
 	{
-		ff_blocking_stack_pop(stack, &(void *)data);
+		ff_blocking_stack_pop(stack, (const void **)&data);
 		ASSERT(data == i, "wrong value retrieved from the stack");
 	}
-	is_success = ff_blocking_stack_pop_with_timeout(stack, &(void *)data, 1);
+	is_success = ff_blocking_stack_pop_with_timeout(stack, (const void **)&data, 1);
 	ASSERT(!is_success, "stack should be empty");
 	ff_blocking_stack_delete(stack);
 	ff_core_shutdown();
@@ -753,12 +753,12 @@ DECLARE_TEST(blocking_stack_fiberpool)
 
 	ff_core_initialize();
 	stack = ff_blocking_stack_create(1);
-	is_success = ff_blocking_stack_pop_with_timeout(stack, &(void *)data, 1);
+	is_success = ff_blocking_stack_pop_with_timeout(stack, (const void **)&data, 1);
 	ASSERT(!is_success, "stack should be empty");
 	ff_core_fiberpool_execute_async(fiberpool_blocking_stack_func, stack);
-	ff_blocking_stack_pop(stack, &(void *)data);
+	ff_blocking_stack_pop(stack, (const void **)&data);
 	ASSERT(data == 543, "unexpected value received from the stack");
-	is_success = ff_blocking_stack_pop_with_timeout(stack, &(void *)data, 1);
+	is_success = ff_blocking_stack_pop_with_timeout(stack, (const void **)&data, 1);
 	ASSERT(!is_success, "stack shouldn't have values");
 	ff_blocking_stack_delete(stack);
 	ff_core_shutdown();
@@ -1275,7 +1275,7 @@ DECLARE_TEST(udp_all)
 /* end of ff_udp tests */
 #pragma endregion
 
-static char *run_all_tests()
+static const char *run_all_tests()
 {
 	RUN_TEST(core_all);
 	RUN_TEST(fiber_all);
@@ -1294,7 +1294,7 @@ static char *run_all_tests()
 
 int main(int argc, char* argv[])
 {
-	char *msg;
+	const char *msg;
 
 	msg = run_all_tests();
 	if (msg != NULL)
