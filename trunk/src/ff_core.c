@@ -187,7 +187,6 @@ void ff_core_fiberpool_execute_async(ff_core_fiberpool_func func, void *ctx)
 
 struct ff_core_timeout_operation_data *ff_core_register_timeout_operation(int timeout, ff_core_cancel_timeout_func cancel_timeout_func, void *ctx)
 {
-	int is_success = 1;
 	struct ff_core_timeout_operation_data *timeout_operation_data;
 	int64_t current_time;
 
