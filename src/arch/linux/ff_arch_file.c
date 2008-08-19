@@ -96,7 +96,7 @@ static void threadpool_copy_file_func(void *ctx)
 	{
 		return;
 	}
-	dst_fd = open(data->dst_path, O_WRONLY | O_CREAT | O_EXCL);
+	dst_fd = open(data->dst_path, O_WRONLY | O_CREAT | O_EXCL, S_IRUSR | S_IWUSR);
 	if (dst_fd == -1)
 	{
 		rv = close(src_fd);
