@@ -53,7 +53,7 @@ void ff_mutex_unlock(struct ff_mutex *mutex)
 	{
 		struct ff_fiber *fiber;
 
-		ff_stack_top(mutex->pending_fibers, &fiber);
+		ff_stack_top(mutex->pending_fibers, (const void **) &fiber);
 		ff_stack_pop(mutex->pending_fibers);
 		ff_core_schedule_fiber(fiber);
 	}
