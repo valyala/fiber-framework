@@ -35,7 +35,7 @@ static void threadpool_addr_resolve_func(void *ctx)
 	{
 		ff_assert(addr_info_ptr != NULL);
 		ff_assert(addr_info_ptr->ai_addrlen == sizeof(data->addr->addr));
-		memcpy(&data->addr->addr, &addr_info_ptr->ai_addr, sizeof(data->addr->addr));
+		memcpy(&data->addr->addr, addr_info_ptr->ai_addr, sizeof(data->addr->addr));
 		freeaddrinfo(addr_info_ptr);
 		data->is_success = 1;
 		data->addr->addr.sin_port = htons((uint16_t) data->port);
