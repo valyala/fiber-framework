@@ -53,9 +53,9 @@ void ff_arch_tcp_delete(struct ff_arch_tcp *tcp)
 	int rv;
 
 	rv = close(tcp->sd_rd);
-	assert(rv != -1);
+	ff_assert(rv != -1);
 	rv = close(tcp->sd_wr);
-	assert(rv != -1);
+	ff_assert(rv != -1);
 	ff_free(tcp);
 }
 
@@ -194,5 +194,9 @@ void ff_arch_tcp_disconnect(struct ff_arch_tcp *tcp)
 	int rv;
 
 	rv = shutdown(tcp->sd_rd, SHUT_RDWR);
-	ff_assert(rv != -1);
+	if (rv == -1)
+	{
+		/* socket already has been shutdowned */
+		ff_assert(errno == ENOTCONN);
+	}
 }
