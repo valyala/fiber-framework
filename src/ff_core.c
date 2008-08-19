@@ -235,13 +235,13 @@ void ff_core_yield_fiber()
 	is_empty = ff_stack_is_empty(core_ctx.pending_fibers);
 	if (!is_empty)
 	{
-		ff_stack_top(core_ctx.pending_fibers, &next_fiber);
+		ff_stack_top(core_ctx.pending_fibers, (const void **) &next_fiber);
 		ff_assert(next_fiber != NULL);
 		ff_stack_pop(core_ctx.pending_fibers);
 	}
 	else
 	{
-		ff_arch_completion_port_get(core_ctx.completion_port, &next_fiber);
+		ff_arch_completion_port_get(core_ctx.completion_port, (const void **) &next_fiber);
 		ff_assert(next_fiber != NULL);
 	}
 	ff_fiber_switch(next_fiber);
