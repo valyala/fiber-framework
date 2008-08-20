@@ -14,7 +14,7 @@ void fatal_error(const wchar_t *format, ...)
 
 	va_list args_ptr;
 	va_start(args_ptr, format);
-	len = fprintf(stderr, mb_format, args_ptr);
+	len = vfprintf(stderr, mb_format, args_ptr);
 	ff_assert(len >= 0);
 	va_end(args_ptr);
 
