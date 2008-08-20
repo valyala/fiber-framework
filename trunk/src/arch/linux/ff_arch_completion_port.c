@@ -147,6 +147,12 @@ void ff_linux_completion_port_register_operation(struct ff_arch_completion_port 
 	event.events = EPOLLET | EPOLLONESHOT | epoll_operation;
 	event.data.ptr = (void *) data;
 
-	rv = epoll_ctl(completion_port->epoll_fd, EPOLL_CTL_ADD, fd, &event);
-	ff_linux_fatal_error_check(rv != -1, L"epoll_ctl() failed");
+	rv = epoll_ctl(completion_port->epoll_fd, EPOLL_CTL_MOD, fd, &event);
+	if (rv == -1)
+	{
+		ff_linux_fatal_error_check(errno == ENOENT, L"epoll_ctl(EPOLL_CTL_MOD) failed");
+		/* the file descriptor isn't in the epoll_fd. Try to add it */
+		rv = epoll_ctl(completion_port->epoll_fd, EPOLL_CTL_ADD, fd, &event);
+		ff_linux_fatal_error_check(rv != -1, L"epoll_ctl(EPOLL_CTL_ADD) failed");
+	}
 }
