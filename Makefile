@@ -1,4 +1,4 @@
-CFLAGS=-Wall -I./include -DHAS_STDINT_H -D_GNU_SOURCE -g
+CFLAGS=-Wall -fpic -g -I./include -DHAS_STDINT_H -D_GNU_SOURCE
 LDFLAGS=-lpthread -shared
 CC=gcc
 
