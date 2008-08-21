@@ -86,7 +86,7 @@ void ff_arch_net_addr_get_broadcast_addr(const struct ff_arch_net_addr *addr, co
 	struct sockaddr_in tmp_addr;
 
 	memcpy(&tmp_addr, &addr->addr, sizeof(tmp_addr));
-	tmp_addr.sin_addr.s_addr = addr->addr.sin_addr.s_addr | ~(net_mask->addr.sin_addr.s_addr);
+	tmp_addr.sin_addr.s_addr |= ~(net_mask->addr.sin_addr.s_addr);
 	memcpy(&broadcast_addr->addr, &tmp_addr, sizeof(tmp_addr));
 }
 
