@@ -6,19 +6,6 @@ SRC_DIR=src
 ARCH_DIR=$(SRC_DIR)/arch/linux
 TESTS_DIR=unit-tests
 
-ARCH_SRCS= \
-	$(ARCH_DIR)/ff_arch_completion_port.c \
-	$(ARCH_DIR)/ff_arch_fiber.c \
-	$(ARCH_DIR)/ff_arch_file.c \
-	$(ARCH_DIR)/ff_arch_misc.c \
-	$(ARCH_DIR)/ff_arch_mutex.c \
-	$(ARCH_DIR)/ff_arch_net_addr.c \
-	$(ARCH_DIR)/ff_arch_tcp.c \
-	$(ARCH_DIR)/ff_arch_thread.c \
-	$(ARCH_DIR)/ff_arch_udp.c \
-	$(ARCH_DIR)/ff_linux_error_check.c \
-	$(ARCH_DIR)/ff_linux_net.c
-
 ARCH_OBJS= \
 	$(ARCH_DIR)/ff_arch_completion_port.o \
 	$(ARCH_DIR)/ff_arch_fiber.o \
@@ -31,29 +18,6 @@ ARCH_OBJS= \
 	$(ARCH_DIR)/ff_arch_udp.o \
 	$(ARCH_DIR)/ff_linux_error_check.o \
 	$(ARCH_DIR)/ff_linux_net.o
-
-MAIN_SRCS= \
-	$(SRC_DIR)/ff_blocking_queue.c \
-	$(SRC_DIR)/ff_blocking_stack.c \
-	$(SRC_DIR)/ff_container.c \
-	$(SRC_DIR)/ff_core.c \
-	$(SRC_DIR)/ff_dictionary.c \
-	$(SRC_DIR)/ff_event.c \
-	$(SRC_DIR)/ff_fiber.c \
-	$(SRC_DIR)/ff_fiberpool.c \
-	$(SRC_DIR)/ff_file.c \
-	$(SRC_DIR)/ff_hash.c \
-	$(SRC_DIR)/ff_malloc.c \
-	$(SRC_DIR)/ff_mutex.c \
-	$(SRC_DIR)/ff_pool.c \
-	$(SRC_DIR)/ff_queue.c \
-	$(SRC_DIR)/ff_read_stream_buffer.c \
-	$(SRC_DIR)/ff_semaphore.c \
-	$(SRC_DIR)/ff_stack.c \
-	$(SRC_DIR)/ff_tcp.c \
-	$(SRC_DIR)/ff_threadpool.c \
-	$(SRC_DIR)/ff_udp.c \
-	$(SRC_DIR)/ff_write_stream_buffer.c
 
 MAIN_OBJS= \
 	$(SRC_DIR)/ff_blocking_queue.o \
@@ -78,34 +42,22 @@ MAIN_OBJS= \
 	$(SRC_DIR)/ff_udp.o \
 	$(SRC_DIR)/ff_write_stream_buffer.o
 
-FF_LIB_SRCS= \
-	$(ARCH_SRCS) \
-	$(MAIN_SRCS)
-
 FF_LIB_OBJS= \
 	$(ARCH_OBJS) \
 	$(MAIN_OBJS)
 
-ALL_SRCS= \
-	$(FF_LIB_SRCS)
-
 ALL_OBJS= \
 	$(FF_LIB_OBJS)
 
-.c:
-	$(CC) $(CFLAGS) $@.c $(LDFLAGS) -o $@
-
 default: all
 
-all: lib-ff.so
+all: libfiber-framework.so tests
 
-lib-ff.so: $(FF_LIB_OBJS)
+libfiber-framework.so: $(FF_LIB_OBJS)
 	$(CC) $(FF_LIB_OBJS) $(LDFLAGS) -o $@
 
-clean:
-	rm -f $(ALL_OBJS) lib-ff.so
+tests: libfiber-framework.so
+	$(CC) -g -I./include -DHAS_STDINT_H -lfiber-framework -L. -o $@ $(TESTS_DIR)/unit-tests.c
 
-touch:
-	touch $(ALL_SRCS)
-	touch include/private/*.h include/private/arch/*.h include/public/*.h include/public/arch/*.h
-	touch Makefile
+clean:
+	rm -f $(ALL_OBJS) libfiber-framework.so tests
