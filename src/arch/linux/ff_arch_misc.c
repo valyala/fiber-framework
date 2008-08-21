@@ -7,6 +7,8 @@
 
 #include <time.h>
 #include <sys/time.h>
+#include <stdio.h>
+#include <string.h>
 
 void ff_arch_misc_initialize(struct ff_arch_completion_port *completion_port)
 {
@@ -52,9 +54,50 @@ void ff_arch_misc_sleep(int interval)
 	}
 }
 
+#define MAX_CPUINFO_LINE_SIZE 0x10000
+
 int ff_arch_misc_get_cpus_cnt()
 {
-	return 1;
+	static int cpus_cnt = 0;
+
+	if (cpus_cnt == 0)
+	{
+		FILE *fp;
+		int rv;
+		char *line;
+
+		fp = fopen("/proc/cpuinfo", "r");
+		if (fp == NULL)
+		{
+			cpus_cnt = 1;
+			goto end;
+		}
+
+		line = (char *) ff_malloc(MAX_CPUINFO_LINE_SIZE);
+
+		for (;;)
+		{
+			char *s;
+
+			s = fgets(line, MAX_CPUINFO_LINE_SIZE, fp);
+			if (s == NULL)
+			{
+				break;
+			}
+			if (memcmp(line, "processor", sizeof("processor") - 1) == 0)
+			{
+				cpus_cnt++;
+			}
+		}
+		ff_free(line);
+		rv = fclose(fp);
+		ff_assert(rv == 0);
+	}
+
+end:
+	ff_assert(cpus_cnt > 0);
+
+	return cpus_cnt;
 }
 
 char *ff_linux_misc_wide_to_multibyte_string(const wchar_t *wide_str)
