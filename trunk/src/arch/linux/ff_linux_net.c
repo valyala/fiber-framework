@@ -33,3 +33,8 @@ void ff_linux_net_wait_for_io(int sd, enum ff_linux_net_io_type io_type)
 	ff_linux_completion_port_register_operation(net_ctx.completion_port, sd, operation_type, current_fiber);
 	ff_core_yield_fiber();
 }
+
+void ff_linux_net_wakeup_fiber(struct ff_fiber *fiber)
+{
+	ff_arch_completion_port_put(net_ctx.completion_port, fiber);
+}
