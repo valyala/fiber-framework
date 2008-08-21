@@ -193,8 +193,13 @@ void ff_arch_tcp_disconnect(struct ff_arch_tcp *tcp)
 {
 	int rv;
 
-	rv = shutdown(tcp->sd_rd, SHUT_RDWR);
-	if (rv == -1)
+	rv = shutdown(tcp->sd_rd, SHUT_RD);
+	if (rv != -1)
+	{
+		rv = shutdown(tcp->sd_wr, SHUT_WR);
+		ff_assert(rv != -1);
+	}
+	else
 	{
 		/* socket already has been shutdowned */
 		ff_assert(errno == ENOTCONN);
