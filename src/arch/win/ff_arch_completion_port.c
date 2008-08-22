@@ -4,6 +4,8 @@
 #include "ff_win_completion_port.h"
 #include "private/ff_dictionary.h"
 
+#define OVERLAPPED_DICTIONARY_ORDER 4
+
 struct ff_arch_completion_port
 {
 	HANDLE handle;
@@ -17,7 +19,7 @@ struct ff_arch_completion_port *ff_arch_completion_port_create(int concurrency)
 	completion_port = (struct ff_arch_completion_port *) ff_malloc(sizeof(*completion_port));
 	completion_port->handle = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, (ULONG_PTR) NULL, concurrency);
 	ff_winapi_fatal_error_check(completion_port->handle != NULL, L"cannot create completion port");
-	completion_port->overlapped_dictionary = ff_dictionary_create();
+	completion_port->overlapped_dictionary = ff_dictionary_create(OVERLAPPED_DICTIONARY_ORDER);
 	return completion_port;
 }
 
