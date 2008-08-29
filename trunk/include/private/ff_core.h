@@ -1,7 +1,7 @@
 #ifndef FF_CORE_PRIVATE
 #define FF_CORE_PRIVATE
 
-#include "public/ff_core.h"
+#include "ff/ff_core.h"
 #include "private/ff_fiber.h"
 #include "private/arch/ff_arch_completion_port.h"
 

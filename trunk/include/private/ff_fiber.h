@@ -1,7 +1,7 @@
 #ifndef FF_FIBER_PRIVATE
 #define FF_FIBER_PRIVATE
 
-#include "public/ff_fiber.h"
+#include "ff/ff_fiber.h"
 
 #ifdef __cplusplus
 extern "C" {

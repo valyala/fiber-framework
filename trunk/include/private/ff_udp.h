@@ -1,7 +1,7 @@
 #ifndef FF_UDP_PRIVATE
 #define FF_UDP_PRIVATE
 
-#include "public/ff_udp.h"
+#include "ff/ff_udp.h"
 
 #ifdef __cplusplus
 extern "C" {

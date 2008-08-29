@@ -1,7 +1,7 @@
 #ifndef FF_HASH_PUBLIC
 #define FF_HASH_PUBLIC
 
-#include "public/ff_common.h"
+#include "ff/ff_common.h"
 
 #ifdef __cplusplus
 extern "C" {
