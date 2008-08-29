@@ -7,7 +7,7 @@ extern "C" {
 
 struct ff_dictionary;
 
-struct ff_dictionary *ff_dictionary_create();
+struct ff_dictionary *ff_dictionary_create(int order);
 
 void ff_dictionary_delete(struct ff_dictionary *dictionary);
 
