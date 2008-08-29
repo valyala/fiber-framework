@@ -1,7 +1,7 @@
 #ifndef FF_FILE_PUBLIC
 #define FF_FILE_PUBLIC
 
-#include "public/ff_common.h"
+#include "ff/ff_common.h"
 
 #ifdef __cplusplus
 extern "C" {

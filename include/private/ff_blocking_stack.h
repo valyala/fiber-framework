@@ -1,7 +1,7 @@
 #ifndef FF_BLOCKING_STACK_PRIVATE
 #define FF_BLOCKING_STACK_PRIVATE
 
-#include "public/ff_blocking_stack.h"
+#include "ff/ff_blocking_stack.h"
 
 #ifdef __cplusplus
 extern "C" {

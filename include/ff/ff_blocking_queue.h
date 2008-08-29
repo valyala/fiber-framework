@@ -1,7 +1,7 @@
 #ifndef FF_BLOCKING_QUEUE_PUBLIC
 #define FF_BLOCKING_QUEUE_PUBLIC
 
-#include "public/ff_common.h"
+#include "ff/ff_common.h"
 
 #ifdef __cplusplus
 extern "C" {

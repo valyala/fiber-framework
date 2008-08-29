@@ -5,7 +5,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#include "public/ff_common.h"
+#include "ff/ff_common.h"
 
 #include "private/ff_malloc.h"
 #include "private/ff_assert.h"

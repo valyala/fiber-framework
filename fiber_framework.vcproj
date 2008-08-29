@@ -729,65 +729,65 @@
 				</Filter>
 			</Filter>
 			<Filter
-				Name="public"
+				Name="ff"
 				>
 				<File
-					RelativePath=".\include\public\ff_blocking_queue.h"
+					RelativePath=".\include\ff\ff_blocking_queue.h"
 					>
 				</File>
 				<File
-					RelativePath=".\include\public\ff_blocking_stack.h"
+					RelativePath=".\include\ff\ff_blocking_stack.h"
 					>
 				</File>
 				<File
-					RelativePath=".\include\public\ff_common.h"
+					RelativePath=".\include\ff\ff_common.h"
 					>
 				</File>
 				<File
-					RelativePath=".\include\public\ff_core.h"
+					RelativePath=".\include\ff\ff_core.h"
 					>
 				</File>
 				<File
-					RelativePath=".\include\public\ff_event.h"
+					RelativePath=".\include\ff\ff_event.h"
 					>
 				</File>
 				<File
-					RelativePath=".\include\public\ff_fiber.h"
+					RelativePath=".\include\ff\ff_fiber.h"
 					>
 				</File>
 				<File
-					RelativePath=".\include\public\ff_file.h"
+					RelativePath=".\include\ff\ff_file.h"
 					>
 				</File>
 				<File
-					RelativePath=".\include\public\ff_hash.h"
+					RelativePath=".\include\ff\ff_hash.h"
 					>
 				</File>
 				<File
-					RelativePath=".\include\public\ff_mutex.h"
+					RelativePath=".\include\ff\ff_mutex.h"
 					>
 				</File>
 				<File
-					RelativePath=".\include\public\ff_pool.h"
+					RelativePath=".\include\ff\ff_pool.h"
 					>
 				</File>
 				<File
-					RelativePath=".\include\public\ff_semaphore.h"
+					RelativePath=".\include\ff\ff_semaphore.h"
 					>
 				</File>
 				<File
-					RelativePath=".\include\public\ff_tcp.h"
+					RelativePath=".\include\ff\ff_tcp.h"
 					>
 				</File>
 				<File
-					RelativePath=".\include\public\ff_udp.h"
+					RelativePath=".\include\ff\ff_udp.h"
 					>
 				</File>
 				<Filter
 					Name="arch"
 					>
 					<File
-						RelativePath=".\include\public\arch\ff_arch_net_addr.h"
+						RelativePath=".\include\ff\arch\ff_arch_net_addr.h"
 						>
 					</File>
 				</Filter>

@@ -1,7 +1,7 @@
 #ifndef FF_ARCH_NET_ADDR_PUBLIC
 #define FF_ARCH_NET_ADDR_PUBLIC
 
-#include "public/ff_common.h"
+#include "ff/ff_common.h"
 
 #ifdef __cplusplus
 extern "C" {

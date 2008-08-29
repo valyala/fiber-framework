@@ -1,8 +1,8 @@
 #ifndef FF_UDP_PUBLIC
 #define FF_UDP_PUBLIC
 
-#include "public/ff_common.h"
-#include "public/arch/ff_arch_net_addr.h"
+#include "ff/ff_common.h"
+#include "ff/arch/ff_arch_net_addr.h"
 
 #ifdef __cplusplus
 extern "C" {
