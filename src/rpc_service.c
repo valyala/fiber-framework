@@ -34,7 +34,7 @@ PARAMS_LIST ::= PARAM { PARAM }
 PARAM ::= TYPE id
 TYPE ::= "uint32" | "uint64" | "int32" | "int64" | "string" | "blob"
 
-id = [a-z][a-z\d]*
+id = [a-z_][a-z_\d]*
 
 static const struct rpc_param_vtable *foo_request_param_vtables[] =
 {
@@ -74,13 +74,19 @@ static const struct rpc_method foo_method =
 	foo_response_params_cnt
 };
 
-extern const struct rpc_method *service_methods[] =
+static const struct rpc_method *service_methods[] =
 {
 	&foo_method,
 	&bar_method
 };
 
-extern const int service_methods_cnt = 2;
+static const struct rpc_service service =
+{
+	service_methods,
+	service_methods_cnt
+};
+
+extern const struct rpc_service *foo_service_extern = &service;
 
 struct rpc_param_vtable
 {
@@ -322,37 +328,8 @@ void rpc_method_invoke_callback(struct rpc_method *method, struct rpc_data *data
 struct rpc_service
 {
 	struct rpc_method **methods;
-	void *ctx;
 	int methods_cnt;
 };
-
-#define MAX_METHODS_CNT 0x100
-
-struct rpc_service *rpc_service_create(void *service_ctx, struct rpc_method **methods, int methods_cnt)
-{
-	struct rpc_service *service;
-
-	ff_assert(methods_cnt > 0);
-	ff_assert(methods_cnt < MAX_METHODS_CNT);
-
-	service = (struct rpc_service *) ff_malloc(sizeof(*service));
-	service->methods = methods;
-	service->ctx = service_ctx;
-	service->methods_cnt = methods_cnt;
-}
-
-void rpc_service_delete(struct rpc_service *service)
-{
-	ff_free(service);
-}
-
-void *rpc_service_get_ctx(struct rpc_service *service)
-{
-	void *service_ctx;
-
-	service_ctx = service->ctx;
-	return service_ctx;
-}
 
 struct rpc_method *rpc_service_get_method(struct rpc_service *service, uint8_t method_id)
 {
@@ -458,7 +435,7 @@ void rpc_data_delete(struct rpc_data *data)
 	ff_free(data);
 }
 
-int rpc_data_process_next_rpc(struct rpc_service *service, struct rpc_stream *stream)
+int rpc_data_process_next_rpc(struct rpc_service *service, void *service_ctx, struct rpc_stream *stream)
 {
 	struct rpc_data *data;
 	int is_success = 0;
@@ -466,9 +443,6 @@ int rpc_data_process_next_rpc(struct rpc_service *service, struct rpc_stream *st
 	data = read_request(service, stream);
 	if (data != NULL)
 	{
-		void *service_ctx;
-
-		service_ctx = rpc_service_get_ctx(service);
 		rpc_method_invoke_callback(data->method, data, service_ctx);
 		is_success = write_response(data, stream);
 		rpc_data_delete(data);
@@ -508,4 +482,12 @@ void rpc_data_get_response_param_value(struct rpc_data *data, int param_idx, voi
 void rpc_data_set_request_param_value(struct rpc_data *data, int param_idx, const void *value)
 {
 	rpc_method_set_request_param_value(data->method, param_idx, data->request_params, value);
+}
+
+uint32_t rpc_data_get_request_hash(struct rpc_data *data, uint32_t start_value)
+{
+	uint32_t hash;
+
+	hash = rpc_method_get_request_hash(data->method, start_value, data->request_params);
+	return hash;
 }
