@@ -36,6 +36,50 @@ TYPE ::= "uint32" | "uint64" | "int32" | "int64" | "string" | "blob"
 
 id = [a-z_][a-z_\d]*
 
+struct rpc_server_params
+{
+	struct rpc_service *service;
+	void *service_ctx;
+	struct ff_arch_net_addr *listen_addr;
+};
+
+#define RPC_SERVER_FIBER_STACK_SIZE 0x10000
+
+struct rpc_server
+{
+	struct ff_fiber *fiber;
+};
+
+static void main_server_func(void *ctx)
+{
+	struct rpc_server *server;
+
+	server = (struct rpc_server *) ctx;
+
+}
+
+struct rpc_server *rpc_server_create(const struct rpc_server_params *params)
+{
+	struct rpc_server *server;
+
+	server = (struct rpc_server *) ff_malloc(sizeof(*server));
+
+	server->fiber = ff_fiber_create(main_server_func, SERVER_FIBER_STACK_SIZE);
+	ff_fiber_start(server->fiber, server);
+
+	return server;
+}
+
+void rpc_server_delete(struct rpc_server *server)
+{
+}
+
+service_ctx = service_create();
+
+server = rpc_server_create(&params);
+rpc_server_delete(server);
+
+
 static const struct rpc_param_vtable *foo_request_param_vtables[] =
 {
 	&rpc_uint32_param_vtable,
