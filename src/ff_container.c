@@ -39,6 +39,10 @@ struct ff_container_entry *ff_container_add_entry(struct ff_container *container
 	entry->next = container->head;
 	entry->prev_ptr = &container->head;
 	entry->data = data;
+	if (container->head != NULL)
+	{
+		container->head->prev_ptr = &entry->next;
+	}
 	container->head = entry;
 
 	return entry;
