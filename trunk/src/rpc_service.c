@@ -1,4 +1,4 @@
-service foo
+interface foo
 {
 	method bar
 	{
@@ -25,7 +25,7 @@ service foo
 	}
 }
 
-SERVICE ::= "service" id "{" METHODS_LIST "}"
+INTERFACE ::= "interface" id "{" METHODS_LIST "}"
 METHODS_LIST ::= METHOD { METHOD }
 METHOD ::= "method" id "{" REQUEST_PARAMS RESPONSE_PARAMS "}"
 REQUEST_PARAMS ::= "request" "{" PARAMS_LIST "}"
@@ -38,7 +38,7 @@ id = [a-z_][a-z_\d]*
 
 struct rpc_server_params
 {
-	struct rpc_service *service;
+	struct rpc_interface *interface;
 	void *service_ctx;
 	struct ff_arch_net_addr *listen_addr;
 };
@@ -47,7 +47,7 @@ struct rpc_server_params
 
 struct rpc_server
 {
-	struct ff_fiber *fiber;
+	struct ff_fiber *main_fiber;
 };
 
 static void main_server_func(void *ctx)
@@ -55,7 +55,6 @@ static void main_server_func(void *ctx)
 	struct rpc_server *server;
 
 	server = (struct rpc_server *) ctx;
-
 }
 
 struct rpc_server *rpc_server_create(const struct rpc_server_params *params)
@@ -64,19 +63,24 @@ struct rpc_server *rpc_server_create(const struct rpc_server_params *params)
 
 	server = (struct rpc_server *) ff_malloc(sizeof(*server));
 
-	server->fiber = ff_fiber_create(main_server_func, SERVER_FIBER_STACK_SIZE);
-	ff_fiber_start(server->fiber, server);
+	server->main_fiber = ff_fiber_create(main_server_func, SERVER_FIBER_STACK_SIZE);
+	ff_fiber_start(server->main_fiber, server);
 
 	return server;
 }
 
 void rpc_server_delete(struct rpc_server *server)
 {
+	ff_fiber_join(server->main_fiber);
+	ff_free(server);
 }
 
-service_ctx = service_create();
+params.interface = foo_interface_extern;
+params.service_ctx = foo_service_create();
+params.listen_addr = listen_addr;
 
 server = rpc_server_create(&params);
+wait();
 rpc_server_delete(server);
 
 
@@ -118,19 +122,19 @@ static const struct rpc_method foo_method =
 	foo_response_params_cnt
 };
 
-static const struct rpc_method *service_methods[] =
+static const struct rpc_method *interface_methods[] =
 {
 	&foo_method,
 	&bar_method
 };
 
-static const struct rpc_service service =
+static const struct rpc_interface interface =
 {
-	service_methods,
-	service_methods_cnt
+	interface_methods,
+	interface_methods_cnt
 };
 
-extern const struct rpc_service *foo_service_extern = &service;
+extern const struct rpc_interface *foo_interface_extern = &interface;
 
 struct rpc_param_vtable
 {
@@ -369,19 +373,19 @@ void rpc_method_invoke_callback(struct rpc_method *method, struct rpc_data *data
 	method->callback(data, service_ctx);
 }
 
-struct rpc_service
+struct rpc_interface
 {
 	struct rpc_method **methods;
 	int methods_cnt;
 };
 
-struct rpc_method *rpc_service_get_method(struct rpc_service *service, uint8_t method_id)
+struct rpc_method *rpc_interface_get_method(struct rpc_interface *interface, uint8_t method_id)
 {
 	struct rpc_method *method = NULL;
 
 	if (method_id >= 0 && method_id < serivce->methods_cnt)
 	{
-		method = service->methods[method_id];
+		method = interface->methods[method_id];
 	}
 	return method;
 }
@@ -394,7 +398,7 @@ struct rpc_data
 	uint8_t method_id;
 };
 
-static struct rpc_data *read_request(struct rpc_service *service, struct rpc_stream *stream)
+static struct rpc_data *read_request(struct rpc_interface *interface, struct rpc_stream *stream)
 {
 	uint8_t method_id;
 	int bytes_read;
@@ -407,7 +411,7 @@ static struct rpc_data *read_request(struct rpc_service *service, struct rpc_str
 	{
 		goto end;
 	}
-	method = rpc_service_get_method(service, method_id);
+	method = rpc_interface_get_method(interface, method_id);
 	if (method == NULL)
 	{
 		goto end;
@@ -479,12 +483,12 @@ void rpc_data_delete(struct rpc_data *data)
 	ff_free(data);
 }
 
-int rpc_data_process_next_rpc(struct rpc_service *service, void *service_ctx, struct rpc_stream *stream)
+int rpc_data_process_next_rpc(struct rpc_interface *interface, void *service_ctx, struct rpc_stream *stream)
 {
 	struct rpc_data *data;
 	int is_success = 0;
 
-	data = read_request(service, stream);
+	data = read_request(interface, stream);
 	if (data != NULL)
 	{
 		rpc_method_invoke_callback(data->method, data, service_ctx);
