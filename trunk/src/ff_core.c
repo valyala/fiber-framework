@@ -43,6 +43,13 @@ struct generic_threadpool_data
 	void *ctx;
 };
 
+struct deferred_func_data
+{
+	ff_core_fiberpool_func func;
+	void *ctx;
+	struct ff_core_timeout_operation_data *timeout_operation_data;
+};
+
 struct core_data
 {
 	struct ff_arch_completion_port *completion_port;
@@ -67,6 +74,16 @@ static void generic_core_threadpool_func(void *ctx)
 	ff_arch_completion_port_put(core_ctx.completion_port, data->fiber);
 }
 
+static void deferred_func(void *ctx)
+{
+	struct deferred_func_data *data;
+
+	data = (struct deferred_func_data *) ctx;
+	data->func(data->ctx);
+	ff_core_deregister_timeout_operation(data->timeout_operation_data);
+	ff_free(data);
+}
+
 static void threadpool_sleep(void *ctx)
 {
 	struct threadpool_sleep_data *data;
@@ -86,6 +103,11 @@ static void internal_sleep(int interval)
 static void sleep_timeout_func(struct ff_fiber *fiber, void *ctx)
 {
 	ff_core_schedule_fiber(fiber);
+}
+
+static void deferred_timeout_func(struct ff_fiber *fiber, void *ctx)
+{
+	ff_core_fiberpool_execute_async(deferred_func, ctx);
 }
 
 static void timeout_operations_visitor_func(const void *data, void *ctx)
@@ -188,6 +210,18 @@ void ff_core_threadpool_execute(ff_core_threadpool_func func, void *ctx)
 void ff_core_fiberpool_execute_async(ff_core_fiberpool_func func, void *ctx)
 {
 	ff_fiberpool_execute_async(core_ctx.fiberpool, func, ctx);
+}
+
+void ff_core_fiberpool_execute_deferred(ff_core_fiberpool_func func, void *ctx, int interval)
+{
+	struct deferred_func_data *data;
+
+	ff_assert(interval > 0);
+
+	data = (struct deferred_func_data *) ff_malloc(sizeof(*data));
+	data->func = func;
+	data->ctx = ctx;
+	data->timeout_operation_data = ff_core_register_timeout_operation(interval, deferred_timeout_func, data);
 }
 
 struct ff_core_timeout_operation_data *ff_core_register_timeout_operation(int timeout, ff_core_cancel_timeout_func cancel_timeout_func, void *ctx)
