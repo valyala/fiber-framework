@@ -4,8 +4,6 @@
 
 #include <ucontext.h>
 
-static const int DEFAULT_STACK_SIZE = 0x10000;
-
 struct ff_arch_fiber
 {
 	ucontext_t context;
@@ -38,12 +36,7 @@ struct ff_arch_fiber *ff_arch_fiber_create(ff_arch_fiber_func arch_fiber_func, v
 {
 	struct ff_arch_fiber *fiber;
 
-	ff_assert(stack_size >= 0);
-
-	if (stack_size == 0)
-	{
-		stack_size = DEFAULT_STACK_SIZE;
-	}
+	ff_assert(stack_size > 0);
 
 	fiber = (struct ff_arch_fiber *) ff_malloc(sizeof(*fiber));
 	fiber->stack = ff_malloc(stack_size);
