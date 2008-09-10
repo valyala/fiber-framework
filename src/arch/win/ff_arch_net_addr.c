@@ -5,6 +5,7 @@
 #include "ff_win_net_addr.h"
 
 #define MAX_STR_PORT_SIZE 6
+#define ADDR_TO_STRING_BUF_SIZE 22
 
 struct threadpool_addr_resolve_data
 {
@@ -96,4 +97,26 @@ int ff_arch_net_addr_is_equal(const struct ff_arch_net_addr *addr1, const struct
 	
 	is_equal = (memcmp(&addr1->addr, &addr2->addr, sizeof(addr1->addr)) == 0);
 	return is_equal;
+}
+
+const wchar_t *ff_arch_net_addr_to_string(const struct ff_arch_net_addr *addr)
+{
+	char *str;
+	u_short port;
+	int len;
+	wchar_t *buf;
+
+	str = inet_ntoa(addr->addr.sin_addr);
+	ff_assert(str != NULL);
+	port = ntohs(addr->addr.sin_port);
+	buf = (wchar_t *) ff_malloc(ADDR_TO_STRING_BUF_SIZE * sizeof(buf[0]));
+	len = swprintf_s(buf, ADDR_TO_STRING_BUF_SIZE, L"%hs:%hu", str, port);
+	ff_assert(len > 0);
+
+	return buf;
+}
+
+void ff_arch_net_addr_delete_string(const wchar_t *str)
+{
+	ff_free((void *) str);
 }

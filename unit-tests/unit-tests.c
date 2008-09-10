@@ -1089,12 +1089,33 @@ DECLARE_TEST(arch_net_addr_broadcast)
 	return NULL;
 }
 
+DECLARE_TEST(arch_net_addr_to_string)
+{
+	struct ff_arch_net_addr *addr;
+	const wchar_t *str;
+	int is_success;
+	int is_equal;
+
+	ff_core_initialize();
+	addr = ff_arch_net_addr_create();
+	is_success = ff_arch_net_addr_resolve(addr, L"12.34.56.78", 90);
+	ASSERT(is_success, "address should be resolved");
+	str = ff_arch_net_addr_to_string(addr);
+	is_equal = (wcscmp(L"12.34.56.78:90", str) == 0);
+	ASSERT(is_equal, "wrong string");
+	ff_arch_net_addr_delete_string(str);
+	ff_arch_net_addr_delete(addr);
+	ff_core_shutdown();
+	return NULL;
+}
+
 DECLARE_TEST(arch_net_addr_all)
 {
 	RUN_TEST(arch_net_addr_create_delete);
 	RUN_TEST(arch_net_addr_resolve_success);
 	RUN_TEST(arch_net_addr_resolve_fail);
 	RUN_TEST(arch_net_addr_broadcast);
+	RUN_TEST(arch_net_addr_to_string);
 	return NULL;
 }
 
