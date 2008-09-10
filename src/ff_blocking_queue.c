@@ -44,6 +44,8 @@ void ff_blocking_queue_get(struct ff_blocking_queue *queue, const void **data)
 int ff_blocking_queue_get_with_timeout(struct ff_blocking_queue *queue, const void **data, int timeout)
 {
 	int is_success;
+
+	ff_assert(timeout > 0);
 	
 	is_success = ff_semaphore_down_with_timeout(queue->producer_semaphore, timeout);
 	if (is_success)
@@ -65,6 +67,8 @@ void ff_blocking_queue_put(struct ff_blocking_queue *queue, const void *data)
 int ff_blocking_queue_put_with_timeout(struct ff_blocking_queue *queue, const void *data, int timeout)
 {
 	int is_success;
+
+	ff_assert(timeout > 0);
 
 	is_success = ff_semaphore_down_with_timeout(queue->consumer_semaphore, timeout);
 	if (is_success)

@@ -40,6 +40,8 @@ int ff_read_stream_buffer_read(struct ff_read_stream_buffer *buffer, void *buf, 
 	char *char_buf;
 	int total_bytes_read = 0;
 
+	ff_assert(len >= 0);
+
 	char_buf = (char *) buf;
 	for (;;)
 	{
