@@ -56,6 +56,7 @@ struct core_data
 };
 
 static struct core_data core_ctx;
+static int is_core_initialized = 0;
 
 static void generic_core_threadpool_func(void *ctx)
 {
@@ -129,6 +130,7 @@ static void timeout_checker_func(void *ctx)
 
 void ff_core_initialize()
 {
+	ff_assert(!is_core_initialized);
 	ff_fiber_initialize();
 	core_ctx.completion_port = ff_arch_completion_port_create(COMPLETION_PORT_CONCURRENCY);
 	ff_arch_misc_initialize(core_ctx.completion_port);
@@ -140,10 +142,12 @@ void ff_core_initialize()
 	core_ctx.timeout_operations_semaphore = ff_semaphore_create(0);
 	core_ctx.timeout_checker_fiber = ff_fiber_create(timeout_checker_func, 0);
 	ff_fiber_start(core_ctx.timeout_checker_fiber, NULL);
+	is_core_initialized = 1;
 }
 
 void ff_core_shutdown()
 {
+	ff_assert(is_core_initialized);
 	ff_semaphore_up(core_ctx.timeout_operations_semaphore);
 	ff_fiber_join(core_ctx.timeout_checker_fiber);
 	ff_fiber_delete(core_ctx.timeout_checker_fiber);
@@ -156,6 +160,7 @@ void ff_core_shutdown()
 	ff_arch_misc_shutdown();
 	ff_arch_completion_port_delete(core_ctx.completion_port);
 	ff_fiber_shutdown();
+	is_core_initialized = 0;
 }
 
 void ff_core_sleep(int interval)
