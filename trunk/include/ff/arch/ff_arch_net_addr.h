@@ -19,6 +19,10 @@ FF_API void ff_arch_net_addr_get_broadcast_addr(const struct ff_arch_net_addr *a
 
 FF_API int ff_arch_net_addr_is_equal(const struct ff_arch_net_addr *addr1, const struct ff_arch_net_addr *addr2);
 
+FF_API const wchar_t *ff_arch_net_addr_to_string(const struct ff_arch_net_addr *addr);
+
+FF_API void ff_arch_net_addr_delete_string(const wchar_t *str);
+
 #ifdef __cplusplus
 }
 #endif
