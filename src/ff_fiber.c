@@ -23,7 +23,7 @@ struct ff_fiber
 };
 
 static struct ff_fiber main_fiber;
-static struct ff_fiber *current_fiber;
+static struct ff_fiber *current_fiber = NULL;
 
 /**
  * @private
@@ -42,6 +42,7 @@ static void generic_arch_fiber_func(void *ctx)
 
 void ff_fiber_initialize()
 {
+	ff_assert(current_fiber == NULL);
 	main_fiber.ctx = NULL;
 	main_fiber.func = NULL;
 	main_fiber.stop_event = NULL;
@@ -54,6 +55,7 @@ void ff_fiber_shutdown()
 	ff_assert(current_fiber == &main_fiber);
 
 	ff_arch_fiber_shutdown(main_fiber.arch_fiber);
+	current_fiber = NULL;
 }
 
 void ff_fiber_switch(struct ff_fiber *fiber)
