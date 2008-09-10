@@ -23,6 +23,8 @@ static int file_read_func(void *ctx, void *buf, int len)
 	struct ff_file *file;
 	int bytes_read;
 
+	ff_assert(len >= 0);
+
 	file = (struct ff_file *) ctx;
 	bytes_read = ff_arch_file_read(file->file, buf, len);
 	return bytes_read;
@@ -32,6 +34,8 @@ static int file_write_func(void *ctx, const void *buf, int len)
 {
 	struct ff_file *file;
 	int bytes_written;
+
+	ff_assert(len >= 0);
 
 	file = (struct ff_file *) ctx;
 	bytes_written = ff_arch_file_write(file->file, buf, len);
@@ -87,6 +91,7 @@ int ff_file_read(struct ff_file *file, void *buf, int len)
 	int bytes_read;
 
 	ff_assert(file->access_mode == FF_FILE_READ);
+	ff_assert(len >= 0);
 
 	bytes_read = ff_read_stream_buffer_read(file->buffers.read_buffer, buf, len);
 	return bytes_read;
@@ -97,6 +102,7 @@ int ff_file_write(struct ff_file *file, const void *buf, int len)
 	int bytes_written;
 
 	ff_assert(file->access_mode == FF_FILE_WRITE);
+	ff_assert(len >= 0);
 
 	bytes_written = ff_write_stream_buffer_write(file->buffers.write_buffer, buf, len);
 	return bytes_written;

@@ -21,6 +21,8 @@ static int tcp_read_func(void *ctx, void *buf, int len)
 	struct ff_tcp *tcp;
 	int bytes_read;
 
+	ff_assert(len >= 0);
+
 	tcp = (struct ff_tcp *) ctx;
 	bytes_read = ff_arch_tcp_read(tcp->tcp, buf, len);
 	return bytes_read;
@@ -30,6 +32,8 @@ static int tcp_write_func(void *ctx, const void *buf, int len)
 {
 	struct ff_tcp *tcp;
 	int bytes_written;
+
+	ff_assert(len >= 0);
 
 	tcp = (struct ff_tcp *) ctx;
 	bytes_written = ff_arch_tcp_write(tcp->tcp, buf, len);
@@ -110,6 +114,8 @@ int ff_tcp_read(struct ff_tcp *tcp, void *buf, int len)
 {
 	int bytes_read;
 
+	ff_assert(len >= 0);
+
 	bytes_read = ff_read_stream_buffer_read(tcp->read_buffer, buf, len);
 	return bytes_read;
 }
@@ -119,6 +125,7 @@ int ff_tcp_read_with_timeout(struct ff_tcp *tcp, void *buf, int len, int timeout
 	struct ff_core_timeout_operation_data *timeout_operation_data;
 	int bytes_read;
 
+	ff_assert(len >= 0);
 	ff_assert(timeout > 0);
 
 	timeout_operation_data = ff_core_register_timeout_operation(timeout, cancel_tcp_operation, tcp);
@@ -132,6 +139,8 @@ int ff_tcp_write(struct ff_tcp *tcp, const void *buf, int len)
 {
 	int bytes_written;
 
+	ff_assert(len >= 0);
+
 	bytes_written = ff_write_stream_buffer_write(tcp->write_buffer, buf, len);
 	return bytes_written;
 }
@@ -141,6 +150,7 @@ int ff_tcp_write_with_timeout(struct ff_tcp *tcp, const void *buf, int len, int 
 	struct ff_core_timeout_operation_data *timeout_operation_data;
 	int bytes_written;
 
+	ff_assert(len >= 0);
 	ff_assert(timeout > 0);
 
 	timeout_operation_data = ff_core_register_timeout_operation(timeout, cancel_tcp_operation, tcp);
@@ -164,6 +174,7 @@ int ff_tcp_flush_with_timeout(struct ff_tcp *tcp, int timeout)
 	int bytes_written;
 
 	ff_assert(timeout > 0);
+
 	timeout_operation_data = ff_core_register_timeout_operation(timeout, cancel_tcp_operation, tcp);
 	bytes_written = ff_tcp_flush(tcp);
 	ff_core_deregister_timeout_operation(timeout_operation_data);

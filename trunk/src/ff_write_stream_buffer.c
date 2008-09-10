@@ -15,6 +15,8 @@ struct ff_write_stream_buffer *ff_write_stream_buffer_create(ff_write_stream_fun
 {
 	struct ff_write_stream_buffer *buffer;
 
+	ff_assert(capacity > 0);
+
 	buffer = (struct ff_write_stream_buffer *) ff_malloc(sizeof(*buffer));
 	buffer->write_func = write_func;
 	buffer->func_ctx = func_ctx;
@@ -35,6 +37,8 @@ int ff_write_stream_buffer_write(struct ff_write_stream_buffer *buffer, const vo
 {
 	char *char_buf;
 	int total_bytes_written;
+
+	ff_assert(len >= 0);
 
 	total_bytes_written = len;
 	char_buf = (char *) buf;

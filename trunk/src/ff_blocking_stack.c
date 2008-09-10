@@ -45,6 +45,8 @@ int ff_blocking_stack_pop_with_timeout(struct ff_blocking_stack *stack, const vo
 {
 	int is_success;
 
+	ff_assert(timeout > 0);
+
 	is_success = ff_semaphore_down_with_timeout(stack->producer_semaphore, timeout);
 	if (is_success)
 	{
@@ -65,6 +67,8 @@ void ff_blocking_stack_push(struct ff_blocking_stack *stack, const void *data)
 int ff_blocking_stack_push_with_timeout(struct ff_blocking_stack *stack, const void *data, int timeout)
 {
 	int is_success;
+
+	ff_assert(timeout > 0);
 
 	is_success = ff_semaphore_down_with_timeout(stack->consumer_semaphore, timeout);
 	if (is_success)

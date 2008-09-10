@@ -71,6 +71,8 @@ struct ff_threadpool *ff_threadpool_create(int max_threads_cnt)
 	struct ff_threadpool *threadpool;
 	int cpus_cnt;
 
+	ff_assert(max_threads_cnt > 0);
+
 	cpus_cnt = ff_arch_misc_get_cpus_cnt();
 	threadpool = (struct ff_threadpool *) ff_malloc(sizeof(*threadpool));
 	threadpool->completion_port = ff_arch_completion_port_create(cpus_cnt);

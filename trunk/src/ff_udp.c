@@ -47,6 +47,8 @@ int ff_udp_read(struct ff_udp *udp, struct ff_arch_net_addr *peer_addr, void *bu
 {
 	int bytes_read;
 
+	ff_assert(len >= 0);
+
 	bytes_read = ff_arch_udp_read(udp->udp, peer_addr, buf, len);
 	return bytes_read;
 }
@@ -56,6 +58,7 @@ int ff_udp_read_with_timeout(struct ff_udp *udp, struct ff_arch_net_addr *peer_a
 	struct ff_core_timeout_operation_data *timeout_operation_data;
 	int bytes_read;
 
+	ff_assert(len >= 0);
 	ff_assert(timeout > 0);
 
 	timeout_operation_data = ff_core_register_timeout_operation(timeout, cancel_udp_operation, udp);
@@ -69,6 +72,8 @@ int ff_udp_write(struct ff_udp *udp, const struct ff_arch_net_addr *addr, const 
 {
 	int bytes_written;
 
+	ff_assert(len >= 0);
+
 	bytes_written = ff_arch_udp_write(udp->udp, addr, buf, len);
 	return bytes_written;
 }
@@ -78,6 +83,7 @@ int ff_udp_write_with_timeout(struct ff_udp *udp, const struct ff_arch_net_addr 
 	struct ff_core_timeout_operation_data *timeout_operation_data;
 	int bytes_written;
 
+	ff_assert(len >= 0);
 	ff_assert(timeout > 0);
 
 	timeout_operation_data = ff_core_register_timeout_operation(timeout, cancel_udp_operation, udp);
