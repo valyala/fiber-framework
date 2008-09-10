@@ -150,6 +150,36 @@ DECLARE_TEST(core_fiberpool_execute_multiple)
 	return NULL;
 }
 
+DECLARE_TEST(core_fiberpool_execute_deferred)
+{
+	int a = 0;
+
+	ff_core_initialize();
+	ff_core_fiberpool_execute_deferred(fiberpool_int_increment, &a, 500);
+	ff_core_sleep(10);
+	ASSERT(a == 0, "unexpected result");
+	ff_core_shutdown();
+	ASSERT(a == 1, "unexpected result");
+	return NULL;
+}
+
+DECLARE_TEST(core_fiberpool_execute_deferred_multiple)
+{
+	int a = 0;
+	int i;
+
+	ff_core_initialize();
+	for (i = 0; i < 10; i++)
+	{
+		ff_core_fiberpool_execute_deferred(fiberpool_int_increment, &a, 500);
+	}
+	ff_core_sleep(10);
+	ASSERT(a == 0, "unexpected result");
+	ff_core_shutdown();
+	ASSERT(a == 10, "unexpected result");
+	return NULL;
+}
+
 DECLARE_TEST(core_all)
 {
 	RUN_TEST(core_init);
@@ -160,6 +190,8 @@ DECLARE_TEST(core_all)
 	RUN_TEST(core_threadpool_execute_multiple);
 	RUN_TEST(core_fiberpool_execute);
 	RUN_TEST(core_fiberpool_execute_multiple);
+	RUN_TEST(core_fiberpool_execute_deferred);
+	RUN_TEST(core_fiberpool_execute_deferred_multiple);
 	return NULL;
 }
 
