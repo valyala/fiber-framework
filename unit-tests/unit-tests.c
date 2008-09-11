@@ -20,7 +20,7 @@
 	{ \
 		if (!(expr)) \
 		{ \
-			return ": ASSERT(" #expr ") failed: " msg; \
+			return "ASSERT(" #expr ") failed: " msg; \
 		} \
 	} while (0)
 
@@ -37,13 +37,10 @@
 
 #define DECLARE_TEST(test_name) static const char *test_ ## test_name()
 
-#define trace_enter() fprintf(stderr, "%s\n", __FUNCTION__)
-
 #pragma region ff_core_tests
 
 DECLARE_TEST(core_init)
 {
-	trace_enter();
 	ff_core_initialize();
 	ff_core_shutdown();
 	return NULL;
@@ -52,7 +49,6 @@ DECLARE_TEST(core_init)
 DECLARE_TEST(core_init_multiple)
 {
 	int i;
-	trace_enter();
 	for (i = 0; i < 10; i++)
 	{
 		RUN_TEST(core_init);
@@ -62,7 +58,6 @@ DECLARE_TEST(core_init_multiple)
 
 DECLARE_TEST(core_sleep)
 {
-	trace_enter();
 	ff_core_initialize();
 	ff_core_sleep(100);
 	ff_core_shutdown();
@@ -73,7 +68,6 @@ DECLARE_TEST(core_sleep_multiple)
 {
 	int i;
 
-	trace_enter();
 	ff_core_initialize();
 	for (i = 0; i < 10; i++)
 	{
@@ -95,7 +89,6 @@ DECLARE_TEST(core_threadpool_execute)
 {
 	int a[2];
 
-	trace_enter();
 	ff_core_initialize();
 	a[0] = 1234;
 	a[1] = 4321;
@@ -109,7 +102,6 @@ DECLARE_TEST(core_threadpool_execute_multiple)
 {
 	int i;
 
-	trace_enter();
 	ff_core_initialize();
 	for (i = 0; i < 10; i++)
 	{
@@ -136,7 +128,6 @@ DECLARE_TEST(core_fiberpool_execute)
 {
 	int a = 0;
 
-	trace_enter();
 	ff_core_initialize();
 	ff_core_fiberpool_execute_async(fiberpool_int_increment, &a);
 	ff_core_shutdown();
@@ -149,7 +140,6 @@ DECLARE_TEST(core_fiberpool_execute_multiple)
 	int a = 0;
 	int i;
 
-	trace_enter();
 	ff_core_initialize();
 	for (i = 0; i < 10; i++)
 	{
@@ -222,7 +212,6 @@ DECLARE_TEST(fiber_create_delete)
 {
 	struct ff_fiber *fiber;
 
-	trace_enter();
 	ff_core_initialize();
 	fiber = ff_fiber_create(fiber_func, 0);
 	ASSERT(fiber != NULL, "unexpected result");
@@ -236,7 +225,6 @@ DECLARE_TEST(fiber_start_join)
 	struct ff_fiber *fiber;
 	int a = 0;
 
-	trace_enter();
 	ff_core_initialize();
 	fiber = ff_fiber_create(fiber_func, 0x100000);
 	ff_fiber_start(fiber, &a);
@@ -253,7 +241,6 @@ DECLARE_TEST(fiber_start_multiple)
 	int a = 0;
 	int i;
 
-	trace_enter();
 	ff_core_initialize();
 	for (i = 0; i < 10; i++)
 	{
@@ -305,7 +292,6 @@ DECLARE_TEST(event_manual_create_delete)
 {
 	struct ff_event *event;
 
-	trace_enter();
 	ff_core_initialize();
 
 	event = ff_event_create(FF_EVENT_MANUAL);
@@ -320,7 +306,6 @@ DECLARE_TEST(event_auto_create_delete)
 {
 	struct ff_event *event;
 
-	trace_enter();
 	ff_core_initialize();
 
 	event = ff_event_create(FF_EVENT_AUTO);
@@ -344,7 +329,6 @@ DECLARE_TEST(event_manual_basic)
 	struct ff_event *event;
 	int is_set;
 
-	trace_enter();
 	ff_core_initialize();
 	event = ff_event_create(FF_EVENT_MANUAL);
 	is_set = ff_event_is_set(event);
@@ -375,7 +359,6 @@ DECLARE_TEST(event_auto_basic)
 	struct ff_event *event;
 	int is_set;
 
-	trace_enter();
 	ff_core_initialize();
 	event = ff_event_create(FF_EVENT_AUTO);
 	is_set = ff_event_is_set(event);
@@ -407,7 +390,6 @@ DECLARE_TEST(event_manual_timeout)
 	int is_success;
 	int is_set;
 
-	trace_enter();
 	ff_core_initialize();
 
 	event = ff_event_create(FF_EVENT_MANUAL);
@@ -432,7 +414,6 @@ DECLARE_TEST(event_auto_timeout)
 	int is_success;
 	int is_set;
 
-	trace_enter();
 	ff_core_initialize();
 
 	event = ff_event_create(FF_EVENT_AUTO);
@@ -475,7 +456,6 @@ DECLARE_TEST(event_manual_multiple)
 	int a = 0;
 	void *data[3];
 
-	trace_enter();
 	ff_core_initialize();
 	event = ff_event_create(FF_EVENT_MANUAL);
 	done_event = ff_event_create(FF_EVENT_MANUAL);
@@ -504,7 +484,6 @@ DECLARE_TEST(event_auto_multiple)
 	int is_success;
 	void *data[3];
 
-	trace_enter();
 	ff_core_initialize();
 	event = ff_event_create(FF_EVENT_AUTO);
 	done_event = ff_event_create(FF_EVENT_MANUAL);
@@ -553,7 +532,6 @@ DECLARE_TEST(mutex_create_delete)
 {
 	struct ff_mutex *mutex;
 
-	trace_enter();
 	ff_core_initialize();
 	mutex = ff_mutex_create();
 	ASSERT(mutex != NULL, "mutex should be initialized");
@@ -587,7 +565,6 @@ DECLARE_TEST(mutex_basic)
 	struct ff_mutex *mutex;
 	struct ff_event *event;
 
-	trace_enter();
 	ff_core_initialize();
 	mutex = ff_mutex_create();
 	event = ff_event_create(FF_EVENT_AUTO);
@@ -626,7 +603,6 @@ DECLARE_TEST(semaphore_create_delete)
 {
 	struct ff_semaphore *semaphore;
 
-	trace_enter();
 	ff_core_initialize();
 	semaphore = ff_semaphore_create(0);
 	ASSERT(semaphore != NULL, "semaphore should be initialized");
@@ -641,7 +617,6 @@ DECLARE_TEST(semaphore_basic)
 	int is_success;
 	struct ff_semaphore *semaphore;
 
-	trace_enter();
 	ff_core_initialize();
 	semaphore = ff_semaphore_create(0);
 	is_success = ff_semaphore_down_with_timeout(semaphore, 1);
@@ -679,7 +654,6 @@ DECLARE_TEST(blocking_queue_create_delete)
 {
 	struct ff_blocking_queue *queue;
 
-	trace_enter();
 	ff_core_initialize();
 	queue = ff_blocking_queue_create(10);
 	ASSERT(queue != NULL, "queue should be initialized");
@@ -695,7 +669,6 @@ DECLARE_TEST(blocking_queue_basic)
 	int64_t data = 0;
 	struct ff_blocking_queue *queue;
 
-	trace_enter();
 	ff_core_initialize();
 	queue = ff_blocking_queue_create(10);
 	for (i = 0; i < 10; i++)
@@ -730,7 +703,6 @@ DECLARE_TEST(blocking_queue_fiberpool)
 	int is_success;
 	struct ff_blocking_queue *queue;
 
-	trace_enter();
 	ff_core_initialize();
 	queue = ff_blocking_queue_create(1);
 	is_success = ff_blocking_queue_get_with_timeout(queue, (const void **)&data, 1);
@@ -762,7 +734,6 @@ DECLARE_TEST(blocking_stack_create_delete)
 {
 	struct ff_blocking_stack *stack;
 
-	trace_enter();
 	ff_core_initialize();
 	stack = ff_blocking_stack_create(10);
 	ASSERT(stack != NULL, "stack should be initialized");
@@ -778,7 +749,6 @@ DECLARE_TEST(blocking_stack_basic)
 	int64_t data = 0;
 	struct ff_blocking_stack *stack;
 
-	trace_enter();
 	ff_core_initialize();
 	stack = ff_blocking_stack_create(10);
 	for (i = 0; i < 10; i++)
@@ -813,7 +783,6 @@ DECLARE_TEST(blocking_stack_fiberpool)
 	int is_success;
 	struct ff_blocking_stack *stack;
 
-	trace_enter();
 	ff_core_initialize();
 	stack = ff_blocking_stack_create(1);
 	is_success = ff_blocking_stack_pop_with_timeout(stack, (const void **)&data, 1);
@@ -858,7 +827,6 @@ DECLARE_TEST(pool_create_delete)
 {
 	struct ff_pool *pool;
 
-	trace_enter();
 	ff_core_initialize();
 	pool = ff_pool_create(10, pool_entry_constructor, NULL, pool_entry_destructor);
 	ASSERT(pool_entries_cnt == 0, "pool should be empty after creation");
@@ -892,7 +860,6 @@ DECLARE_TEST(pool_basic)
 	int i;
 	struct pool_visitor_func_data data;
 
-	trace_enter();
 	ff_core_initialize();
 	pool = ff_pool_create(10, pool_entry_constructor, NULL, pool_entry_destructor);
 	for (i = 0; i < 10; i++)
@@ -936,7 +903,6 @@ DECLARE_TEST(pool_fiberpool)
 	struct ff_pool *pool;
 	void *entry;
 	
-	trace_enter();
 	ff_core_initialize();
 	pool = ff_pool_create(1, pool_entry_constructor, NULL, pool_entry_destructor);
 	ASSERT(pool_entries_cnt == 0, "pool should be empty after creation");
@@ -971,7 +937,6 @@ DECLARE_TEST(file_open_read_fail)
 {
 	struct ff_file *file;
 
-	trace_enter();
 	ff_core_initialize();
 	file = ff_file_open(L"unexpected_file.txt", FF_FILE_READ);
 	ASSERT(file == NULL, "unexpected file couldn't be opened");
@@ -984,7 +949,6 @@ DECLARE_TEST(file_create_delete)
 	struct ff_file *file;
 	int is_success;
 
-	trace_enter();
 	ff_core_initialize();
 
 	file = ff_file_open(L"test.txt", FF_FILE_WRITE);
@@ -1009,7 +973,6 @@ DECLARE_TEST(file_basic)
 	int is_equal;
 	int is_success;
 
-	trace_enter();
 	ff_core_initialize();
 
 	file = ff_file_open(L"test.txt", FF_FILE_WRITE);
@@ -1081,7 +1044,6 @@ DECLARE_TEST(arch_net_addr_create_delete)
 {
 	struct ff_arch_net_addr *addr;
 
-	trace_enter();
 	ff_core_initialize();
 	addr = ff_arch_net_addr_create();
 	ASSERT(addr != NULL, "addr should be created");
@@ -1096,7 +1058,6 @@ DECLARE_TEST(arch_net_addr_resolve_success)
 	int is_success;
 	int is_equal;
 
-	trace_enter();
 	ff_core_initialize();
 	addr1 = ff_arch_net_addr_create();
 	addr2 = ff_arch_net_addr_create();
@@ -1121,7 +1082,6 @@ DECLARE_TEST(arch_net_addr_resolve_fail)
 	struct ff_arch_net_addr *addr;
 	int is_success;
 
-	trace_enter();
 	ff_core_initialize();
 	addr = ff_arch_net_addr_create();
 	is_success = ff_arch_net_addr_resolve(addr, L"non.existant,address", 123);
@@ -1137,7 +1097,6 @@ DECLARE_TEST(arch_net_addr_broadcast)
 	int is_success;
 	int is_equal;
 
-	trace_enter();
 	ff_core_initialize();
 	addr = ff_arch_net_addr_create();
 	net_mask = ff_arch_net_addr_create();
@@ -1199,7 +1158,6 @@ DECLARE_TEST(tcp_create_delete)
 {
 	struct ff_tcp *tcp;
 
-	trace_enter();
 	ff_core_initialize();
 	tcp = ff_tcp_create();
 	ASSERT(tcp != NULL, "tcp should be created");
@@ -1245,7 +1203,6 @@ DECLARE_TEST(tcp_basic)
 	int is_equal;
 	uint8_t buf[4];
 
-	trace_enter();
 	ff_core_initialize();
 	addr = ff_arch_net_addr_create();
 	is_success = ff_arch_net_addr_resolve(addr, L"127.0.0.1", 43210);
@@ -1291,7 +1248,6 @@ DECLARE_TEST(udp_create_delete)
 {
 	struct ff_udp *udp;
 
-	trace_enter();
 	ff_core_initialize();
 
 	udp = ff_udp_create(FF_UDP_BROADCAST);
@@ -1305,8 +1261,6 @@ DECLARE_TEST(udp_create_delete)
 	ff_core_shutdown();
 	return NULL;
 }
-
-#define alert(msg) fprintf(stderr, "%s", msg)
 
 static void fiberpool_udp_func(void *ctx)
 {
@@ -1328,14 +1282,10 @@ static void fiberpool_udp_func(void *ctx)
 			len = ff_udp_write(udp_server, client_addr, buf, 4);
 			if (len == 4)
 			{
-alert("read 10 bytes...");
 				len = ff_udp_read(udp_server, client_addr, buf, 10);
-alert("done\n");
 				if (len == 9)
 				{
-alert("write 9 bytes...");
 					len = ff_udp_write(udp_server, client_addr, buf, 9);
-alert("done\n");
 					if (len == 9)
 					{
 						ff_arch_net_addr_delete(client_addr);
@@ -1355,31 +1305,27 @@ DECLARE_TEST(udp_basic)
 	struct ff_arch_net_addr *server_addr, *client_addr, *net_mask;
 	uint8_t buf[10];
 
-	trace_enter();
 	ff_core_initialize();
 	server_addr = ff_arch_net_addr_create();
 	client_addr = ff_arch_net_addr_create();
 	net_mask = ff_arch_net_addr_create();
-	is_success = ff_arch_net_addr_resolve(net_mask, L"255.255.192.0", 0);
+	is_success = ff_arch_net_addr_resolve(net_mask, L"255.0.0.0", 0);
 	ASSERT(is_success, "network mask should be resolved");
-	is_success = ff_arch_net_addr_resolve(server_addr, L"10.6.27.90", 5432);
+	is_success = ff_arch_net_addr_resolve(server_addr, L"127.0.0.1", 5432);
 	ASSERT(is_success, "localhost address should be resolved");
-
 	udp_server = ff_udp_create(FF_UDP_UNICAST);
 	is_success = ff_udp_bind(udp_server, server_addr);
 	ff_core_fiberpool_execute_async(fiberpool_udp_func, udp_server);
-	udp_client = ff_udp_create(FF_UDP_UNICAST);
 
+	udp_client = ff_udp_create(FF_UDP_UNICAST);
 	len = ff_udp_write_with_timeout(udp_client, server_addr, "test", 4, 100);
 	ASSERT(len == 4, "data should be sent to server");
-
 	len = ff_udp_read(udp_client, client_addr, buf, 10);
 	is_equal = ff_arch_net_addr_is_equal(server_addr, client_addr);
 	ASSERT(is_equal, "server address should be eqaul to the client address");
 	ASSERT(len == 4, "data should be read from the server");
 	is_equal = (memcmp(buf, "test", 4) == 0);
 	ASSERT(is_equal, "wrong data received from the server");
-
 	len = ff_udp_read_with_timeout(udp_client, client_addr, buf, 10, 100);
 	ASSERT(len == -1, "server shouldn't send data to client");
 	ff_udp_delete(udp_client);
@@ -1388,10 +1334,8 @@ DECLARE_TEST(udp_basic)
 	ff_arch_net_addr_get_broadcast_addr(server_addr, net_mask, server_addr);
 	len = ff_udp_write(udp_client, server_addr, "broadcast", 9);
 	ASSERT(len == 9, "broadcast data should be sent");
-alert("reading response from broadcast...");
 	len = ff_udp_read(udp_client, client_addr, buf, 10);
 	ASSERT(len == 9, "server should send response with the given length");
-alert("response received\n");
 	is_equal = (memcmp(buf, "broadcast", 9) == 0);
 	ASSERT(is_equal, "server sent wrong data");
 	ff_udp_delete(udp_client);
@@ -1416,7 +1360,7 @@ DECLARE_TEST(udp_all)
 
 static const char *run_all_tests()
 {
-/*	RUN_TEST(core_all);
+	RUN_TEST(core_all);
 	RUN_TEST(fiber_all);
 	RUN_TEST(event_all);
 	RUN_TEST(mutex_all);
@@ -1427,7 +1371,6 @@ static const char *run_all_tests()
 	RUN_TEST(file_all);
 	RUN_TEST(arch_net_addr_all);
 	RUN_TEST(tcp_all);
-	*/
 	RUN_TEST(udp_all);
 	return NULL;
 }
