@@ -44,17 +44,77 @@ struct rpc_server_params
 };
 
 #define RPC_SERVER_FIBER_STACK_SIZE 0x10000
+#define CONNECTION_PROCESSORS_CNT 100
 
 struct rpc_server
 {
+	struct ff_arch_net_addr *listen_addr;
+	struct ff_pool *connection_processors;
 	struct ff_fiber *main_fiber;
 };
+
+static void *create_connection_processor(void *ctx)
+{
+	struct rpc_connection_processor *connection_processor;
+
+	connection_processor = rpc_connection_processor_create();
+	return connection_processor;
+}
+
+static void delete_connection_processor(void *ctx)
+{
+	struct rpc_connection_processor *connection_processor;
+
+	connection_processor = (struct rpc_connection_processor *) ctx;
+	rpc_connection_processor_delete(connection_processor);
+}
+
+static void stop_connection_processor(void *entry, void *ctx, int is_acquired)
+{
+	struct rpc_connection_processor *connection_processor;
+
+	connection_processor = (struct rpc_connection_processor *) entry;
+	if (is_acquired)
+	{
+		rpc_connection_processor_stop(connection_processor);
+	}
+}
 
 static void main_server_func(void *ctx)
 {
 	struct rpc_server *server;
+	struct ff_tcp *server_tcp;
+	struct ff_arch_net_addr *remote_addr;
+	int is_success;
 
 	server = (struct rpc_server *) ctx;
+	server_tcp = ff_tcp_create();
+	is_success = ff_tcp_bind(server_tcp, server->listen_addr, FF_TCP_SERVER);
+	if (!is_success)
+	{
+		addr_str = ff_arch_net_addr_to_string(server->listen_addr);
+		fatal_error(L"cannot bind the address %ls for the server", addr_str);
+	}
+
+	remote_addr = ff_arch_net_addr_create();
+	for (;;)
+	{
+		struct ff_tcp *client_tcp;
+		struct rpc_connection_processor *connection_processor;
+
+		client_tcp = ff_tcp_accept(server_tcp, remote_addr);
+		if (client_tcp == NULL)
+		{
+			break;
+		}
+
+		connection_processor = acquire_connection_processor(server);
+		rpc_connection_processor_start(connection_processor, client_tcp);
+	}
+	ff_pool_for_each_entry(server->connection_processors, stop_connection_processor, NULL);
+
+	ff_arch_net_addr_delete(remote_addr);
+	ff_tcp_delete(server_tcp);
 }
 
 struct rpc_server *rpc_server_create(const struct rpc_server_params *params)
@@ -63,6 +123,8 @@ struct rpc_server *rpc_server_create(const struct rpc_server_params *params)
 
 	server = (struct rpc_server *) ff_malloc(sizeof(*server));
 
+	server->listen_addr = params->listen_addr;
+	server->connection_processors = ff_pool_create(CONNECTION_PROCESSORS_CNT, create_connection_processor, NULL, delete_connection_processor);
 	server->main_fiber = ff_fiber_create(main_server_func, SERVER_FIBER_STACK_SIZE);
 	ff_fiber_start(server->main_fiber, server);
 
@@ -71,6 +133,7 @@ struct rpc_server *rpc_server_create(const struct rpc_server_params *params)
 
 void rpc_server_delete(struct rpc_server *server)
 {
+	ff_pool_delete(server->connection_processors);
 	ff_fiber_join(server->main_fiber);
 	ff_free(server);
 }
