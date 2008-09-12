@@ -836,20 +836,14 @@ DECLARE_TEST(pool_create_delete)
 	return NULL;
 }
 
-struct pool_visitor_func_data
-{
-	int is_acquired;
-	int is_success;
-};
-
 static void pool_visitor_func(void *entry, void *ctx, int is_acquired)
 {
-	struct pool_visitor_func_data *data;
+	int *a;
 
-	data = (struct pool_visitor_func_data *) ctx;
-	if (data->is_success)
+	a = (int *) ctx;
+	if (is_acquired)
 	{
-		data->is_success = (data->is_acquired == is_acquired);
+		(*a)++;
 	}
 }
 
@@ -858,7 +852,7 @@ DECLARE_TEST(pool_basic)
 	struct ff_pool *pool;
 	void *entry;
 	int i;
-	struct pool_visitor_func_data data;
+	int a;
 
 	ff_core_initialize();
 	pool = ff_pool_create(10, pool_entry_constructor, NULL, pool_entry_destructor);
@@ -869,20 +863,18 @@ DECLARE_TEST(pool_basic)
 		ASSERT(pool_entries_cnt == i + 1, "unexpected entries number");
 	}
 
-	data.is_acquired = 1;
-	data.is_success = 1;
-	ff_pool_for_each_entry(pool, pool_visitor_func, &data);
-	ASSERT(data.is_success == 1, "unexpected result");
+	a = 0;
+	ff_pool_for_each_entry(pool, pool_visitor_func, &a);
+	ASSERT(a == 10, "unexpected result");
 
 	for (i = 0; i < 10; i++)
 	{
 		ff_pool_release_entry(pool, (void *)123);
 	}
 
-	data.is_acquired = 0;
-	data.is_success = 1;
-	ff_pool_for_each_entry(pool, pool_visitor_func, &data);
-	ASSERT(data.is_success == 1, "unexpected result");
+	a = 0;
+	ff_pool_for_each_entry(pool, pool_visitor_func, &a);
+	ASSERT(a == 0, "unexpected result");
 
 	ff_pool_delete(pool);
 	ASSERT(pool_entries_cnt == 0, "pool should be empty after deletion");

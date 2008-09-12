@@ -71,13 +71,13 @@ void *ff_pool_acquire_entry(struct ff_pool *pool)
 	ff_assert(pool->busy_entries_cnt >= 0);
 	if (pool->busy_entries_cnt == pool->current_size)
 	{
-		entry = pool->entry_constructor(pool->entry_constructor_ctx);
+		void *new_entry;
+
+		new_entry = pool->entry_constructor(pool->entry_constructor_ctx);
+		pool->entries[pool->busy_entries_cnt] = new_entry;
 		pool->current_size++;
 	}
-	else
-	{
-		entry = pool->entries[pool->busy_entries_cnt];
-	}
+	entry = pool->entries[pool->busy_entries_cnt];
 	pool->busy_entries_cnt++;
 	ff_mutex_unlock(pool->mutex);
 
@@ -86,12 +86,32 @@ void *ff_pool_acquire_entry(struct ff_pool *pool)
 
 void ff_pool_release_entry(struct ff_pool *pool, void *entry)
 {
+	int busy_entries_cnt;
+	int i;
+
 	ff_mutex_lock(pool->mutex);
 	ff_assert(pool->current_size <= pool->max_size);
 	ff_assert(pool->busy_entries_cnt <= pool->current_size);
 	ff_assert(pool->busy_entries_cnt > 0);
+	busy_entries_cnt = pool->busy_entries_cnt;
+	for (i = 0; i < busy_entries_cnt; i++)
+	{
+		void *busy_entry;
+
+		busy_entry = pool->entries[i];
+		if (busy_entry == entry)
+		{
+			void *tmp;
+
+			busy_entries_cnt--;
+			tmp = pool->entries[busy_entries_cnt];
+			pool->entries[i] = tmp;
+			break;
+		}
+	}
+	ff_assert(busy_entries_cnt + 1 == pool->busy_entries_cnt);
 	pool->busy_entries_cnt--;
-	pool->entries[pool->busy_entries_cnt] = entry;
+	pool->entries[busy_entries_cnt] = entry;
 	ff_mutex_unlock(pool->mutex);
 
 	ff_semaphore_up(pool->semaphore);
