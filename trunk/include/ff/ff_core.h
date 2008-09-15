@@ -11,7 +11,7 @@ extern "C" {
  * @public
  * Initializes the fiber framework
  */
-FF_API void ff_core_initialize();
+FF_API void ff_core_initialize(const wchar_t *log_filename);
 
 /**
  * @public

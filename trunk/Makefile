@@ -1,4 +1,4 @@
-CFLAGS=-Wall -fpic -g -I./include -DHAS_STDINT_H -D_GNU_SOURCE
+CFLAGS=-Wall -fpic -g -I./include -DHAS_STDINT_H -DHAS_THREAD_KEYWORD -D_GNU_SOURCE
 LDFLAGS=-lpthread -shared
 CC=gcc
 
@@ -10,13 +10,13 @@ ARCH_OBJS= \
 	$(ARCH_DIR)/ff_arch_completion_port.o \
 	$(ARCH_DIR)/ff_arch_fiber.o \
 	$(ARCH_DIR)/ff_arch_file.o \
+	$(ARCH_DIR)/ff_arch_log.o \
 	$(ARCH_DIR)/ff_arch_misc.o \
 	$(ARCH_DIR)/ff_arch_mutex.o \
 	$(ARCH_DIR)/ff_arch_net_addr.o \
 	$(ARCH_DIR)/ff_arch_tcp.o \
 	$(ARCH_DIR)/ff_arch_thread.o \
 	$(ARCH_DIR)/ff_arch_udp.o \
-	$(ARCH_DIR)/ff_linux_error_check.o \
 	$(ARCH_DIR)/ff_linux_net.o
 
 MAIN_OBJS= \
@@ -30,6 +30,7 @@ MAIN_OBJS= \
 	$(SRC_DIR)/ff_fiberpool.o \
 	$(SRC_DIR)/ff_file.o \
 	$(SRC_DIR)/ff_hash.o \
+	$(SRC_DIR)/ff_log.o \
 	$(SRC_DIR)/ff_malloc.o \
 	$(SRC_DIR)/ff_mutex.o \
 	$(SRC_DIR)/ff_pool.o \

@@ -225,6 +225,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\ff_log.c"
+				>
+			</File>
+			<File
 				RelativePath=".\src\ff_malloc.c"
 				>
 			</File>
@@ -324,6 +328,30 @@
 					</File>
 					<File
 						RelativePath=".\src\arch\win\ff_arch_file.c"
+						>
+						<FileConfiguration
+							Name="Debug|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								DisableLanguageExtensions="false"
+								UsePrecompiledHeader="2"
+								PrecompiledHeaderThrough="ff_win_stdafx.h"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								DisableLanguageExtensions="false"
+								UsePrecompiledHeader="2"
+								PrecompiledHeaderThrough="ff_win_stdafx.h"
+							/>
+						</FileConfiguration>
+					</File>
+					<File
+						RelativePath=".\src\arch\win\ff_arch_log.c"
 						>
 						<FileConfiguration
 							Name="Debug|Win32"
@@ -495,30 +523,6 @@
 						>
 					</File>
 					<File
-						RelativePath=".\src\arch\win\ff_win_error_check.c"
-						>
-						<FileConfiguration
-							Name="Debug|Win32"
-							>
-							<Tool
-								Name="VCCLCompilerTool"
-								DisableLanguageExtensions="false"
-								UsePrecompiledHeader="2"
-								PrecompiledHeaderThrough="ff_win_stdafx.h"
-							/>
-						</FileConfiguration>
-						<FileConfiguration
-							Name="Release|Win32"
-							>
-							<Tool
-								Name="VCCLCompilerTool"
-								DisableLanguageExtensions="false"
-								UsePrecompiledHeader="2"
-								PrecompiledHeaderThrough="ff_win_stdafx.h"
-							/>
-						</FileConfiguration>
-					</File>
-					<File
 						RelativePath=".\src\arch\win\ff_win_error_check.h"
 						>
 					</File>
@@ -644,6 +648,10 @@
 					>
 				</File>
 				<File
+					RelativePath=".\include\private\ff_log.h"
+					>
+				</File>
+				<File
 					RelativePath=".\include\private\ff_malloc.h"
 					>
 				</File>
@@ -700,6 +708,10 @@
 					</File>
 					<File
 						RelativePath=".\include\private\arch\ff_arch_file.h"
+						>
+					</File>
+					<File
+						RelativePath=".\include\private\arch\ff_arch_log.h"
 						>
 					</File>
 					<File
@@ -761,6 +773,10 @@
 				</File>
 				<File
 					RelativePath=".\include\ff\ff_hash.h"
+					>
+				</File>
+				<File
+					RelativePath=".\include\ff\ff_log.h"
 					>
 				</File>
 				<File
