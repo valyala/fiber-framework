@@ -26,7 +26,7 @@ static void write_log_to_stream(FILE *stream, enum ff_log_level level, const wch
 	ff_assert(len > 0);
    	len = vfwprintf(stream, format, args_ptr);
    	ff_assert(len >= 0);
-   	len = fwprintf_s(stream, L"\n");
+   	len = fwprintf(stream, L"\n");
    	ff_assert(len > 0);
    	rv = fflush(stream);
    	ff_assert(rv == 0);
@@ -34,7 +34,7 @@ static void write_log_to_stream(FILE *stream, enum ff_log_level level, const wch
 
 void ff_arch_log_initialize(const wchar_t *log_filename)
 {
-	const char *log_filename_mb;
+	char *log_filename_mb;
 
 	ff_assert(!is_arch_log_initialized);
 	log_filename_mb = ff_linux_misc_wide_to_multibyte_string(log_filename);
