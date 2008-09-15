@@ -13,7 +13,7 @@ struct ff_log_ctx
 
 static struct ff_log_ctx log_data;
 static int is_log_initialized = 0;
-static PER_THREAD is_log_write_called = 0;
+static PER_THREAD int is_log_write_called = 0;
 
 void ff_log_initialize(const wchar_t *log_filename)
 {
