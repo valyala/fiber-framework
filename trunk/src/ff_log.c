@@ -35,9 +35,11 @@ void ff_log_write(enum ff_log_level level, const wchar_t *format, ...)
 {
 	va_list args_ptr;
 
+	va_start(args_ptr, format);
 	if (is_log_write_called)
 	{
 		fprintf(stderr, "recursive call to the ff_log_write() detected\n");
+		vfwprintf(stderr, format, args_ptr);
 		exit(EXIT_FAILURE);
 	}
 
@@ -46,11 +48,9 @@ void ff_log_write(enum ff_log_level level, const wchar_t *format, ...)
 	{
 		ff_arch_mutex_lock(log_data.mutex);
 	}
-
 	/* even if is_log_initialized == 0, then the ff_arch_log_write() should
 	 * write the log message somewhere (at least to the stderr).
 	 */
-	va_start(args_ptr, format);
 	ff_arch_log_write(level, format, args_ptr);
 	if (level == FF_LOG_ERROR)
 	{
