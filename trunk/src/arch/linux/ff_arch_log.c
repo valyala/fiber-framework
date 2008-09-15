@@ -1,9 +1,8 @@
-#include "ff_win_stdafx.h"
+#include "private/ff_common.h"
 
 #include "private/arch/ff_arch_log.h"
-#include "ff_win_error_check.h"
-
-#include <share.h>
+#include "ff_linux_error_check.h"
+#include "ff_linux_misc.h"
 
 #define LOG_LEVEL_TO_STR(level) ((level) == FF_LOG_ERROR ? L"error" : ((level) == FF_LOG_WARNING ? L"warning" : L"info"))
 
@@ -23,9 +22,9 @@ static void write_log_to_stream(FILE *stream, enum ff_log_level level, const wch
 
 	level_str = LOG_LEVEL_TO_STR(level);
 	ff_assert(level_str != NULL);
-	len = fwprintf_s(stream, L"%ls: ", level_str);
+	len = fwprintf(stream, L"%ls: ", level_str);
 	ff_assert(len > 0);
-   	len = vfwprintf_s(stream, format, args_ptr);
+   	len = vfwprintf(stream, format, args_ptr);
    	ff_assert(len >= 0);
    	len = fwprintf_s(stream, L"\n");
    	ff_assert(len > 0);
@@ -35,9 +34,13 @@ static void write_log_to_stream(FILE *stream, enum ff_log_level level, const wch
 
 void ff_arch_log_initialize(const wchar_t *log_filename)
 {
+	const char *log_filename_mb;
+
 	ff_assert(!is_arch_log_initialized);
-	arch_log_data.log_file = _wfsopen(log_filename, L"at, ccs=UTF-8", _SH_DENYWR);
-	ff_winapi_fatal_error_check(arch_log_data.log_file != NULL, L"cannot open the log file [%ls], errno=%d.", log_filename, errno);
+	log_filename_mb = ff_linux_misc_wide_to_multibyte_string(log_filename);
+	arch_log_data.log_file = fopen(log_filename_mb, "at");
+	ff_free(log_filename_mb);
+	ff_linux_fatal_error_check(arch_log_data.log_file != NULL, L"cannot open the log file [%ls], errno=%d.", log_filename, errno);
 	is_arch_log_initialized = 1;
 }
 
