@@ -8,8 +8,8 @@ void fatal_error(const wchar_t *format, ...)
 {
 	static wchar_t error_message[ERROR_MESSAGE_MAX_SIZE];
 	int len;
-
 	va_list args_ptr;
+
 	va_start(args_ptr, format);
 	len = vswprintf_s(error_message, ERROR_MESSAGE_MAX_SIZE, format, args_ptr);
 	ff_assert(len >= 0);
