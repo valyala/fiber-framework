@@ -1,5 +1,6 @@
 #include "ff/ff_common.h"
 #include "ff/ff_core.h"
+#include "ff/ff_log.h"
 #include "ff/ff_fiber.h"
 #include "ff/ff_event.h"
 #include "ff/ff_mutex.h"
@@ -14,6 +15,8 @@
 
 #include <stdio.h>
 #include <string.h>
+
+#define LOG_FILENAME L"ff_unit_tests_log.txt"
 
 #define ASSERT(expr, msg) \
 	do \
@@ -41,7 +44,7 @@
 
 DECLARE_TEST(core_init)
 {
-	ff_core_initialize();
+	ff_core_initialize(LOG_FILENAME);
 	ff_core_shutdown();
 	return NULL;
 }
@@ -51,14 +54,15 @@ DECLARE_TEST(core_init_multiple)
 	int i;
 	for (i = 0; i < 10; i++)
 	{
-		RUN_TEST(core_init);
+		ff_core_initialize(LOG_FILENAME);
+		ff_core_shutdown();
 	}
 	return NULL;
 }
 
 DECLARE_TEST(core_sleep)
 {
-	ff_core_initialize();
+	ff_core_initialize(LOG_FILENAME);
 	ff_core_sleep(100);
 	ff_core_shutdown();
 	return NULL;
@@ -68,7 +72,7 @@ DECLARE_TEST(core_sleep_multiple)
 {
 	int i;
 
-	ff_core_initialize();
+	ff_core_initialize(LOG_FILENAME);
 	for (i = 0; i < 10; i++)
 	{
 		ff_core_sleep(i * 10 + 1);
@@ -89,7 +93,7 @@ DECLARE_TEST(core_threadpool_execute)
 {
 	int a[2];
 
-	ff_core_initialize();
+	ff_core_initialize(LOG_FILENAME);
 	a[0] = 1234;
 	a[1] = 4321;
 	ff_core_threadpool_execute(threadpool_int_increment, a);
@@ -102,7 +106,7 @@ DECLARE_TEST(core_threadpool_execute_multiple)
 {
 	int i;
 
-	ff_core_initialize();
+	ff_core_initialize(LOG_FILENAME);
 	for (i = 0; i < 10; i++)
 	{
 		int a[2];
@@ -128,7 +132,7 @@ DECLARE_TEST(core_fiberpool_execute)
 {
 	int a = 0;
 
-	ff_core_initialize();
+	ff_core_initialize(LOG_FILENAME);
 	ff_core_fiberpool_execute_async(fiberpool_int_increment, &a);
 	ff_core_shutdown();
 	ASSERT(a == 1, "unexpected result");
@@ -140,7 +144,7 @@ DECLARE_TEST(core_fiberpool_execute_multiple)
 	int a = 0;
 	int i;
 
-	ff_core_initialize();
+	ff_core_initialize(LOG_FILENAME);
 	for (i = 0; i < 10; i++)
 	{
 		ff_core_fiberpool_execute_async(fiberpool_int_increment, &a);
@@ -154,7 +158,7 @@ DECLARE_TEST(core_fiberpool_execute_deferred)
 {
 	int a = 0;
 
-	ff_core_initialize();
+	ff_core_initialize(LOG_FILENAME);
 	ff_core_fiberpool_execute_deferred(fiberpool_int_increment, &a, 500);
 	ff_core_sleep(10);
 	ASSERT(a == 0, "unexpected result");
@@ -168,7 +172,7 @@ DECLARE_TEST(core_fiberpool_execute_deferred_multiple)
 	int a = 0;
 	int i;
 
-	ff_core_initialize();
+	ff_core_initialize(LOG_FILENAME);
 	for (i = 0; i < 10; i++)
 	{
 		ff_core_fiberpool_execute_deferred(fiberpool_int_increment, &a, 500);
@@ -198,6 +202,28 @@ DECLARE_TEST(core_all)
 /* end of ff_core tests */
 #pragma endregion
 
+#pragma region ff_log tests
+
+DECLARE_TEST(log_basic)
+{
+	ff_log_write(FF_LOG_INFO, L"log messages can be written even before ff_core_initialize()");
+	ff_core_initialize(LOG_FILENAME);
+	ff_log_write(FF_LOG_INFO, L"this is an info log");
+	ff_log_write(FF_LOG_WARNING, L"this is a warning log");
+	ff_core_shutdown();
+	ff_log_write(FF_LOG_WARNING, L"log messages can be written even after ff_core_shutdown()");
+	return NULL;
+}
+
+DECLARE_TEST(log_all)
+{
+	RUN_TEST(log_basic);
+	return NULL;
+}
+
+/* end of ff_log tests */
+#pragma endregion
+
 #pragma region ff_fiber tests
 
 static void fiber_func(void *ctx)
@@ -212,7 +238,7 @@ DECLARE_TEST(fiber_create_delete)
 {
 	struct ff_fiber *fiber;
 
-	ff_core_initialize();
+	ff_core_initialize(LOG_FILENAME);
 	fiber = ff_fiber_create(fiber_func, 0);
 	ASSERT(fiber != NULL, "unexpected result");
 	ff_fiber_delete(fiber);
@@ -225,7 +251,7 @@ DECLARE_TEST(fiber_start_join)
 	struct ff_fiber *fiber;
 	int a = 0;
 
-	ff_core_initialize();
+	ff_core_initialize(LOG_FILENAME);
 	fiber = ff_fiber_create(fiber_func, 0x100000);
 	ff_fiber_start(fiber, &a);
 	ff_fiber_join(fiber);
@@ -241,7 +267,7 @@ DECLARE_TEST(fiber_start_multiple)
 	int a = 0;
 	int i;
 
-	ff_core_initialize();
+	ff_core_initialize(LOG_FILENAME);
 	for (i = 0; i < 10; i++)
 	{
 		struct ff_fiber *fiber;
@@ -292,7 +318,7 @@ DECLARE_TEST(event_manual_create_delete)
 {
 	struct ff_event *event;
 
-	ff_core_initialize();
+	ff_core_initialize(LOG_FILENAME);
 
 	event = ff_event_create(FF_EVENT_MANUAL);
 	ASSERT(event != NULL, "unexpected result");
@@ -306,7 +332,7 @@ DECLARE_TEST(event_auto_create_delete)
 {
 	struct ff_event *event;
 
-	ff_core_initialize();
+	ff_core_initialize(LOG_FILENAME);
 
 	event = ff_event_create(FF_EVENT_AUTO);
 	ASSERT(event != NULL, "unexpected result");
@@ -329,7 +355,7 @@ DECLARE_TEST(event_manual_basic)
 	struct ff_event *event;
 	int is_set;
 
-	ff_core_initialize();
+	ff_core_initialize(LOG_FILENAME);
 	event = ff_event_create(FF_EVENT_MANUAL);
 	is_set = ff_event_is_set(event);
 	ASSERT(!is_set, "initial event state should be 'not set'");
@@ -359,7 +385,7 @@ DECLARE_TEST(event_auto_basic)
 	struct ff_event *event;
 	int is_set;
 
-	ff_core_initialize();
+	ff_core_initialize(LOG_FILENAME);
 	event = ff_event_create(FF_EVENT_AUTO);
 	is_set = ff_event_is_set(event);
 	ASSERT(!is_set, "initial event state should be 'not set'");
@@ -390,7 +416,7 @@ DECLARE_TEST(event_manual_timeout)
 	int is_success;
 	int is_set;
 
-	ff_core_initialize();
+	ff_core_initialize(LOG_FILENAME);
 
 	event = ff_event_create(FF_EVENT_MANUAL);
 	is_success = ff_event_wait_with_timeout(event, 100);
@@ -414,7 +440,7 @@ DECLARE_TEST(event_auto_timeout)
 	int is_success;
 	int is_set;
 
-	ff_core_initialize();
+	ff_core_initialize(LOG_FILENAME);
 
 	event = ff_event_create(FF_EVENT_AUTO);
 	is_success = ff_event_wait_with_timeout(event, 100);
@@ -456,7 +482,7 @@ DECLARE_TEST(event_manual_multiple)
 	int a = 0;
 	void *data[3];
 
-	ff_core_initialize();
+	ff_core_initialize(LOG_FILENAME);
 	event = ff_event_create(FF_EVENT_MANUAL);
 	done_event = ff_event_create(FF_EVENT_MANUAL);
 	data[0] = event;
@@ -484,7 +510,7 @@ DECLARE_TEST(event_auto_multiple)
 	int is_success;
 	void *data[3];
 
-	ff_core_initialize();
+	ff_core_initialize(LOG_FILENAME);
 	event = ff_event_create(FF_EVENT_AUTO);
 	done_event = ff_event_create(FF_EVENT_MANUAL);
 	data[0] = event;
@@ -532,7 +558,7 @@ DECLARE_TEST(mutex_create_delete)
 {
 	struct ff_mutex *mutex;
 
-	ff_core_initialize();
+	ff_core_initialize(LOG_FILENAME);
 	mutex = ff_mutex_create();
 	ASSERT(mutex != NULL, "mutex should be initialized");
 	ff_mutex_delete(mutex);
@@ -565,7 +591,7 @@ DECLARE_TEST(mutex_basic)
 	struct ff_mutex *mutex;
 	struct ff_event *event;
 
-	ff_core_initialize();
+	ff_core_initialize(LOG_FILENAME);
 	mutex = ff_mutex_create();
 	event = ff_event_create(FF_EVENT_AUTO);
 	ff_mutex_lock(mutex);
@@ -603,7 +629,7 @@ DECLARE_TEST(semaphore_create_delete)
 {
 	struct ff_semaphore *semaphore;
 
-	ff_core_initialize();
+	ff_core_initialize(LOG_FILENAME);
 	semaphore = ff_semaphore_create(0);
 	ASSERT(semaphore != NULL, "semaphore should be initialized");
 	ff_semaphore_delete(semaphore);
@@ -617,7 +643,7 @@ DECLARE_TEST(semaphore_basic)
 	int is_success;
 	struct ff_semaphore *semaphore;
 
-	ff_core_initialize();
+	ff_core_initialize(LOG_FILENAME);
 	semaphore = ff_semaphore_create(0);
 	is_success = ff_semaphore_down_with_timeout(semaphore, 1);
 	ASSERT(!is_success, "semaphore with 0 value cannot be down");
@@ -654,7 +680,7 @@ DECLARE_TEST(blocking_queue_create_delete)
 {
 	struct ff_blocking_queue *queue;
 
-	ff_core_initialize();
+	ff_core_initialize(LOG_FILENAME);
 	queue = ff_blocking_queue_create(10);
 	ASSERT(queue != NULL, "queue should be initialized");
 	ff_blocking_queue_delete(queue);
@@ -669,7 +695,7 @@ DECLARE_TEST(blocking_queue_basic)
 	int64_t data = 0;
 	struct ff_blocking_queue *queue;
 
-	ff_core_initialize();
+	ff_core_initialize(LOG_FILENAME);
 	queue = ff_blocking_queue_create(10);
 	for (i = 0; i < 10; i++)
 	{
@@ -703,7 +729,7 @@ DECLARE_TEST(blocking_queue_fiberpool)
 	int is_success;
 	struct ff_blocking_queue *queue;
 
-	ff_core_initialize();
+	ff_core_initialize(LOG_FILENAME);
 	queue = ff_blocking_queue_create(1);
 	is_success = ff_blocking_queue_get_with_timeout(queue, (const void **)&data, 1);
 	ASSERT(!is_success, "queue should be empty");
@@ -734,7 +760,7 @@ DECLARE_TEST(blocking_stack_create_delete)
 {
 	struct ff_blocking_stack *stack;
 
-	ff_core_initialize();
+	ff_core_initialize(LOG_FILENAME);
 	stack = ff_blocking_stack_create(10);
 	ASSERT(stack != NULL, "stack should be initialized");
 	ff_blocking_stack_delete(stack);
@@ -749,7 +775,7 @@ DECLARE_TEST(blocking_stack_basic)
 	int64_t data = 0;
 	struct ff_blocking_stack *stack;
 
-	ff_core_initialize();
+	ff_core_initialize(LOG_FILENAME);
 	stack = ff_blocking_stack_create(10);
 	for (i = 0; i < 10; i++)
 	{
@@ -783,7 +809,7 @@ DECLARE_TEST(blocking_stack_fiberpool)
 	int is_success;
 	struct ff_blocking_stack *stack;
 
-	ff_core_initialize();
+	ff_core_initialize(LOG_FILENAME);
 	stack = ff_blocking_stack_create(1);
 	is_success = ff_blocking_stack_pop_with_timeout(stack, (const void **)&data, 1);
 	ASSERT(!is_success, "stack should be empty");
@@ -827,7 +853,7 @@ DECLARE_TEST(pool_create_delete)
 {
 	struct ff_pool *pool;
 
-	ff_core_initialize();
+	ff_core_initialize(LOG_FILENAME);
 	pool = ff_pool_create(10, pool_entry_constructor, NULL, pool_entry_destructor);
 	ASSERT(pool_entries_cnt == 0, "pool should be empty after creation");
 	ff_pool_delete(pool);
@@ -854,7 +880,7 @@ DECLARE_TEST(pool_basic)
 	int i;
 	int a;
 
-	ff_core_initialize();
+	ff_core_initialize(LOG_FILENAME);
 	pool = ff_pool_create(10, pool_entry_constructor, NULL, pool_entry_destructor);
 	for (i = 0; i < 10; i++)
 	{
@@ -895,7 +921,7 @@ DECLARE_TEST(pool_fiberpool)
 	struct ff_pool *pool;
 	void *entry;
 	
-	ff_core_initialize();
+	ff_core_initialize(LOG_FILENAME);
 	pool = ff_pool_create(1, pool_entry_constructor, NULL, pool_entry_destructor);
 	ASSERT(pool_entries_cnt == 0, "pool should be empty after creation");
 	entry = ff_pool_acquire_entry(pool);
@@ -929,7 +955,7 @@ DECLARE_TEST(file_open_read_fail)
 {
 	struct ff_file *file;
 
-	ff_core_initialize();
+	ff_core_initialize(LOG_FILENAME);
 	file = ff_file_open(L"unexpected_file.txt", FF_FILE_READ);
 	ASSERT(file == NULL, "unexpected file couldn't be opened");
 	ff_core_shutdown();
@@ -941,7 +967,7 @@ DECLARE_TEST(file_create_delete)
 	struct ff_file *file;
 	int is_success;
 
-	ff_core_initialize();
+	ff_core_initialize(LOG_FILENAME);
 
 	file = ff_file_open(L"test.txt", FF_FILE_WRITE);
 	ASSERT(file != NULL, "file should be created");
@@ -965,7 +991,7 @@ DECLARE_TEST(file_basic)
 	int is_equal;
 	int is_success;
 
-	ff_core_initialize();
+	ff_core_initialize(LOG_FILENAME);
 
 	file = ff_file_open(L"test.txt", FF_FILE_WRITE);
 	ASSERT(file != NULL, "file should be created");
@@ -1036,7 +1062,7 @@ DECLARE_TEST(arch_net_addr_create_delete)
 {
 	struct ff_arch_net_addr *addr;
 
-	ff_core_initialize();
+	ff_core_initialize(LOG_FILENAME);
 	addr = ff_arch_net_addr_create();
 	ASSERT(addr != NULL, "addr should be created");
 	ff_arch_net_addr_delete(addr);
@@ -1050,7 +1076,7 @@ DECLARE_TEST(arch_net_addr_resolve_success)
 	int is_success;
 	int is_equal;
 
-	ff_core_initialize();
+	ff_core_initialize(LOG_FILENAME);
 	addr1 = ff_arch_net_addr_create();
 	addr2 = ff_arch_net_addr_create();
 	is_success = ff_arch_net_addr_resolve(addr1, L"localhost", 80);
@@ -1074,7 +1100,7 @@ DECLARE_TEST(arch_net_addr_resolve_fail)
 	struct ff_arch_net_addr *addr;
 	int is_success;
 
-	ff_core_initialize();
+	ff_core_initialize(LOG_FILENAME);
 	addr = ff_arch_net_addr_create();
 	is_success = ff_arch_net_addr_resolve(addr, L"non.existant,address", 123);
 	ASSERT(!is_success, "address shouldn't be resolved");
@@ -1089,7 +1115,7 @@ DECLARE_TEST(arch_net_addr_broadcast)
 	int is_success;
 	int is_equal;
 
-	ff_core_initialize();
+	ff_core_initialize(LOG_FILENAME);
 	addr = ff_arch_net_addr_create();
 	net_mask = ff_arch_net_addr_create();
 	broadcast_addr = ff_arch_net_addr_create();
@@ -1118,7 +1144,7 @@ DECLARE_TEST(arch_net_addr_to_string)
 	int is_success;
 	int is_equal;
 
-	ff_core_initialize();
+	ff_core_initialize(LOG_FILENAME);
 	addr = ff_arch_net_addr_create();
 	is_success = ff_arch_net_addr_resolve(addr, L"12.34.56.78", 90);
 	ASSERT(is_success, "address should be resolved");
@@ -1150,7 +1176,7 @@ DECLARE_TEST(tcp_create_delete)
 {
 	struct ff_tcp *tcp;
 
-	ff_core_initialize();
+	ff_core_initialize(LOG_FILENAME);
 	tcp = ff_tcp_create();
 	ASSERT(tcp != NULL, "tcp should be created");
 	ff_tcp_delete(tcp);
@@ -1195,7 +1221,7 @@ DECLARE_TEST(tcp_basic)
 	int is_equal;
 	uint8_t buf[4];
 
-	ff_core_initialize();
+	ff_core_initialize(LOG_FILENAME);
 	addr = ff_arch_net_addr_create();
 	is_success = ff_arch_net_addr_resolve(addr, L"127.0.0.1", 43210);
 	ASSERT(is_success, "localhost address should be resolved successfully");
@@ -1240,7 +1266,7 @@ DECLARE_TEST(udp_create_delete)
 {
 	struct ff_udp *udp;
 
-	ff_core_initialize();
+	ff_core_initialize(LOG_FILENAME);
 
 	udp = ff_udp_create(FF_UDP_BROADCAST);
 	ASSERT(udp != NULL, "broadcast udp should be created");
@@ -1297,7 +1323,7 @@ DECLARE_TEST(udp_basic)
 	struct ff_arch_net_addr *server_addr, *client_addr, *net_mask;
 	uint8_t buf[10];
 
-	ff_core_initialize();
+	ff_core_initialize(LOG_FILENAME);
 	server_addr = ff_arch_net_addr_create();
 	client_addr = ff_arch_net_addr_create();
 	net_mask = ff_arch_net_addr_create();
@@ -1353,6 +1379,7 @@ DECLARE_TEST(udp_all)
 static const char *run_all_tests()
 {
 	RUN_TEST(core_all);
+	RUN_TEST(log_all);
 	RUN_TEST(fiber_all);
 	RUN_TEST(event_all);
 	RUN_TEST(mutex_all);
