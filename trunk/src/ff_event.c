@@ -92,7 +92,7 @@ int ff_event_wait_with_timeout(struct ff_event *event, int timeout)
 	if (!event->is_set)
 	{
 		struct ff_fiber *current_fiber;
-		struct ff_core_timeout_operation_data *timeout_operation_data;
+		struct ff_core_timeout_operation_data *timeout_operation_data = NULL;
 
 		current_fiber = ff_fiber_get_current();
 		ff_stack_push(event->pending_fibers, current_fiber);
