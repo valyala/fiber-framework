@@ -9,10 +9,10 @@ void fatal_error(const wchar_t *format, ...)
 {
 	int len;
 	char *mb_format;
+	va_list args_ptr;
 
 	mb_format = ff_linux_misc_wide_to_multibyte_string(format);
 
-	va_list args_ptr;
 	va_start(args_ptr, format);
 	len = vfprintf(stderr, mb_format, args_ptr);
 	ff_assert(len >= 0);
