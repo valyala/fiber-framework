@@ -24,11 +24,11 @@ static void write_log_to_stream(FILE *stream, const char *log_level, const wchar
 	{
 		ff_arch_mutex_lock(log_data.mutex);
 	}
-	len = fwprintf_s(stream, L"%hs: ", log_level);
+	len = fwprintf(stream, L"%hs: ", log_level);
 	ff_assert(len > 0);
-   	len = vfwprintf_s(stream, format, args_ptr);
+   	len = vfwprintf(stream, format, args_ptr);
    	ff_assert(len >= 0);
-   	len = fwprintf_s(stream, L"\n");
+   	len = fwprintf(stream, L"\n");
    	ff_assert(len > 0);
    	rv = fflush(stream);
    	ff_assert(rv == 0);
