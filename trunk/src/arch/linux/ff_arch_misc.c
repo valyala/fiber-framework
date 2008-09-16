@@ -114,3 +114,23 @@ char *ff_linux_misc_wide_to_multibyte_string(const wchar_t *wide_str)
 
 	return mb_str;
 }
+
+FILE *ff_arch_misc_open_log_file_utf8(const wchar_t *filename)
+{
+	FILE *stream;
+	wchar_t *filename_mb;
+
+	filename_mb = ff_linux_misc_wide_to_multibyte_string(filename);
+	stream = fopen(filename_mb, "at");
+	ff_free(filename_mb);
+	ff_linux_fatal_error_check(stream != NULL, L"cannot open the log file [%ls], errno=%d.", filename, errno);
+	return stream;
+}
+
+void ff_arch_misc_close_log_file_utf8(FILE *stream)
+{
+	int rv;
+
+	rv = fclose(stream);
+	ff_assert(rv == 0);
+}

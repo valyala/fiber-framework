@@ -38,6 +38,19 @@ void ff_arch_misc_sleep(int interval);
  */
 int ff_arch_misc_get_cpus_cnt();
 
+/**
+ * @public
+ * Opens the given file for logging in utf8 mode.
+ * Returns NULL if the file cannot be opened.
+ */
+FILE *ff_arch_misc_open_log_file_utf8(const wchar_t *filename);
+
+/**
+ * @public
+ * Closes the given stream, which was opened using the ff_arch_misc_open_log_file_utf8()
+ */
+void ff_arch_misc_close_log_file_utf8(FILE *stream);
+
 #ifdef __cplusplus
 }
 #endif

@@ -13,7 +13,7 @@ extern "C" {
 		if (!(expression)) \
 		{ \
 			DWORD last_error = GetLastError(); \
-			ff_log_write(FF_LOG_ERROR, L"WINAPI fatal error at %hs:%d, GetLastError()=%lu. " format, __FILE__, __LINE__, last_error, ## __VA_ARGS__); \
+			ff_log_fatal_error(L"WINAPI fatal error at %hs:%d, GetLastError()=%lu. " format, __FILE__, __LINE__, last_error, ## __VA_ARGS__); \
 		} \
 	} while (0)
 
@@ -22,7 +22,7 @@ extern "C" {
 		if (!(expression)) \
 		{ \
 			int last_error = WSAGetLastError(); \
-			ff_log_write(FF_LOG_ERROR, L"WinSock fatal error at %hs:%d, WSAGetLastError()=%lu. " format, __FILE__, __LINE__, last_error, ## __VA_ARGS__); \
+			ff_log_fatal_error(L"WinSock fatal error at %hs:%d, WSAGetLastError()=%lu. " format, __FILE__, __LINE__, last_error, ## __VA_ARGS__); \
 		} \
 	} while (0)
 

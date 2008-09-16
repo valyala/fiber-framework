@@ -351,30 +351,6 @@
 						</FileConfiguration>
 					</File>
 					<File
-						RelativePath=".\src\arch\win\ff_arch_log.c"
-						>
-						<FileConfiguration
-							Name="Debug|Win32"
-							>
-							<Tool
-								Name="VCCLCompilerTool"
-								DisableLanguageExtensions="false"
-								UsePrecompiledHeader="2"
-								PrecompiledHeaderThrough="ff_win_stdafx.h"
-							/>
-						</FileConfiguration>
-						<FileConfiguration
-							Name="Release|Win32"
-							>
-							<Tool
-								Name="VCCLCompilerTool"
-								DisableLanguageExtensions="false"
-								UsePrecompiledHeader="2"
-								PrecompiledHeaderThrough="ff_win_stdafx.h"
-							/>
-						</FileConfiguration>
-					</File>
-					<File
 						RelativePath=".\src\arch\win\ff_arch_misc.c"
 						>
 						<FileConfiguration
@@ -708,10 +684,6 @@
 					</File>
 					<File
 						RelativePath=".\include\private\arch\ff_arch_file.h"
-						>
-					</File>
-					<File
-						RelativePath=".\include\private\arch\ff_arch_log.h"
 						>
 					</File>
 					<File
