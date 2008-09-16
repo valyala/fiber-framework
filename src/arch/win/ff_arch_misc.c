@@ -4,6 +4,9 @@
 #include "private/arch/ff_arch_completion_port.h"
 #include "ff_win_net.h"
 #include "ff_win_file.h"
+#include "ff_win_error_check.h"
+
+#include <share.h>
 
 void ff_arch_misc_initialize(struct ff_arch_completion_port *completion_port)
 {
@@ -38,4 +41,21 @@ int ff_arch_misc_get_cpus_cnt()
 	GetSystemInfo(&system_info);
 	cpus_cnt = (int) system_info.dwNumberOfProcessors;
 	return cpus_cnt;
+}
+
+FILE *ff_arch_misc_open_log_file_utf8(const wchar_t *filename)
+{
+	FILE *stream;
+	
+	stream = _wfsopen(filename, L"at, ccs=UTF-8", _SH_DENYWR);
+	ff_winapi_fatal_error_check(stream != NULL, L"cannot open the log file [%ls], errno=%d.", filename, errno);
+	return stream;
+}
+
+void ff_arch_misc_close_log_file_utf8(FILE *stream)
+{
+	int rv;
+
+	rv = fclose(stream);
+	ff_assert(rv == 0);
 }

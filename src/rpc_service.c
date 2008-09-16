@@ -93,7 +93,7 @@ static void main_server_func(void *ctx)
 	if (!is_success)
 	{
 		addr_str = ff_arch_net_addr_to_string(server->listen_addr);
-		ff_log_write(FF_LOG_ERROR, L"cannot bind the address %ls to the server", addr_str);
+		ff_log_fatal_error(L"cannot bind the address %ls to the server", addr_str);
 	}
 
 	remote_addr = ff_arch_net_addr_create();

@@ -10,7 +10,6 @@ ARCH_OBJS= \
 	$(ARCH_DIR)/ff_arch_completion_port.o \
 	$(ARCH_DIR)/ff_arch_fiber.o \
 	$(ARCH_DIR)/ff_arch_file.o \
-	$(ARCH_DIR)/ff_arch_log.o \
 	$(ARCH_DIR)/ff_arch_misc.o \
 	$(ARCH_DIR)/ff_arch_mutex.o \
 	$(ARCH_DIR)/ff_arch_net_addr.o \
