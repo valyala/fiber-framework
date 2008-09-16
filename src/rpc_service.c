@@ -36,6 +36,59 @@ TYPE ::= "uint32" | "uint64" | "int32" | "int64" | "string" | "blob"
 
 id = [a-z_][a-z_\d]*
 
+typedef void (*rpc_connection_processor_release_func)(void *release_func_ctx, struct rpc_connection_processor *connection_processor);
+
+struct rpc_connection_processor
+{
+	struct ff_tcp *connection;
+	rpc_connection_processor_release_func release_func;
+	void *release_func_ctx;
+};
+
+struct rpc_connection_processor *rpc_connection_processor_create()
+{
+	struct rpc_connection_processor *connection_processor;
+
+	connection_processor = (struct rpc_connection_processor *) ff_malloc(sizeof(*connection_processor));
+	connection_processor->connection = NULL;
+	connection_processor->release_func = NULL;
+	connection_processor->release_func_ctx = NULL;
+}
+
+void rpc_connection_processor_delete(struct rpc_connection_processor *connection_processor)
+{
+	ff_assert(connection_processor->connection == NULL);
+	ff_assert(connection_processor->release_func == NULL);
+	ff_assert(connection_processor->release_func_ctx == NULL);
+
+	ff_free(connection_processor);
+}
+
+void rpc_connection_processor_start(struct rpc_connection_processor *connection_processor, struct ff_tcp *connection,
+	rpc_connection_processor_release_func release_func, void *release_func_ctx)
+{
+	ff_assert(connection_processor->connection == NULL);
+	ff_assert(connection_processor->release_func == NULL);
+	ff_assert(connection_processor->release_func_ctx == NULL);
+
+	connection_processor->connection = connection;
+	connection_processor->release_func = release_func;
+	connection_processor->release_func_ctx = release_func_ctx;
+}
+
+void rpc_connection_processor_stop(struct rpc_connection_processor *connection_processor)
+{
+	ff_assert(connection_processor->connection != NULL);
+	ff_assert(connection_processor->release_func != NULL);
+	ff_assert(connection_processor->release_func_ctx != NULL);
+
+	connection_processor->release_func(connection_processor->release_func_ctx, connection_processor);
+
+	connection_processor->connection = NULL;
+	connection_processor->release_func = NULL;
+	connection_processor->release_func_ctx = NULL;
+}
+
 struct rpc_server_params
 {
 	struct rpc_interface *interface;
@@ -48,7 +101,7 @@ struct rpc_server_params
 
 struct rpc_server
 {
-	struct ff_arch_net_addr *listen_addr;
+	struct ff_tcp *accept_tcp;
 	struct ff_pool *connection_processors;
 	struct ff_fiber *main_fiber;
 };
@@ -80,50 +133,65 @@ static void stop_connection_processor(void *entry, void *ctx, int is_acquired)
 	}
 }
 
+static struct rpc_connection_processor *acquire_connection_processor(struct rpc_server *server)
+{
+	struct rpc_connection_processor *connection_processor;
+
+	connection_processor = (struct rpc_connection_processor *) ff_pool_acquire_entry(server->connection_processors);
+	return connection_processor;
+}
+
+static void release_connection_processor(void *ctx, struct rpc_connection_processor *connection_processor)
+{
+	struct rpc_server *server;
+
+	server = (struct rpc_server *) ctx;
+	ff_pool_release_entry(server->connection_processors, connection_processor);
+}
+
 static void main_server_func(void *ctx)
 {
 	struct rpc_server *server;
-	struct ff_tcp *server_tcp;
 	struct ff_arch_net_addr *remote_addr;
-	int is_success;
 
 	server = (struct rpc_server *) ctx;
-	server_tcp = ff_tcp_create();
-	is_success = ff_tcp_bind(server_tcp, server->listen_addr, FF_TCP_SERVER);
-	if (!is_success)
-	{
-		addr_str = ff_arch_net_addr_to_string(server->listen_addr);
-		ff_log_fatal_error(L"cannot bind the address %ls to the server", addr_str);
-	}
-
 	remote_addr = ff_arch_net_addr_create();
 	for (;;)
 	{
 		struct ff_tcp *client_tcp;
 		struct rpc_connection_processor *connection_processor;
 
-		client_tcp = ff_tcp_accept(server_tcp, remote_addr);
+		client_tcp = ff_tcp_accept(server->accept_tcp, remote_addr);
 		if (client_tcp == NULL)
 		{
 			break;
 		}
 
 		connection_processor = acquire_connection_processor(server);
-		rpc_connection_processor_start(connection_processor, client_tcp);
+		rpc_connection_processor_start(connection_processor, client_tcp, release_connection_processor, server);
 	}
 	ff_pool_for_each_entry(server->connection_processors, stop_connection_processor, NULL);
-
 	ff_arch_net_addr_delete(remote_addr);
-	ff_tcp_delete(server_tcp);
 }
 
 struct rpc_server *rpc_server_create(const struct rpc_server_params *params)
 {
 	struct rpc_server *server;
+	int is_success;
 
 	server = (struct rpc_server *) ff_malloc(sizeof(*server));
+	server->accept_tcp = ff_tcp_create();
+	is_success = ff_tcp_bind(server->accept_tcp, params->listen_addr, FF_TCP_SERVER);
+	if (!is_success)
+	{
+		const wchar_t *addr_str;
 
-	server->listen_addr = params->listen_addr;
+		addr_str = ff_arch_net_addr_to_string(params->listen_addr);
+		ff_log_fatal_error(L"cannot bind the address %ls to the server", addr_str);
+		/* there is no need to call ff_arch_net_add_delete_string() here,
+		 * because the ff_log_fatal_error() will terminate the application
+		 */
+	}
 	server->connection_processors = ff_pool_create(CONNECTION_PROCESSORS_CNT, create_connection_processor, NULL, delete_connection_processor);
 	server->main_fiber = ff_fiber_create(main_server_func, SERVER_FIBER_STACK_SIZE);
 	ff_fiber_start(server->main_fiber, server);
@@ -133,8 +201,11 @@ struct rpc_server *rpc_server_create(const struct rpc_server_params *params)
 
 void rpc_server_delete(struct rpc_server *server)
 {
-	ff_pool_delete(server->connection_processors);
+	ff_tcp_disconnect(server->accept_tcp);
 	ff_fiber_join(server->main_fiber);
+	ff_fiber_delete(server->main_fiber);
+	ff_pool_delete(server->connection_processors);
+	ff_tcp_delete(server->accept_tcp);
 	ff_free(server);
 }
 
