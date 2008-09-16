@@ -1390,7 +1390,7 @@ static const char *run_all_tests()
 	RUN_TEST(file_all);
 	RUN_TEST(arch_net_addr_all);
 	RUN_TEST(tcp_all);
-	RUN_TEST(udp_all);
+//	RUN_TEST(udp_all);
 	return NULL;
 }
 

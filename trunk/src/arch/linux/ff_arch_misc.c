@@ -118,7 +118,7 @@ char *ff_linux_misc_wide_to_multibyte_string(const wchar_t *wide_str)
 FILE *ff_arch_misc_open_log_file_utf8(const wchar_t *filename)
 {
 	FILE *stream;
-	wchar_t *filename_mb;
+	char *filename_mb;
 
 	filename_mb = ff_linux_misc_wide_to_multibyte_string(filename);
 	stream = fopen(filename_mb, "at");
