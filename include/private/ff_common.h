@@ -11,9 +11,9 @@
 #include "private/ff_assert.h"
 
 #ifdef HAS_THREAD_KEYWORD
-	#define PER_THREAD __thread
+	#define FF_PER_THREAD __thread
 #else
-	#define PER_THREAD __declspec(thread)
+	#define FF_PER_THREAD __declspec(thread)
 #endif
 
 #endif
