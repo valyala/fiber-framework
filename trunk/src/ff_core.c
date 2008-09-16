@@ -155,7 +155,6 @@ void ff_core_initialize(const wchar_t *log_filename)
 {
 	ff_assert(!is_core_initialized);
 	ff_log_initialize(log_filename);
-	ff_log_write(FF_LOG_INFO, L"initializing the fiber framework...");
 	ff_fiber_initialize();
 	core_ctx.completion_port = ff_arch_completion_port_create(COMPLETION_PORT_CONCURRENCY);
 	ff_arch_misc_initialize(core_ctx.completion_port);
@@ -167,14 +166,12 @@ void ff_core_initialize(const wchar_t *log_filename)
 	core_ctx.timeout_operations_semaphore = ff_semaphore_create(0);
 	core_ctx.timeout_checker_fiber = ff_fiber_create(timeout_checker_func, 0);
 	ff_fiber_start(core_ctx.timeout_checker_fiber, NULL);
-	ff_log_write(FF_LOG_INFO, L"the fiber framework has been initialized");
 	is_core_initialized = 1;
 }
 
 void ff_core_shutdown()
 {
 	ff_assert(is_core_initialized);
-	ff_log_write(FF_LOG_INFO, L"shutting down the fiber framework...");
 	ff_semaphore_up(core_ctx.timeout_operations_semaphore);
 	ff_fiber_join(core_ctx.timeout_checker_fiber);
 	ff_fiber_delete(core_ctx.timeout_checker_fiber);
@@ -187,7 +184,6 @@ void ff_core_shutdown()
 	ff_arch_misc_shutdown();
 	ff_arch_completion_port_delete(core_ctx.completion_port);
 	ff_fiber_shutdown();
-	ff_log_write(FF_LOG_INFO, L"the fiber framework has been shutdowned");
 	ff_log_shutdown();
 	is_core_initialized = 0;
 }
