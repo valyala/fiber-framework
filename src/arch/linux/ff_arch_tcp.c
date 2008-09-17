@@ -197,7 +197,11 @@ void ff_arch_tcp_disconnect(struct ff_arch_tcp *tcp)
 	if (rv != -1)
 	{
 		rv = shutdown(tcp->sd_wr, SHUT_WR);
-		ff_assert(rv != -1);
+		if (rv == -1)
+		{
+			/* server socket returns ENOTCONN error when shutting down the tcp->sd_wr */
+			ff_assert(errno == ENOTCONN);
+		}
 	}
 	else
 	{
