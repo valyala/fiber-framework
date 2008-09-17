@@ -36,6 +36,9 @@ TYPE ::= "uint32" | "uint64" | "int32" | "int64" | "string" | "blob"
 
 id = [a-z_][a-z_\d]*
 
+#define READER_FIBER_STACK_SIZE 0x10000
+#define WRITER_FIBER_STACK_SIZE 0x10000
+
 typedef void (*rpc_connection_processor_release_func)(void *release_func_ctx, struct rpc_connection_processor *connection_processor);
 
 struct rpc_connection_processor
@@ -43,7 +46,67 @@ struct rpc_connection_processor
 	struct ff_tcp *connection;
 	rpc_connection_processor_release_func release_func;
 	void *release_func_ctx;
+	struct ff_event *start_event;
+	struct ff_event *stop_event;
+	struct ff_fiber *reader_fiber;
+	struct ff_fiber *writer_fiber;
 };
+
+static void read_from_connection(struct rpc_connection_processor *connection_processor)
+{
+	ff_fiber_start(connection_processor->writer_fiber, connection_processor);
+
+	for (;;)
+	{
+		int is_success;
+
+		is_success = rpc_packet_read(connection_processor->connection);
+		if (!is_success)
+		{
+			break;
+		}
+	}
+
+	stop_connection_writer(connection_processor);
+	ff_tcp_delete(connection_processor->connection);
+
+	connection_processor->connection = NULL;
+	connection_processor->release_func = NULL;
+	connection_processor->release_func_ctx = NULL;
+}
+
+static void connection_reader_func(void *ctx)
+{
+	struct rpc_connection_processor *connection_processor;
+
+	connection_processor = (struct rpc_connection_processor *) ctx;
+
+	for (;;)
+	{
+		ff_event_wait(connection_processor->start_event);
+		if (connection_processor->connection == NULL)
+		{
+			break;
+		}
+
+		ff_assert(connection_processor->connection != NULL);
+		ff_assert(connection_processor->release_func != NULL);
+
+		read_from_connection(connection_processor);
+
+		ff_assert(connection_processor->connection == NULL);
+
+		connection_processor->release_func(release_func_ctx, connection_processor);
+		ff_event_set(connection_processor->stop_event);
+	}
+}
+
+static void connection_writer_func(void *ctx)
+{
+	struct rpc_connection_processor *connection_processor;
+
+	connection_processor = (struct rpc_connection_processor *) ctx;
+}
 
 struct rpc_connection_processor *rpc_connection_processor_create()
 {
@@ -53,6 +116,11 @@ struct rpc_connection_processor *rpc_connection_processor_create()
 	connection_processor->connection = NULL;
 	connection_processor->release_func = NULL;
 	connection_processor->release_func_ctx = NULL;
+	connection_processor->start_event = ff_event_create(FF_EVENT_AUTO);
+	connection_processor->stop_event = ff_event_create(FF_EVENT_AUTO);
+	connection_processor->reader_fiber = ff_fiber_create(connection_reader_func, READER_FIBER_STACK_SIZE);
+	connection_processor->writer_fiber = ff_fiber_create(connection_writer_func, WRITER_FIBER_STACK_SIZE);
+	ff_fiber_start(connection_processor->reader_fiber, connection_processor);
 }
 
 void rpc_connection_processor_delete(struct rpc_connection_processor *connection_processor)
@@ -61,6 +129,12 @@ void rpc_connection_processor_delete(struct rpc_connection_processor *connection
 	ff_assert(connection_processor->release_func == NULL);
 	ff_assert(connection_processor->release_func_ctx == NULL);
 
+	ff_event_set(connection_processor->start_event);
+	ff_fiber_join(connection_processor->reader_fiber);
+	ff_fiber_delete(connection_processor->writer_fiber);
+	ff_fiber_delete(connection_processor->reader_fiber);
+	ff_event_delete(connection_processor->stop_event);
+	ff_event_delete(connection_processor->start_event);
 	ff_free(connection_processor);
 }
 
@@ -74,19 +148,24 @@ void rpc_connection_processor_start(struct rpc_connection_processor *connection_
 	connection_processor->connection = connection;
 	connection_processor->release_func = release_func;
 	connection_processor->release_func_ctx = release_func_ctx;
+	ff_event_set(connection_processor->start_event);
 }
 
 void rpc_connection_processor_stop(struct rpc_connection_processor *connection_processor)
 {
 	ff_assert(connection_processor->connection != NULL);
 	ff_assert(connection_processor->release_func != NULL);
-	ff_assert(connection_processor->release_func_ctx != NULL);
 
-	connection_processor->release_func(connection_processor->release_func_ctx, connection_processor);
+	ff_tcp_disconnect(connection_processor->connection);
+}
 
-	connection_processor->connection = NULL;
-	connection_processor->release_func = NULL;
-	connection_processor->release_func_ctx = NULL;
+void rpc_connection_processor_join(struct rpc_connection_processor *connection_processor)
+{
+	ff_event_wait(connection_processor->stop_event);
+
+	ff_assert(connection_processor->connection == NULL);
+	ff_assert(connection_processor->release_func == NULL);
+	ff_assert(connection_processor->release_func_ctx == NULL);
 }
 
 struct rpc_server_params
@@ -133,6 +212,17 @@ static void stop_connection_processor(void *entry, void *ctx, int is_acquired)
 	}
 }
 
+static void join_connection_processor(void *entry, void *ctx, int is_acquired)
+{
+	struct rpc_connection_processor *connection_processor;
+
+	connection_processor = (struct rpc_connection_processor *) entry;
+	if (is_acquired)
+	{
+		rpc_connection_processor_join(connection_processor);
+	}
+}
+
 static struct rpc_connection_processor *acquire_connection_processor(struct rpc_server *server)
 {
 	struct rpc_connection_processor *connection_processor;
@@ -171,6 +261,7 @@ static void main_server_func(void *ctx)
 		rpc_connection_processor_start(connection_processor, client_tcp, release_connection_processor, server);
 	}
 	ff_pool_for_each_entry(server->connection_processors, stop_connection_processor, NULL);
+	ff_pool_for_each_entry(server->connection_processors, join_connection_processor, NULL);
 	ff_arch_net_addr_delete(remote_addr);
 }
 
