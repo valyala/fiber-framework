@@ -183,12 +183,10 @@ static void test_core_all()
 
 static void test_log_basic()
 {
-	ff_log_info(L"log messages can be written even before ff_core_initialize()");
 	ff_core_initialize(LOG_FILENAME);
 	ff_log_info(L"this is an info log");
 	ff_log_warning(L"this is a warning log");
 	ff_core_shutdown();
-	ff_log_warning(L"log messages can be written even after ff_core_shutdown()");
 }
 
 static void test_log_all()
