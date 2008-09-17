@@ -1250,10 +1250,73 @@ DECLARE_TEST(tcp_basic)
 	return NULL;
 }
 
+struct tcp_server_shutdown_data
+{
+	struct ff_tcp *tcp_server1;
+	struct ff_tcp *tcp_server2;
+	struct ff_event *event;
+};
+
+static void fiberpool_tcp_server_shutdown_func(void *ctx)
+{
+	struct ff_arch_net_addr *client_addr;
+	struct tcp_server_shutdown_data *data;
+	struct ff_tcp *tcp_client;
+
+	data = (struct tcp_server_shutdown_data *) ctx;
+	client_addr = ff_arch_net_addr_create();
+	tcp_client = ff_tcp_accept(data->tcp_server1, client_addr);
+	if (tcp_client == NULL)
+	{
+		ff_event_set(data->event);
+		tcp_client = ff_tcp_accept(data->tcp_server2, client_addr);
+		if (tcp_client == NULL)
+		{
+			ff_event_set(data->event);
+		}
+	}
+	ff_arch_net_addr_delete(client_addr);
+}
+
+DECLARE_TEST(tcp_server_shutdown)
+{
+	struct ff_arch_net_addr *addr1, *addr2;
+	struct tcp_server_shutdown_data data;
+	int is_success;
+
+	ff_core_initialize(LOG_FILENAME);
+	addr1 = ff_arch_net_addr_create();
+	addr2 = ff_arch_net_addr_create();
+	is_success = ff_arch_net_addr_resolve(addr1, L"127.0.0.1", 43211);
+	ASSERT(is_success, "localhost address should be resolved successfully");
+	is_success = ff_arch_net_addr_resolve(addr2, L"127.0.0.1", 43212);
+	ASSERT(is_success, "localhost address should be resolved successfully");
+	data.tcp_server1 = ff_tcp_create();
+	data.tcp_server2 = ff_tcp_create();
+	is_success = ff_tcp_bind(data.tcp_server1, addr1, FF_TCP_SERVER);
+	ASSERT(is_success, "server should be bound to local address");
+	is_success = ff_tcp_bind(data.tcp_server2, addr2, FF_TCP_SERVER);
+	data.event = ff_event_create(FF_EVENT_AUTO);
+	ff_core_fiberpool_execute_async(fiberpool_tcp_server_shutdown_func, &data);
+	ff_tcp_disconnect(data.tcp_server1);
+	ff_event_wait(data.event);
+	ff_tcp_disconnect(data.tcp_server2);
+	ff_event_wait(data.event);
+
+	ff_event_delete(data.event);
+	ff_tcp_delete(data.tcp_server2);
+	ff_tcp_delete(data.tcp_server1);
+	ff_arch_net_addr_delete(addr2);
+	ff_arch_net_addr_delete(addr1);
+	ff_core_shutdown();
+	return NULL;
+}
+
 DECLARE_TEST(tcp_all)
 {
 	RUN_TEST(tcp_create_delete);
 	RUN_TEST(tcp_basic);
+	RUN_TEST(tcp_server_shutdown);
 	return NULL;
 }
 
