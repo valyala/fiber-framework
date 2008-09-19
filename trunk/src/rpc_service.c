@@ -36,207 +36,651 @@ TYPE ::= "uint32" | "uint64" | "int32" | "int64" | "string" | "blob"
 
 id = [a-z_][a-z_\d]*
 
-#define READER_FIBER_STACK_SIZE 0x10000
-#define WRITER_FIBER_STACK_SIZE 0x10000
+#define MAX_READER_QUEUE_SIZE 100
+#define READ_TIMEOUT 2000
+#define WRITE_TIMEOUT 2000
 
-typedef void (*rpc_connection_processor_release_func)(void *release_func_ctx, struct rpc_connection_processor *connection_processor);
+typedef void (*rpc_request_processor_release_func)(void *release_func_ctx, struct rpc_request_processor *request_processor, uint8_t request_id);
+typedef void (*rpc_request_processor_notify_error_func)(void *notify_error_func_ctx);
+typedef struct rpc_packet *(*rpc_request_processor_acquire_packet_func)(void *packet_func_ctx);
+typedef void (*rpc_request_processor_release_packet_func)(void *packet_func_ctx, struct rpc_packet *packet);
 
-struct rpc_connection_processor
+struct rpc_request_processor
 {
-	struct ff_tcp *connection;
-	rpc_connection_processor_release_func release_func;
+	rpc_request_processor_release_func release_func;
 	void *release_func_ctx;
-	struct ff_event *start_event;
-	struct ff_event *stop_event;
-	struct ff_fiber *reader_fiber;
-	struct ff_fiber *writer_fiber;
+	rpc_request_processor_notify_error_func notify_error_func;
+	void *notify_error_func_ctx;
+	rpc_request_processor_acquire_packet_func acquire_packet_func;
+	rpc_request_processor_release_packet_func release_packet_func;
+	void *packet_func_ctx;
+	struct rpc_interface *service_interface;
+	void *service_ctx;
+	struct ff_blocking_queue *writer_queue;
+	struct ff_blocking_queue *reader_queue;
+	struct rpc_stream *stream;
+	struct rpc_packet *current_read_packet;
+	uint8_t request_id;
 };
 
-static void read_from_connection(struct rpc_connection_processor *connection_processor)
+static int read_from_packet_stream(struct rpc_stream *stream, void *buf, int len)
 {
-	ff_fiber_start(connection_processor->writer_fiber, connection_processor);
+	struct rpc_request_processor *request_processor;
+	struct rpc_packet *packet;
+	char *p;
+	int total_bytes_read = -1;
+	int bytes_to_read;
+	enum rpc_packet_type packet_type;
 
-	for (;;)
+	ff_assert(len >= 0);
+
+	request_processor = (struct rpc_request_processor *) stream->ctx;
+
+	packet = request_processor->current_read_packet;
+	if (packet == NULL)
 	{
 		int is_success;
 
-		is_success = rpc_packet_read(connection_processor->connection);
+		is_success = ff_blocking_queue_get_with_timeout(request_processor->reader_queue, &packet, READ_TIMEOUT);
 		if (!is_success)
 		{
-			break;
+			goto end;
+		}
+		if (packet == NULL)
+		{
+			goto end;
+		}
+		packet_type = rpc_packet_get_type(packet);
+		if (packet_type == RPC_PACKET_END || packet_type == RPC_PACKET_MIDDLE)
+		{
+			request_processor->release_packet_func(request_processor->packet_func_ctx, packet);
+			packet = NULL;
+			goto end;
 		}
 	}
 
-	stop_connection_writer(connection_processor);
-	ff_tcp_delete(connection_processor->connection);
+	p = (char *) buf;
+	bytes_to_read = len;
+	while (bytes_to_read > 0)
+	{
+		int bytes_read;
 
-	connection_processor->connection = NULL;
-	connection_processor->release_func = NULL;
-	connection_processor->release_func_ctx = NULL;
+		ff_assert(packet != NULL);
+
+		bytes_read = rpc_packet_read_data(packet, p, bytes_to_read);
+		ff_assert(bytes_read >= 0);
+		bytes_to_read -= bytes_read;
+		p += bytes_read;
+
+        if (bytes_read < bytes_to_read)
+		{
+			int is_success;
+
+			request_processor->release_packet_func(request_processor->packet_func_ctx, packet);
+			if (packet_type == RPC_PACKET_SINGLE || packet_type == RPC_PACKET_END)
+			{
+				goto end;
+			}
+			is_success = ff_blocking_queue_get_with_timeout(request_processor->reader_queue, &packet, READ_TIMEOUT);
+			if (!is_success)
+			{
+				goto end;
+			}
+			if (packet == NULL)
+			{
+				goto end;
+			}
+			packet_type = rpc_packet_get_type(packet);
+			if (packet_type == RPC_PACKET_START || packet_type == RPC_PACKET_SINGLE)
+			{
+				request_processor->release_packet_func(request_processor->packet_func_ctx, packet);
+				packet = NULL;
+				goto end;
+			}
+		}
+	}
+	total_bytes_read = len;
+
+end:
+	request_processor->current_read_packet = packet;
+	return total_bytes_read;
 }
 
-static void connection_reader_func(void *ctx)
+static int write_to_packet_stream(struct rpc_stream *stream, const void *buf, int len)
 {
-	struct rpc_connection_processor *connection_processor;
+	char *p;
+	struct rpc_packet *packet;
+	int bytes_to_write;
+	int total_bytes_written = -1;
 
-	connection_processor = (struct rpc_connection_processor *) ctx;
+	ff_assert(len >= 0);
+
+	request_processor = (struct rpc_request_processor *) stream->ctx;
+
+	packet = request_processor->current_write_packet;
+	if (packet == NULL)
+	{
+		packet = request_processor->acquire_packet_func(request_processor->packet_func_ctx);
+		rpc_packet_set_request_id(packet, request_processor->request_id);
+		rpc_packet_set_type(packet, RPC_PACKET_START);
+	}
+
+	p = (char *) buf;
+	bytes_to_write = len;
+	while (bytes_to_write > 0)
+	{
+		int bytes_written;
+
+		bytes_written = rpc_packet_write_data(packet, p, bytes_to_write);
+		bytes_to_write -= bytes_written;
+		p += bytes_written;
+
+		if (bytes_written < bytes_to_write)
+		{
+			int is_success;
+
+			rpc_packet_set_type(packet, RPC_PACKET_MIDDLE);
+			is_success = ff_blocking_queue_put_with_timeout(request_processor->writer_queue, packet, WRITE_TIMEOUT);
+			if (!is_success)
+			{
+				goto end;
+			}
+		}
+	}
+	total_bytes_written = len;
+
+end:
+	request_processor->current_write_packet = packet;
+	return total_bytes_written;
+}
+
+static int flush_packet_stream(struct rpc_stream *stream)
+{
+	int is_success = 1;
+
+	return is_success;
+}
+
+static void disconnect_packet_stream(struct rpc_stream *stream)
+{
+	/* nothing to do */
+}
+
+static void delete_packet_stream(struct rpc_stream *stream)
+{
+	ff_free(stream);
+}
+
+static struct rpc_stream_vtable packet_stream_vtable =
+{
+	read_from_packet_stream,
+	write_to_packet_stream,
+	flush_packet_stream,
+	disconnect_packet_stream,
+	delete_packet_stream
+};
+
+static struct rpc_stream *create_packet_stream(struct rpc_request_processor *request_processor)
+{
+	struct rpc_stream *rpc_stream;
+
+	rpc_stream = (struct rpc_stream *) ff_malloc(sizeof(*rpc_stream));
+	rpc_stream->vtalbe = &packet_stream_vtable;
+	rpc_stream->cxt = request_processor;
+
+	return rpc_stream;
+}
+
+static void flush_reader_queue(struct rpc_request_processor *request_processor)
+{
+	if (request_processor->current_read_packet != NULL)
+	{
+		request_processor->release_packet_func(request_processor->packet_func_ctx, request_processor->current_read_packet);
+		request_processor->current_read_packet = NULL;
+	}
+	for (;;)
+	{
+		struct rpc_packet *packet;
+		int is_empty;
+
+		is_empty = ff_blocking_queue_is_empty(request_processor->reader_queue);
+		if (is_empty)
+		{
+			break;
+		}
+		ff_blocking_queue_get(request_processor->reader_queue, &packet);
+		request_processor->release_packet_func(request_processor->packet_func_ctx, packet);
+	}
+}
+
+static void process_request_func(void *ctx)
+{
+	struct rpc_request_processor *request_processor;
+	int is_success;
+
+	request_processor = (struct rpc_request_processor *) ctx;
+
+	is_success = rpc_data_process_next_rpc(request_processor->service_interface, request_processor->service_ctx, request_processor->stream);
+	if (!is_success)
+	{
+		request_processor->notify_error_func(request_processor->notify_error_func_ctx);
+	}
+	flush_reader_queue(request_processor);
+	request_processor->release_func(request_processor->release_func_ctx, request_processor, request_processor->request_id);
+}
+
+struct rpc_request_processor *rpc_request_processor_create(rpc_request_processor_release_func release_func, void *release_func_ctx,
+	rpc_request_processor_notify_error_func notify_error_func, void *notify_error_func_ctx,
+	rpc_request_processor_acquire_packet_func acquire_packet_func, rpc_request_processor_release_packet_func release_packet_func, void *packet_func_ctx,
+	struct rpc_interface *service_interface, void *service_ctx, struct ff_blocking_queue *writer_queue)
+{
+	struct rpc_request_processor *request_processor;
+
+	request_processor = (struct rpc_request_processor *) ff_malloc(sizeof(*request_processor));
+	request_processor->release_func = release_func;
+	request_processor->release_func_ctx = release_func_ctx;
+	request_processor->notify_error_func = notify_error_func;
+	request_processor->notify_error_func_ctx = notify_error_func_ctx;
+	request_processor->acquire_packet_func = acquire_packet_func;
+	request_processor->release_packet_func = release_packet_func;
+	request_processor->packet_func_ctx = packet_func_ctx;
+	request_processor->service_interface = service_interface;
+	request_processor->service_ctx = service_ctx;
+	request_processor->writer_queue = writer_queue;
+	request_processor->reader_queue = ff_blocking_queue_create(MAX_READER_QUEUE_SIZE);
+	request_processor->stream = create_packet_stream(request_processor->reader_queue, request_processor->writer_queue);
+	request_processor->current_read_packet = NULL;
+	request_processor->request_id = 0;
+	return request_processor;
+}
+
+void rpc_request_processor_delete(struct rpc_request_processor *request_processor)
+{
+	ff_assert(request_processor->current_read_packet == NULL);
+
+	rpc_stream_delete(request_processor->stream);
+	ff_blocking_queue_delete(request_processor->reader_queue);
+	ff_free(request_processor);
+}
+
+void rpc_request_processor_start(struct rpc_request_processor *request_processor, uint8_t request_id)
+{
+	request_processor->request_id = request_id;
+	ff_core_fiberpool_execute_async(process_request_func, request_processor);
+}
+
+void rpc_request_processor_stop_async(struct rpc_request_processor *request_processor)
+{
+	ff_blocking_queue_put(request_processor->reader_queue, NULL);
+}
+
+void rpc_request_processor_push_packet(struct rpc_request_processor *request_processor, struct rpc_packet *packet)
+{
+	ff_blocking_queue_put(request_processor->reader_queue, packet);
+}
+
+#define MAX_REQUEST_PROCESSORS_CNT 0x100
+#define MAX_WRITER_QUEUE_SIZE 1000
+
+typedef void (*rpc_server_stream_processor_release_func)(void *release_func_ctx, struct rpc_server_stream_processor *stream_processor);
+
+struct rpc_server_stream_processor
+{
+	rpc_server_stream_processor_release_func release_func;
+	void *release_func_ctx;
+	struct rpc_interface *service_interface;
+	void *service_ctx;
+	struct ff_event *writer_stop_event;
+	struct ff_event *request_processors_stop_event;
+	struct ff_pool *request_processors_pool;
+	struct ff_pool *packets_pool;
+	struct ff_blocking_queue *writer_queue;
+	struct rpc_request_processor *request_processors[MAX_REQUEST_PROCESSORS_CNT];
+	struct rpc_stream *stream;
+	int request_processors_cnt;
+};
+
+static void stream_writer_func(void *ctx)
+{
+	struct rpc_server_stream_processor *stream_processor;
+
+	stream_processor = (struct rpc_server_stream_processor *) ctx;
 
 	for (;;)
 	{
-		ff_event_wait(connection_processor->start_event);
-		if (connection_processor->connection == NULL)
+		struct rpc_packet *packet;
+		int is_empty;
+		int is_success;
+
+		ff_blocking_queue_get(stream_processor->writer_queue, &packet);
+		if (packet == NULL)
 		{
+			is_empty = ff_blocking_queue_is_empty(stream_processor->writer_queue);
+			ff_assert(is_empty);
+			break;
+		}
+		is_success = rpc_packet_write_to_stream(packet, stream_processor->stream);
+		is_empty = ff_blocking_queue_is_empty(stream_processor->writer_queue);
+		if (is_success && is_empty)
+		{
+			is_success = rpc_stream_flush(stream_processor->stream);
+		}
+		if (!is_success)
+		{
+			rpc_server_stream_processor_stop_async(stream_processor);
+		}
+
+		ff_pool_release_entry(stream_processor->packets_pool, packet);
+	}
+
+	ff_event_set(stream_processor->writer_stop_event);
+}
+
+static void start_stream_writer(struct rpc_server_stream_processor *stream_processor)
+{
+	ff_core_fiberpool_execute_async(stream_writer_func, stream_processor);
+}
+
+static void stop_stream_writer(struct rpc_server_stream_processor *stream_processor)
+{
+	ff_blocking_queue_put(stream_processor->writer_queue, NULL);
+	ff_event_wait(stream_processor->writer_stop_event);
+}
+
+static void stop_request_processor(void *entry, void *ctx, int is_acquired)
+{
+	struct rpc_request_processor *request_processor;
+
+	request_processor = (struct rpc_request_processor *) entry;
+	if (is_acquired)
+	{
+		rpc_request_processor_stop_async(request_processor);
+	}
+}
+
+static void stop_all_request_processors(struct rpc_server_stream_processor *stream_processor)
+{
+	ff_pool_for_each_entry(stream_processor->request_processors_pool, stop_request_processor, stream_processor);
+	ff_event_wait(stream_processor->request_processors_stop_event);
+	ff_assert(stream_processor->request_processors_cnt == 0);
+}
+
+static struct rpc_request_processor *acquire_request_processor(struct rpc_server_stream_processor *stream_processor, uint8_t request_id)
+{
+	struct rpc_request_processor *request_processor;
+
+	ff_assert(stream_processor->request_processors_cnt >= 0);
+	ff_assert(stream_processor->request_processors_cnt < MAX_REQUEST_PROCESSORS_CNT);
+
+	request_processor = ff_pool_acquire_entry(stream_processor->request_processors_pool);
+	stream_processor->request_processors[request_id] = request_processor;
+	stream_processor->request_processors_cnt++;
+	if (stream_processor->request_processors_cnt == 1)
+	{
+		ff_event_reset(stream_processor->request_processors_stop_event);
+	}
+	return request_processor;
+}
+
+static void release_request_processor(void *ctx, struct rpc_request_processor *request_processor, uint8_t request_id)
+{
+	struct rpc_server_stream_processor *stream_processor;
+
+	stream_processor = (struct rpc_server_stream_processor *) ctx;
+
+	ff_assert(stream_processor->request_processors_cnt > 0);
+	ff_assert(stream_processor->request_processors_cnt <= MAX_REQUEST_PROCESSORS_CNT);
+	ff_assert(stream_processor->request_processors[request_id] == request_processor);
+
+	ff_pool_release_entry(stream_processor->request_processors_pool, request_processor);
+	stream_processor->request_processors[request_id] = NULL;
+	stream_processor->request_processors_cnt--;
+	if (stream_processor->request_processors_cnt == 0)
+	{
+		ff_event_set(stream_processor->request_processors_stop_event);
+	}
+}
+
+static void notify_request_processor_error(void *ctx)
+{
+	struct rpc_server_stream_processor *stream_processor;
+
+	stream_processor = (struct rpc_server_stream_processor *) ctx;
+	rpc_server_stream_processor_stop_async(stream_processor);
+}
+
+static struct rpc_packet *acquire_packet(void *ctx)
+{
+	struct rpc_server_stream_processor *stream_processor;
+	struct rpc_packet *packet;
+
+	stream_processor = (struct rpc_server_stream_processor *) ctx;
+	packet = ff_pool_acquire_entry(stream_processor->packets_pool);
+	return packet;
+}
+
+static void release_packet(void *ctx, struct rpc_packet *packet)
+{
+	struct rpc_server_stream_processor *stream_processor;
+
+	stream_processor = (struct rpc_server_stream_processor *) ctx;
+	ff_pool_release_entry(stream_processor->packets_pool, packet);
+}
+
+static void create_request_processor(void *ctx)
+{
+	struct rpc_server_stream_processor *stream_processor;
+	struct rpc_request_processor *request_processor;
+
+	stream_processor = (struct rpc_server_stream_processor *) ctx;
+	request_processor = rpc_request_processor_create(release_request_processor, stream_processor, notify_request_processor_error, stream_processor,
+		acquire_packet, release_packet, stream_processor,
+		stream_processor->service_interface, stream_processor->service_ctx, stream_processor->writer_queue);
+	return request_processor;
+}
+
+static void delete_request_processor(void *ctx)
+{
+	struct rpc_request_processor *request_processor;
+
+	request_processor = (struct rpc_request_processor *) ctx;
+	rpc_request_processor_delete(request_processor);
+}
+
+static void stream_reader_func(void *ctx)
+{
+	struct rpc_server_stream_processor *stream_processor;
+
+	stream_processor = (struct rpc_server_stream_processor *) ctx;
+
+	ff_assert(stream_processor->request_processors_cnt == 0);
+	ff_assert(stream_processor->stream != NULL);
+
+	start_stream_writer(stream_processor);
+	ff_event_set(stream_processor->request_processors_stop_event);
+	for (;;)
+	{
+		struct rpc_packet *packet;
+		int is_success;
+		enum rpc_packet_type packet_type;
+		uint8_t request_id;
+		struct rpc_request_processor *request_processor;
+
+		packet = ff_pool_acquire_entry(stream_processor->packets_pool);
+		is_success = rpc_packet_read_from_stream(packet, stream_processor->stream);
+		if (!is_success)
+		{
+			ff_pool_release_entry(stream_processor->packets_pool, packet);
 			break;
 		}
 
-		ff_assert(connection_processor->connection != NULL);
-		ff_assert(connection_processor->release_func != NULL);
+		packet_type = rpc_packet_get_type(packet);
+		request_id = rpc_packet_get_request_id(packet);
+		request_processor = stream_processor->request_processors[request_id];
+		if (packet_type == RPC_PACKET_FIRST || packet_type == RPC_PACKET_SINGLE)
+		{
+			if (request_processor != NULL)
+			{
+				ff_pool_release_entry(stream_processor->packets_pool, packet);
+				break;
+			}
 
-		read_from_connection(connection_processor);
-
-		ff_assert(connection_processor->connection == NULL);
-
-		connection_processor->release_func(release_func_ctx, connection_processor);
-		ff_event_set(connection_processor->stop_event);
+			request_processor = acquire_request_processor(stream_processor, request_id);
+			rpc_request_processor_start(request_processor, request_id);
+		}
+		else
+		{
+			/* packet_type is RPC_PACKET_MIDDLE or RPC_PACKET_LAST */
+			if (request_processor == NULL)
+			{
+				ff_pool_release_entry(stream_processor->packets_pool, packet);
+				break;
+			}
+		}
+		rpc_request_processor_push_packet(request_processor, packet);
 	}
+	rpc_server_stream_processor_stop_async(stream_processor);
+	stop_all_request_processors(stream_processor);
+	stop_stream_writer(stream_processor);
+	rpc_stream_delete(stream_processor->stream);
+	stream_processor->stream = NULL;
+	stream_processor->release_func(release_func_ctx, stream_processor);
 }
 
-static void connection_writer_func(void *ctx)
+struct rpc_server_stream_processor *rpc_server_stream_processor_create(rpc_server_stream_processor_release_func release_func,
+	void *release_func_ctx, struct rpc_interface *service_interface, void *service_ctx)
 {
-	struct rpc_connection_processor *connection_processor;
+	struct rpc_server_stream_processor *stream_processor;
+	int i;
 
-	connection_processor = (struct rpc_connection_processor *) ctx;
+	stream_processor = (struct rpc_server_stream_processor *) ff_malloc(sizeof(*stream_processor));
+	stream_processor->release_func = release_func;
+	stream_processor->release_func_ctx = release_func_ctx;
+	stream_processor->service_interface = service_interface;
+	stream_processor->service_ctx = service_ctx;
+	stream_processor->writer_stop_event = ff_event_create(FF_EVENT_AUTO);
+	stream_processor->request_processors_stop_event = ff_event_create(FF_EVENT_AUTO);
+	stream_processor->request_processors = ff_pool_create(MAX_REQUEST_PROCESSORS_CNT, create_request_processor, stream_processor, delete_request_processor);
+	stream_processor->packets = ff_pool_create(MAX_PACKETS_CNT, create_packet, stream_processor, delete_packet);
+	stream_processor->writer_queue = ff_blocking_queue_create(MAX_WRITER_QUEUE_SIZE);
+
+	for (i = 0; i < MAX_REQUEST_PROCESSORS_CNT; i++)
+	{
+		stream_processor->request_processors[i] = NULL;
+	}
+
+	stream_processor->stream = NULL;
+	stream_processor->request_processors_cnt = 0;
 }
 
-struct rpc_connection_processor *rpc_connection_processor_create()
+void rpc_server_stream_processor_delete(struct rpc_server_stream_processor *stream_processor)
 {
-	struct rpc_connection_processor *connection_processor;
+	ff_assert(stream_processor->stream == NULL);
+	ff_assert(stream_processor->request_processors_cnt == 0);
 
-	connection_processor = (struct rpc_connection_processor *) ff_malloc(sizeof(*connection_processor));
-	connection_processor->connection = NULL;
-	connection_processor->release_func = NULL;
-	connection_processor->release_func_ctx = NULL;
-	connection_processor->start_event = ff_event_create(FF_EVENT_AUTO);
-	connection_processor->stop_event = ff_event_create(FF_EVENT_AUTO);
-	connection_processor->reader_fiber = ff_fiber_create(connection_reader_func, READER_FIBER_STACK_SIZE);
-	connection_processor->writer_fiber = ff_fiber_create(connection_writer_func, WRITER_FIBER_STACK_SIZE);
-	ff_fiber_start(connection_processor->reader_fiber, connection_processor);
+	ff_blocking_queue_delete(stream_processor->writer_queue);
+	ff_pool_delete(stream_processor->packets);
+	ff_pool_delete(stream_processor->request_processors);
+	ff_event_delete(stream_processor->request_processors_stop_event);
+	ff_event_delete(stream_processor->writer_stop_event);
+	ff_free(stream_processor);
 }
 
-void rpc_connection_processor_delete(struct rpc_connection_processor *connection_processor)
+void rpc_server_stream_processor_start(struct rpc_server_stream_processor *stream_processor, struct rpc_stream *stream)
 {
-	ff_assert(connection_processor->connection == NULL);
-	ff_assert(connection_processor->release_func == NULL);
-	ff_assert(connection_processor->release_func_ctx == NULL);
+	ff_assert(stream_processor->stream == NULL);
+	ff_assert(stream != NULL);
 
-	ff_event_set(connection_processor->start_event);
-	ff_fiber_join(connection_processor->reader_fiber);
-	ff_fiber_delete(connection_processor->writer_fiber);
-	ff_fiber_delete(connection_processor->reader_fiber);
-	ff_event_delete(connection_processor->stop_event);
-	ff_event_delete(connection_processor->start_event);
-	ff_free(connection_processor);
+	stream_processor->stream = stream;
+	ff_core_fiberpool_execute_async(stream_reader_func, stream_processor);
 }
 
-void rpc_connection_processor_start(struct rpc_connection_processor *connection_processor, struct ff_tcp *connection,
-	rpc_connection_processor_release_func release_func, void *release_func_ctx)
+void rpc_server_stream_processor_stop_async(struct rpc_server_stream_processor *stream_processor)
 {
-	ff_assert(connection_processor->connection == NULL);
-	ff_assert(connection_processor->release_func == NULL);
-	ff_assert(connection_processor->release_func_ctx == NULL);
+	ff_assert(stream_processor->stream != NULL);
 
-	connection_processor->connection = connection;
-	connection_processor->release_func = release_func;
-	connection_processor->release_func_ctx = release_func_ctx;
-	ff_event_set(connection_processor->start_event);
+	rpc_stream_disconnect(stream_processor->stream);
 }
 
-void rpc_connection_processor_stop(struct rpc_connection_processor *connection_processor)
-{
-	ff_assert(connection_processor->connection != NULL);
-	ff_assert(connection_processor->release_func != NULL);
-
-	ff_tcp_disconnect(connection_processor->connection);
-}
-
-void rpc_connection_processor_join(struct rpc_connection_processor *connection_processor)
-{
-	ff_event_wait(connection_processor->stop_event);
-
-	ff_assert(connection_processor->connection == NULL);
-	ff_assert(connection_processor->release_func == NULL);
-	ff_assert(connection_processor->release_func_ctx == NULL);
-}
-
-struct rpc_server_params
-{
-	struct rpc_interface *interface;
-	void *service_ctx;
-	struct ff_arch_net_addr *listen_addr;
-};
-
-#define RPC_SERVER_FIBER_STACK_SIZE 0x10000
-#define CONNECTION_PROCESSORS_CNT 100
+#define MAX_STREAM_PROCESSORS_CNT 0x100
 
 struct rpc_server
 {
+	struct rpc_interface *service_interface;
+	void *service_ctx;
 	struct ff_tcp *accept_tcp;
-	struct ff_pool *connection_processors;
-	struct ff_fiber *main_fiber;
+	struct ff_event *stream_processors_stop_event;
+	struct ff_pool *stream_processors;
+	int stream_processors_cnt;
 };
 
-static void *create_connection_processor(void *ctx)
+static void stop_stream_processor(void *entry, void *ctx, int is_acquired)
 {
-	struct rpc_connection_processor *connection_processor;
+	struct rpc_server_stream_processor *stream_processor;
 
-	connection_processor = rpc_connection_processor_create();
-	return connection_processor;
-}
-
-static void delete_connection_processor(void *ctx)
-{
-	struct rpc_connection_processor *connection_processor;
-
-	connection_processor = (struct rpc_connection_processor *) ctx;
-	rpc_connection_processor_delete(connection_processor);
-}
-
-static void stop_connection_processor(void *entry, void *ctx, int is_acquired)
-{
-	struct rpc_connection_processor *connection_processor;
-
-	connection_processor = (struct rpc_connection_processor *) entry;
+	stream_processor = (struct rpc_server_stream_processor *) entry;
 	if (is_acquired)
 	{
-		rpc_connection_processor_stop(connection_processor);
+		rpc_server_stream_processor_stop_async(stream_processor);
 	}
 }
 
-static void join_connection_processor(void *entry, void *ctx, int is_acquired)
+static void stop_all_stream_processors(struct rpc_server *server)
 {
-	struct rpc_connection_processor *connection_processor;
+	ff_pool_for_each_entry(server->stream_processors, stop_stream_processor, server);
+	ff_event_wait(server->stream_processors_stop_event);
+	ff_assert(server->stream_processors_cnt == 0);
+}
 
-	connection_processor = (struct rpc_connection_processor *) entry;
-	if (is_acquired)
+static struct rpc_server_stream_processor *acquire_stream_processor(struct rpc_server *server)
+{
+	struct rpc_server_stream_processor *stream_processor;
+
+	ff_assert(server->stream_processors_cnt >= 0);
+	ff_assert(server->stream_processors_cnt < MAX_STREAM_PROCESSORS_CNT);
+
+	stream_processor = (struct rpc_server_stream_processor *) ff_pool_acquire_entry(server->stream_processors);
+	server->stream_processors_cnt++;
+	if (server->stream_processors_cnt == 1)
 	{
-		rpc_connection_processor_join(connection_processor);
+		ff_event_reset(server->stream_processors_stop_event);
 	}
+	return stream_processor;
 }
 
-static struct rpc_connection_processor *acquire_connection_processor(struct rpc_server *server)
-{
-	struct rpc_connection_processor *connection_processor;
-
-	connection_processor = (struct rpc_connection_processor *) ff_pool_acquire_entry(server->connection_processors);
-	return connection_processor;
-}
-
-static void release_connection_processor(void *ctx, struct rpc_connection_processor *connection_processor)
+static void release_stream_processor(void *ctx, struct rpc_server_stream_processor *stream_processor)
 {
 	struct rpc_server *server;
 
 	server = (struct rpc_server *) ctx;
-	ff_pool_release_entry(server->connection_processors, connection_processor);
+
+	ff_assert(server->stream_processors_cnt > 0);
+	ff_assert(server->stream_processors <= MAX_STREAM_PROCESSORS_CNT);
+
+	ff_pool_release_entry(server->stream_processors, stream_processor);
+	server->stream_processors_cnt--;
+	if (server->stream_processors_cnt == 0)
+	{
+		ff_event_set(server->stream_processors_stop_event);
+	}
+}
+
+static void *create_stream_processor(void *ctx)
+{
+	struct rpc_server *server;
+	struct rpc_server_stream_processor *stream_processor;
+
+	server = (struct rpc_server *) ctx;
+	stream_processor = rpc_server_stream_processor_create(release_stream_processor, server, server->service_interface, server->service_ctx);
+	return stream_processor;
+}
+
+static void delete_stream_processor(void *ctx)
+{
+	struct rpc_server_stream_processor *stream_processor;
+
+	stream_processor = (struct rpc_server_stream_processor *) ctx;
+	rpc_server_stream_processor_delete(stream_processor);
 }
 
 static void main_server_func(void *ctx)
@@ -245,11 +689,16 @@ static void main_server_func(void *ctx)
 	struct ff_arch_net_addr *remote_addr;
 
 	server = (struct rpc_server *) ctx;
+
+	ff_assert(server->stream_processors_cnt == 0);
+
 	remote_addr = ff_arch_net_addr_create();
+	ff_event_set(server->stream_processors_stop_event);
 	for (;;)
 	{
 		struct ff_tcp *client_tcp;
-		struct rpc_connection_processor *connection_processor;
+		struct rpc_server_stream_processor *stream_processor;
+		struct rpc_stream *client_stream;
 
 		client_tcp = ff_tcp_accept(server->accept_tcp, remote_addr);
 		if (client_tcp == NULL)
@@ -257,20 +706,37 @@ static void main_server_func(void *ctx)
 			break;
 		}
 
-		connection_processor = acquire_connection_processor(server);
-		rpc_connection_processor_start(connection_processor, client_tcp, release_connection_processor, server);
+		stream_processor = acquire_stream_processor(server);
+
+		client_stream = rpc_stream_create_from_tcp(client_tcp);
+		rpc_server_stream_processor_start(stream_processor, client_stream);
 	}
-	ff_pool_for_each_entry(server->connection_processors, stop_connection_processor, NULL);
-	ff_pool_for_each_entry(server->connection_processors, join_connection_processor, NULL);
+	stop_all_stream_processors(server);
 	ff_arch_net_addr_delete(remote_addr);
+
+	ff_event_set(server->stop_event);
 }
 
-struct rpc_server *rpc_server_create(const struct rpc_server_params *params)
+static void start_server(struct rpc_server *server)
+{
+	ff_core_fiberpool_execute_async(main_server_func, server);
+}
+
+static void stop_server(struct rpc_server *server)
+{
+	ff_tcp_disconnect(server->accept_tcp);
+	ff_event_wait(server->stop_event);
+	ff_assert(server->stream_processors_cnt == 0);
+}
+
+struct rpc_server *rpc_server_create(struct rpc_interface *service_interface, void *service_ctx, struct ff_arch_net_addr *listen_addr)
 {
 	struct rpc_server *server;
 	int is_success;
 
 	server = (struct rpc_server *) ff_malloc(sizeof(*server));
+	server->service_interface = service_interface;
+	server->service_ctx = service_ctx;
 	server->accept_tcp = ff_tcp_create();
 	is_success = ff_tcp_bind(server->accept_tcp, params->listen_addr, FF_TCP_SERVER);
 	if (!is_success)
@@ -283,28 +749,30 @@ struct rpc_server *rpc_server_create(const struct rpc_server_params *params)
 		 * because the ff_log_fatal_error() will terminate the application
 		 */
 	}
-	server->connection_processors = ff_pool_create(CONNECTION_PROCESSORS_CNT, create_connection_processor, NULL, delete_connection_processor);
-	server->main_fiber = ff_fiber_create(main_server_func, SERVER_FIBER_STACK_SIZE);
-	ff_fiber_start(server->main_fiber, server);
+	server->stop_event = ff_event_create(FF_EVENT_AUTO);
+	server->stream_processors_stop_event = ff_event_create(FF_EVENT_AUTO);
+	server->stream_processors = ff_pool_create(MAX_STREAM_PROCESSORS_CNT, create_stream_processor, server, delete_stream_processor);
+	server->stream_processors_cnt = 0;
+
+	start_server(server);
 
 	return server;
 }
 
 void rpc_server_delete(struct rpc_server *server)
 {
-	ff_tcp_disconnect(server->accept_tcp);
-	ff_fiber_join(server->main_fiber);
-	ff_fiber_delete(server->main_fiber);
-	ff_pool_delete(server->connection_processors);
+	stop_server(server);
+
+	ff_pool_delete(server->stream_processors);
+	ff_event_delete(server->stream_processors_stop_event);
+	ff_event_delete(server->stop_event);
 	ff_tcp_delete(server->accept_tcp);
 	ff_free(server);
 }
 
-params.interface = foo_interface_extern;
-params.service_ctx = foo_service_create();
-params.listen_addr = listen_addr;
+service_ctx = foo_service_create();
 
-server = rpc_server_create(&params);
+server = rpc_server_create(foo_interface_extern, service_ctx, listen_addr);
 wait();
 rpc_server_delete(server);
 
@@ -658,6 +1126,10 @@ static int write_response(struct rpc_data *data, struct rpc_stream *stream)
 	int is_success;
 
 	is_success = rpc_method_write_response_params(data->method, data->response_params, stream);
+	if (is_success)
+	{
+		is_success = rpc_stream_flush(stream);
+	}
 	return is_success;
 }
 
@@ -670,6 +1142,10 @@ static int write_request(struct rpc_data *data, struct rpc_stream *stream)
 	if (bytes_written == 1)
 	{
 		is_succes = rpc_method_write_request_params(data->method, data->request_params, stream);
+		if (is_success)
+		{
+			is_success = rpc_stream_flush(stream);
+		}
 	}
 
 	return is_success;
