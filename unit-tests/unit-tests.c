@@ -647,13 +647,18 @@ static void test_blocking_queue_basic()
 	int is_success;
 	int64_t data = 0;
 	struct ff_blocking_queue *queue;
+	int is_empty;
 
 	ff_core_initialize(LOG_FILENAME);
 	queue = ff_blocking_queue_create(10);
+	is_empty = ff_blocking_queue_is_empty(queue);
+	ASSERT(is_empty, "queue should be empty");
 	for (i = 0; i < 10; i++)
 	{
 		ff_blocking_queue_put(queue, *(void **)&i);
 	}
+	is_empty = ff_blocking_queue_is_empty(queue);
+	ASSERT(!is_empty, "queue shouldn't be empty");
 	is_success = ff_blocking_queue_put_with_timeout(queue, (void *)123, 1);
 	ASSERT(!is_success, "queue should be full");
 	for (i = 0; i < 10; i++)
@@ -661,6 +666,8 @@ static void test_blocking_queue_basic()
 		ff_blocking_queue_get(queue, (const void **)&data);
 		ASSERT(data == i, "wrong value received from the queue");
 	}
+	is_empty = ff_blocking_queue_is_empty(queue);
+	ASSERT(is_empty, "queue should be empty");
 	is_success = ff_blocking_queue_get_with_timeout(queue, (const void **)&data, 1);
 	ASSERT(!is_success, "queue should be empty");
 	ff_blocking_queue_delete(queue);

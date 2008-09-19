@@ -21,6 +21,8 @@ FF_API void ff_blocking_queue_put(struct ff_blocking_queue *queue, const void *d
 
 FF_API int ff_blocking_queue_put_with_timeout(struct ff_blocking_queue *queue, const void *data, int timeout);
 
+FF_API int ff_blocking_queue_is_empty(struct ff_blocking_queue *queue);
+
 #ifdef __cplusplus
 }
 #endif
