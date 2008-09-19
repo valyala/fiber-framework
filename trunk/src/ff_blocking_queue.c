@@ -78,3 +78,11 @@ int ff_blocking_queue_put_with_timeout(struct ff_blocking_queue *queue, const vo
 	}
 	return is_success;
 }
+
+int ff_blocking_queue_is_empty(struct ff_blocking_queue *queue)
+{
+	int is_empty;
+
+	is_empty = ff_queue_is_empty(queue->simple_queue);
+	return is_empty;
+}
