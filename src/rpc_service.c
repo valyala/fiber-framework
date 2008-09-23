@@ -40,59 +40,195 @@ id = [a-z_][a-z_\d]*
 #define READ_TIMEOUT 2000
 #define WRITE_TIMEOUT 2000
 
-typedef void (*rpc_request_processor_release_func)(void *release_func_ctx, struct rpc_request_processor *request_processor, uint8_t request_id);
-typedef void (*rpc_request_processor_notify_error_func)(void *notify_error_func_ctx);
-typedef struct rpc_packet *(*rpc_request_processor_acquire_packet_func)(void *packet_func_ctx);
-typedef void (*rpc_request_processor_release_packet_func)(void *packet_func_ctx, struct rpc_packet *packet);
+typedef struct rpc_packet *(*rpc_packet_stream_acquire_packet_func)(void *packet_func_ctx);
+typedef void (*rpc_packet_stream_release_packet_func)(void *packet_func_ctx, struct rpc_packet *packet);
 
-struct rpc_request_processor
+struct rpc_packet_stream
 {
-	rpc_request_processor_release_func release_func;
-	void *release_func_ctx;
-	rpc_request_processor_notify_error_func notify_error_func;
-	void *notify_error_func_ctx;
-	rpc_request_processor_acquire_packet_func acquire_packet_func;
-	rpc_request_processor_release_packet_func release_packet_func;
+	rpc_packet_stream_acquire_packet_func acquire_packet_func;
+	rpc_packet_stream_release_packet_func release_packet_func;
 	void *packet_func_ctx;
-	struct rpc_interface *service_interface;
-	void *service_ctx;
-	struct ff_blocking_queue *writer_queue;
 	struct ff_blocking_queue *reader_queue;
-	struct rpc_stream *stream;
+	struct ff_blocking_queue *writer_queue;
 	struct rpc_packet *current_read_packet;
 	struct rpc_packet *current_write_packet;
 	uint8_t request_id;
 };
 
-static int read_from_packet_stream(struct rpc_stream *stream, void *buf, int len)
+static struct rpc_packet *acquire_packet(struct rpc_packet_stream *stream, enum rpc_packet_type packet_type)
 {
-	struct rpc_request_processor *request_processor;
 	struct rpc_packet *packet;
+
+	ff_assert(packet_type == RPC_PACKET_START || packet_type == RPC_PACKET_MIDDLE);
+	packet = stream->acquire_packet_func(stream->packet_func_ctx);
+	rpc_packet_set_request_id(packet, stream->request_id);
+	rpc_packet_set_type(packet, packet_type);
+
+	return packet;
+}
+
+static void release_packet(struct rpc_packet_stream *stream, struct rpc_packet *packet)
+{
+	stream->release_packet_func(stream->packet_func_ctx, packet);
+}
+
+static int prefetch_current_read_packet(struct rpc_packet_stream *stream)
+{
+	int is_success;
+
+	ff_assert(stream->current_read_packet == NULL);
+	is_success = ff_blocking_queue_get_with_timeout(stream->reader_queue, &stream->current_read_packet, READ_TIMEOUT);
+	if (is_success)
+	{
+		enum rpc_packet_type packet_type;
+
+		ff_assert(stream->current_read_packet != NULL);
+		packet_type = rpc_packet_get_type(stream->current_read_packet);
+		if (packet_type != RPC_PACKET_START && packet_type != RPC_PACKET_SINGLE)
+		{
+			release_packet(stream, stream->current_read_packet);
+			stream->current_read_packet = NULL;
+			is_success = 0;
+		}
+	}
+	else
+	{
+		ff_assert(stream->current_read_packet == NULL);
+	}
+
+	return is_success;
+}
+
+static void release_current_read_packet(struct rpc_packet_stream *stream)
+{
+	ff_assert(stream->current_read_packet != NULL);
+	release_packet(stream, stream->current_read_packet);
+	stream->current_read_packet = NULL;
+}
+
+static void acquire_current_write_packet(struct rpc_packet_stream *stream)
+{
+	ff_assert(stream->current_write_packet == NULL);
+	stream->current_write_packet = acquire_packet(stream, RPC_PACKET_START);
+}
+
+static void release_current_write_packet(struct rpc_packet_stream *stream)
+{
+	enum rpc_packet_type packet_type;
+
+	ff_assert(stream->current_write_packet != NULL);
+	packet_type = rpc_packet_get_type(stream->current_write_packet);
+	ff_assert(packet_type == RPC_PACKET_END);
+	release_packet(stream, stream->current_write_packet);
+	stream->current_write_packet = NULL;
+}
+
+struct rpc_packet_stream *rpc_packet_stream_create(struct ff_blocking_queue *writer_queue,
+	rpc_packet_stream_acquire_packet_func acquire_packet_func, rpc_packet_stream_release_packet_func release_packet_func, void *packet_func_ctx)
+{
+	struct rpc_packet_stream *stream;
+
+	stream = (struct rpc_packet_stream *) ff_malloc(sizeof(*stream));
+	stream->acquire_packet_func = acquire_packet_func;
+	stream->release_packet_func = release_packet_func;
+	stream->packet_func_ctx = packet_func_ctx;
+	stream->reader_queue = ff_blocking_queue_create(MAX_READER_QUEUE_SIZE);
+	stream->writer_queue = writer_queue;
+	stream->current_read_packet = NULL;
+	stream->current_write_packet = NULL;
+	stream->request_id = 0;
+
+	return stream;
+}
+
+void rpc_packet_stream_delete(struct rpc_packet_stream *stream)
+{
+	ff_assert(stream->current_read_packet == NULL);
+	ff_assert(stream->current_write_packet == NULL);
+	ff_assert(stream->request_id == 0);
+
+	ff_blocking_queue_delete(stream->reader_queue);
+	ff_free(stream);
+}
+
+int rpc_packet_stream_initialize(struct rpc_packet_stream *stream, uint8_t request_id)
+{
+	int is_success;
+
+	ff_assert(stream->current_read_packet == NULL);
+	ff_assert(stream->current_write_packet == NULL);
+	ff_assert(stream->request_id == 0);
+
+	stream->request_id = request_id;
+	is_success = prefetch_current_read_packet(stream);
+	if (is_success)
+	{
+		ff_assert(stream->current_read_packet != NULL);
+		acquire_current_write_packet(stream);
+		ff_assert(stream->current_write_packet != NULL);
+	}
+
+	return is_success;
+}
+
+int rpc_packet_stream_shutdown(struct rpc_packet_stream *stream)
+{
+	int is_success;
+
+	ff_assert(stream->current_read_packet != NULL);
+	ff_assert(stream->current_write_packet != NULL);
+
+	stream->request_id = 0;
+	is_success = rpc_packet_stream_flush(stream);
+	release_current_write_packet(stream);
+	ff_assert(stream->current_write_packet == NULL);
+	release_current_read_packet(stream);
+	ff_assert(stream->current_read_packet == NULL);
+
+	return is_success;
+}
+
+void rpc_packet_stream_clear_reader_queue(struct rpc_packet_stream *stream)
+{
+	for (;;)
+	{
+		struct rpc_packet *packet;
+		int is_empty;
+
+		is_empty = ff_blocking_queue_is_empty(stream->reader_queue);
+		if (is_empty)
+		{
+			break;
+		}
+		ff_blocking_queue_get(stream->reader_queue, &packet);
+		release_packet(stream, packet);
+	}
+}
+
+int rpc_packet_stream_read(struct rpc_packet_stream *stream, void *buf, int len)
+{
 	char *p;
 	enum rpc_packet_type packet_type;
 	int total_bytes_read = -1;
 	int bytes_to_read;
 
 	ff_assert(len >= 0);
-
-	request_processor = (struct rpc_request_processor *) stream->ctx;
-	ff_assert(request_processor->current_read_packet != NULL);
+	ff_assert(stream->current_read_packet != NULL);
 
 	p = (char *) buf;
 	bytes_to_read = len;
-	packet_type = rpc_packet_get_type(request_processor->current_read_packet);
+	packet_type = rpc_packet_get_type(stream->current_read_packet);
 	while (bytes_to_read > 0)
 	{
 		int bytes_read;
 
-		ff_assert(packet != NULL);
-
-		bytes_read = rpc_packet_read_data(request_processor->current_read_packet, p, bytes_to_read);
+		bytes_read = rpc_packet_read_data(stream->current_read_packet, p, bytes_to_read);
 		ff_assert(bytes_read >= 0);
+		ff_assert(bytes_read <= bytes_to_read);
 		bytes_to_read -= bytes_read;
 		p += bytes_read;
 
-        if (bytes_read < bytes_to_read)
+        if (bytes_to_read > 0)
 		{
 			struct rpc_packet *packet;
 			int is_success;
@@ -102,24 +238,21 @@ static int read_from_packet_stream(struct rpc_stream *stream, void *buf, int len
 				goto end;
 			}
 
-			is_success = ff_blocking_queue_get_with_timeout(request_processor->reader_queue, &packet, READ_TIMEOUT);
+			is_success = ff_blocking_queue_get_with_timeout(stream->reader_queue, &packet, READ_TIMEOUT);
 			if (!is_success)
 			{
 				goto end;
 			}
-			if (packet == NULL)
-			{
-				goto end;
-			}
+			ff_assert(packet != NULL);
 			packet_type = rpc_packet_get_type(packet);
 			if (packet_type == RPC_PACKET_START || packet_type == RPC_PACKET_SINGLE)
 			{
-				request_processor->release_packet_func(request_processor->packet_func_ctx, packet);
+				release_packet(stream, packet);
 				goto end;
 			}
 
-			request_processor->release_packet_func(request_processor->packet_func_ctx, request_processor->current_read_packet);
-			request_processor->current_read_packet = packet;
+			release_packet(stream, stream->current_read_packet);
+			stream->current_read_packet = packet;
 		}
 	}
 	total_bytes_read = len;
@@ -128,43 +261,44 @@ end:
 	return total_bytes_read;
 }
 
-static int write_to_packet_stream(struct rpc_stream *stream, const void *buf, int len)
+int rpc_packet_stream_write(struct rpc_packet_stream *stream, const void *buf, int len)
 {
 	char *p;
-	struct rpc_packet *packet;
 	enum rpc_packet_type packet_type;
-	int bytes_to_write;
 	int total_bytes_written = -1;
+	int bytes_to_write;
 
 	ff_assert(len >= 0);
-
-	request_processor = (struct rpc_request_processor *) stream->ctx;
-	ff_assert(request_processor->current_write_packet != NULL);
+	ff_assert(stream->current_write_packet != NULL);
 
 	p = (char *) buf;
 	bytes_to_write = len;
-	packet_type = rpc_packet_get_type(request_processor->current_write_packet);
-	ff_assert(packet_type != RPC_PACKET_SINGLE && packet_type != RPC_PACKET_END);
+	packet_type = rpc_packet_get_type(stream->current_write_packet);
+	if (packet_type == RPC_PACKET_END)
+	{
+		goto end;
+	}
+	ff_assert(packet_type == RPC_PACKET_START || packet_type == RPC_PACKET_MIDDLE);
 	while (bytes_to_write > 0)
 	{
 		int bytes_written;
 
-		bytes_written = rpc_packet_write_data(request_processor->current_write_packet, p, bytes_to_write);
+		bytes_written = rpc_packet_write_data(stream->current_write_packet, p, bytes_to_write);
+		ff_assert(bytes_written >= 0);
+		ff_assert(bytes_written <= bytes_to_write);
 		bytes_to_write -= bytes_written;
 		p += bytes_written;
 
-		if (bytes_written < bytes_to_write)
+		if (bytes_to_write > 0)
 		{
 			int is_success;
 
-			is_success = ff_blocking_queue_put_with_timeout(request_processor->writer_queue, request_processor->current_write_packet, WRITE_TIMEOUT);
+			is_success = ff_blocking_queue_put_with_timeout(stream->writer_queue, stream->current_write_packet, WRITE_TIMEOUT);
 			if (!is_success)
 			{
 				goto end;
 			}
-			request_processor->current_write_packet = request_processor->acquire_packet_func(request_processor->packet_func_ctx);
-			rpc_packet_set_request_id(request_processor->current_write_packet, request_processor->request_id);
-			rpc_packet_set_type(request_processor->current_write_packet, RPC_PACKET_MIDDLE);
+			stream->current_write_packet = acquire_packet(stream, RPC_PACKET_MIDDLE);
 		}
 	}
 	total_bytes_written = len;
@@ -173,20 +307,94 @@ end:
 	return total_bytes_written;
 }
 
-static int flush_packet_stream(struct rpc_stream *stream)
+int rpc_packet_stream_flush(struct rpc_packet_stream *stream)
 {
 	int is_success = 1;
+	enum rpc_packet_type packet_type;
 
+	ff_assert(stream->current_write_packet != NULL);
+	packet_type = rpc_packet_get_type(stream->current_write_packet);
+	if (packet_type != RPC_PACKET_END)
+	{
+		ff_assert(packet_type == RPC_PACKET_START || packet_type == RPC_PACKET_MIDDLE);
+		if (packet_type == RPC_PACKET_START)
+		{
+			packet_type = RPC_PACKET_SINGLE;
+		}
+		else
+		{
+			packet_type = RPC_PACKET_END;
+		}
+		rpc_packet_set_type(stream->current_write_packet, packet_type);
+		is_success = ff_blocking_queue_put_with_timeout(stream->writer_queue, stream->current_write_packet, WRITE_TIMEOUT);
+		if (!is_success)
+		{
+			release_packet(stream, stream->current_write_packet);
+		}
+		stream->current_write_packet = acqiure_packet(stream, RPC_PACKET_END);
+	}
+
+	return is_success;
+}
+
+void rpc_packet_stream_disconnect(struct rpc_packet_stream *stream)
+{
+	struct rpc_packet *packet;
+
+	rpc_packet_stream_flush(stream);
+	packet = acquire_packet(stream, RPC_PACKET_END);
+	ff_blocking_queue_put(stream->reader_queue, packet);
+}
+
+void rpc_packet_stream_push_packet(struct rpc_packet_stream *stream)
+{
+	ff_blocking_queue_put(stream->reader_queue, packet);
+}
+
+static int read_from_packet_stream(struct rpc_stream *stream, void *buf, int len)
+{
+	struct rpc_packet_stream *packet_stream;
+	int bytes_read;
+
+	packet_stream = (struct rpc_packet_stream *) stream->ctx;
+	bytes_read = rpc_packet_stream_read(packet_stream, buf, len);
+	return bytes_read;
+}
+
+static int write_to_packet_stream(struct rpc_stream *stream, const void *buf, int len)
+{
+	struct rpc_packet_stream *packet_stream;
+	int bytes_written;
+
+	packet_stream = (struct rpc_packet_stream *) stream->ctx;
+	bytes_written = rpc_packet_stream_write(packet_stream, buf, len);
+	return bytes_written;
+}
+
+static int flush_packet_stream(struct rpc_stream *stream)
+{
+	struct rpc_packet_stream *packet_stream;
+	int is_success;
+
+	packet_stream = (struct rpc_packet_stream *) stream->ctx;
+	is_success = rpc_packet_stream_flush(packet_stream);
 	return is_success;
 }
 
 static void disconnect_packet_stream(struct rpc_stream *stream)
 {
-	/* nothing to do */
+	struct rpc_packet_stream *packet_stream;
+
+	packet_stream = (struct rpc_packet_stream *) stream->ctx;
+	rpc_packet_stream_disconnect(packet_stream);
 }
 
 static void delete_packet_stream(struct rpc_stream *stream)
 {
+	struct rpc_packet_stream *packet_stream;
+
+	packet_stream = (struct rpc_packet_stream *) stream->ctx;
+	rpc_packet_stream_delete(packet_stream);
 	ff_free(stream);
 }
 
@@ -199,105 +407,32 @@ static struct rpc_stream_vtable packet_stream_vtable =
 	delete_packet_stream
 };
 
-static struct rpc_stream *create_packet_stream(struct rpc_request_processor *request_processor)
+struct rpc_stream *rpc_stream_create_from_packet_stream(struct rpc_packet_stream *packet_stream)
 {
-	struct rpc_stream *rpc_stream;
+	struct rpc_stream *stream;
 
-	rpc_stream = (struct rpc_stream *) ff_malloc(sizeof(*rpc_stream));
-	rpc_stream->vtalbe = &packet_stream_vtable;
-	rpc_stream->cxt = request_processor;
+	stream = (struct rpc_stream *) ff_malloc(sizeof(*stream));
+	stream->vtalbe = &packet_stream_vtable;
+	stream->cxt = packet_stream;
 
-	return rpc_stream;
+	return stream;
 }
 
-static void clear_reader_queue(struct rpc_request_processor *request_processor)
+typedef void (*rpc_request_processor_release_func)(void *release_func_ctx, struct rpc_request_processor *request_processor, uint8_t request_id);
+typedef void (*rpc_request_processor_notify_error_func)(void *notify_error_func_ctx);
+
+struct rpc_request_processor
 {
-	for (;;)
-	{
-		struct rpc_packet *packet;
-		int is_empty;
-
-		is_empty = ff_blocking_queue_is_empty(request_processor->reader_queue);
-		if (is_empty)
-		{
-			break;
-		}
-		ff_blocking_queue_get(request_processor->reader_queue, &packet);
-		request_processor->release_packet_func(request_processor->packet_func_ctx, packet);
-	}
-}
-
-static int prefetch_current_read_packet(struct rpc_request_processor *request_processor)
-{
-	struct rpc_packet *packet;
-	int is_success;
-
-	ff_assert(request_processor->current_read_packet == NULL);
-
-	is_success = ff_blocking_queue_get_with_timeout(request_processor->reader_queue, &packet, READ_TIMEOUT);
-	if (is_success)
-	{
-		if (packet != NULL)
-		{
-			enum rpc_packet_type packet_type;
-
-			packet_type = rpc_packet_get_type(request_processor->current_read_packet);
-			if (packet_type == RPC_PACKET_START || packet_type == RPC_PACKET_SINGLE)
-			{
-				request_processor->current_read_packet = packet;
-			}
-			else
-			{
-				request_processor->release_packet_func(request_processor->packet_func_ctx, packet);
-				is_success = 0;
-			}
-		}
-		else
-		{
-			is_success = 0;
-		}
-	}
-
-	return is_success;
-}
-
-static void release_current_read_packet(struct rpc_request_processor *request_processor)
-{
-	ff_assert(request_processor->current_read_packet != NULL);
-	request_processor->release_packet_func(request_processor->packet_func_ctx, request_processor->current_read_packet);
-	request_processor->current_read_packet = NULL;
-}
-
-static void acquire_current_write_packet(struct rpc_request_processor *request_processor)
-{
-	ff_assert(request_processor->current_write_packet == NULL);
-
-	request_processor->current_write_packet = request_processor->acquire_packet_func(request_processor->packet_func_ctx);
-	rpc_packet_set_request_id(request_processor->current_write_packet, request_processor->request_id);
-	rpc_packet_set_type(request_processor->current_write_packet, RPC_PACKET_START);
-}
-
-static void flush_current_write_packet(struct rpc_request_processor *request_processor)
-{
-	enum rpc_packet_type packet_type;
-
-	ff_assert(request_processor->current_write_packet != NULL);
-
-	packet_type = rpc_packet_get_type(request_processor->current_write_packet);
-	ff_assert(packet_type != RPC_PACKET_SINGLE && packet_type != RPC_PACKET_END);
-	if (packet_type == RPC_PACKET_START)
-	{
-		packet_type = RPC_PACKET_SINGLE;
-	}
-	else
-	{
-		/* packet_type is RPC_PACKET_MIDDLE */
-		packet_type = RPC_PACKET_END;
-	}
-	rpc_packet_set_type(request_processor->current_write_packet, packet_type);
-	ff_blocking_queue_put(request_processor->writer_queue, request_processor->current_write_packet);
-	request_processor->current_write_packet = NULL;
-}
+	rpc_request_processor_release_func release_func;
+	void *release_func_ctx;
+	rpc_request_processor_notify_error_func notify_error_func;
+	void *notify_error_func_ctx;
+	struct rpc_interface *service_interface;
+	void *service_ctx;
+	struct rpc_packet_stream *packet_stream;
+	struct rpc_stream *stream;
+	uint8_t request_id;
+};
 
 static void process_request_func(void *ctx)
 {
@@ -306,38 +441,21 @@ static void process_request_func(void *ctx)
 
 	request_processor = (struct rpc_request_processor *) ctx;
 
-	ff_assert(request_processor->current_read_packet == NULL);
-	ff_assert(request_processor->current_write_packet == NULL);
-
-	is_success = prefetch_current_read_packet(request_processor);
+	is_success = rpc_packet_stream_initialize(request_processor->packet_stream, request_processor->request_id);
 	if (is_success)
 	{
-		ff_assert(request_processor->current_read_packet != NULL);
-		acquire_current_write_packet(request_processor);
-		ff_assert(request_processor->current_write_packet != NULL);
 		is_success = rpc_data_process_next_rpc(request_processor->service_interface, request_processor->service_ctx, request_processor->stream);
-		if (is_success)
-		{
-			ff_assert(request_processor->current_write_packet != NULL);
-			flush_current_write_packet(request_processor);
-			ff_assert(request_processor->current_write_packet == NULL);
-		}
-		else
+		if (!is_success)
 		{
 			request_processor->notify_error_func(request_processor->notify_error_func_ctx);
 		}
-
-		ff_assert(request_processor->current_read_packet != NULL);
-		release_current_read_packet(request_processor);
-		ff_assert(request_processor->current_read_packet == NULL);
-
-		clear_reader_queue(request_processor);
+		rpc_packet_stream_shutdown(request_processor->packet_stream);
 	}
 	else
 	{
 		request_processor->notify_error_func(request_processor->notify_error_func_ctx);
 	}
-
+	rpc_packet_stream_clear_reader_queue(request_processor->packet_stream);
 	request_processor->release_func(request_processor->release_func_ctx, request_processor, request_processor->request_id);
 }
 
@@ -353,27 +471,21 @@ struct rpc_request_processor *rpc_request_processor_create(rpc_request_processor
 	request_processor->release_func_ctx = release_func_ctx;
 	request_processor->notify_error_func = notify_error_func;
 	request_processor->notify_error_func_ctx = notify_error_func_ctx;
-	request_processor->acquire_packet_func = acquire_packet_func;
-	request_processor->release_packet_func = release_packet_func;
-	request_processor->packet_func_ctx = packet_func_ctx;
 	request_processor->service_interface = service_interface;
 	request_processor->service_ctx = service_ctx;
-	request_processor->writer_queue = writer_queue;
-	request_processor->reader_queue = ff_blocking_queue_create(MAX_READER_QUEUE_SIZE);
-	request_processor->stream = create_packet_stream(request_processor->reader_queue, request_processor->writer_queue);
-	request_processor->current_read_packet = NULL;
-	request_processor->current_write_packet = NULL;
+	request_processor->packet_stream = rpc_packet_stream_create(writer_queue, acquire_packet_func, release_packet_func, packet_func_ctx);
+	request_processor->stream = rpc_stream_create_from_packet_stream(packet_stream);
 	request_processor->request_id = 0;
 	return request_processor;
 }
 
 void rpc_request_processor_delete(struct rpc_request_processor *request_processor)
 {
-	ff_assert(request_processor->current_read_packet == NULL);
-	ff_assert(request_processor->current_write_packet == NULL);
-
 	rpc_stream_delete(request_processor->stream);
-	ff_blocking_queue_delete(request_processor->reader_queue);
+	/* there is no need to make the call
+	 *   rpc_packet_stream_delete(request_processor->packet_stream);
+	 * here, because it was already called by rpc_stream_delete()
+	 */
 	ff_free(request_processor);
 }
 
@@ -385,12 +497,12 @@ void rpc_request_processor_start(struct rpc_request_processor *request_processor
 
 void rpc_request_processor_stop_async(struct rpc_request_processor *request_processor)
 {
-	ff_blocking_queue_put(request_processor->reader_queue, NULL);
+	rpc_stream_disconnect(request_processor->stream);
 }
 
 void rpc_request_processor_push_packet(struct rpc_request_processor *request_processor, struct rpc_packet *packet)
 {
-	ff_blocking_queue_put(request_processor->reader_queue, packet);
+	rpc_packet_stream_push_packet(request_processor->packet_stream, packet);
 }
 
 #define MAX_REQUEST_PROCESSORS_CNT 0x100
