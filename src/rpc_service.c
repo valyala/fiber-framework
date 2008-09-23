@@ -526,6 +526,25 @@ struct rpc_server_stream_processor
 	int request_processors_cnt;
 };
 
+static void skip_writer_queue_packets(struct rpc_server_stream_processor *stream_processor)
+{
+	for (;;)
+	{
+		struct rpc_packet *packet;
+
+		ff_blocking_queue_get(stream_processor->writer_queue, &packet);
+		if (packet == NULL)
+		{
+			int is_empty;
+
+			is_empty = ff_blocking_queue_is_empty(stream_processor->writer_queue);
+			ff_assert(is_empty);
+			break;
+		}
+		ff_pool_release_entry(stream_processor->packets_pool, packet);
+	}
+}
+
 static void stream_writer_func(void *ctx)
 {
 	struct rpc_server_stream_processor *stream_processor;
@@ -546,6 +565,7 @@ static void stream_writer_func(void *ctx)
 			break;
 		}
 		is_success = rpc_packet_write_to_stream(packet, stream_processor->stream);
+		ff_pool_release_entry(stream_processor->packets_pool, packet);
 		is_empty = ff_blocking_queue_is_empty(stream_processor->writer_queue);
 		if (is_success && is_empty)
 		{
@@ -554,9 +574,9 @@ static void stream_writer_func(void *ctx)
 		if (!is_success)
 		{
 			rpc_server_stream_processor_stop_async(stream_processor);
+			skip_writer_queue_packets(stream_processor);
+			break;
 		}
-
-		ff_pool_release_entry(stream_processor->packets_pool, packet);
 	}
 
 	ff_event_set(stream_processor->writer_stop_event);
