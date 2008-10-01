@@ -50,7 +50,7 @@ struct rpc_packet
 {
 	char *buf;
 	int curr_pos;
-	int payload_size;
+	int size;
 	enum rpc_packet_type type;
 	uint8_t request_id;
 };
@@ -62,7 +62,7 @@ struct rpc_packet *rpc_packet_create()
 	packet = (struct rpc_packet *) ff_malloc(sizeof(*packet));
 	packet->buf = (char *) ff_malloc(MAX_PACKET_SIZE);
 	packet->curr_pos = 0;
-	packet->payload_size = 0;
+	packet->size = 0;
 	packet->type = RPC_PACKET_START;
 	packet->request_id = 0;
 
@@ -72,7 +72,7 @@ struct rpc_packet *rpc_packet_create()
 void rpc_packet_delete(struct rpc_packet *packet)
 {
 	ff_assert(packet->curr_pos == 0);
-	ff_assert(packet->payload_size == 0);
+	ff_assert(packet->size == 0);
 
 	ff_free(packet->buf);
 	ff_free(packet);
@@ -81,7 +81,7 @@ void rpc_packet_delete(struct rpc_packet *packet)
 void rpc_packet_reset(struct rpc_packet *packet)
 {
 	packet->curr_pos = 0;
-	packet->payload_size = 0;
+	packet->size = 0;
 }
 
 uint8_t rpc_packet_get_request_id(struct rpc_packet *packet)
@@ -111,10 +111,10 @@ int rpc_packet_read_data(struct rpc_packet *packet, void *buf, int len)
 
 	ff_assert(len >= 0);
 	ff_assert(packet->curr_pos >= 0);
-	ff_assert(packet->payload_size >= packet->curr_pos);
-	ff_assert(packet->payload_size <= MAX_PACKET_SIZE);
+	ff_assert(packet->size >= packet->curr_pos);
+	ff_assert(packet->size <= MAX_PACKET_SIZE);
 
-	bytes_left = packet->payload_size - packet->curr_pos;
+	bytes_left = packet->size - packet->curr_pos;
 	bytes_read = (len > bytes_left) ? bytes_left : len;
 	memcpy(buf, packet->buf + packet->curr_pos, bytes_read);
 
@@ -128,12 +128,12 @@ int rpc_packet_write_data(struct rpc_packet *packet, const void *buf, int len)
 
 	ff_assert(len >= 0);
 	ff_assert(packet->curr_pos >= 0);
-	ff_assert(packet->payload_size >= packet->curr_pos);
-	ff_assert(packet->payload_size <= MAX_PACKET_SIZE);
+	ff_assert(packet->size >= packet->curr_pos);
+	ff_assert(packet->size <= MAX_PACKET_SIZE);
 
-	bytes_left = MAX_PACKET_SIZE - packet->payload_size;
+	bytes_left = MAX_PACKET_SIZE - packet->size;
 	bytes_written = (len > bytes_left) ? bytes_left : len;
-	memcpy(packet->buf + packet->payload_size, buf, bytes_written);
+	memcpy(packet->buf + packet->size, buf, bytes_written);
 
 	return bytes_written;
 }
@@ -145,7 +145,7 @@ int rpc_packet_read_from_stream(struct rpc_packet *packet, struct rpc_stream *st
 	uint32_t tmp;
 
 	ff_assert(packet->curr_pos == 0);
-	ff_assert(packet->payload_size == 0);
+	ff_assert(packet->size == 0);
 
 	bytes_read = rpc_stream_read(stream, &packet->request_id, 1);
 	if (bytes_read != 1)
@@ -162,13 +162,13 @@ int rpc_packet_read_from_stream(struct rpc_packet *packet, struct rpc_stream *st
 	{
 		goto end;
 	}
-	packet->payload_size = (int) (tmp >> 2);
-	if (packet->payload_size > MAX_PACKET_SIZE)
+	packet->size = (int) (tmp >> 2);
+	if (packet->size > MAX_PACKET_SIZE)
 	{
 		goto end;
 	}
-	bytes_read = rpc_stream_read(stream, packet->buf, packet->payload_size);
-	if (bytes_read != packet->payload_size)
+	bytes_read = rpc_stream_read(stream, packet->buf, packet->size);
+	if (bytes_read != packet->size)
 	{
 		goto end;
 	}
@@ -184,21 +184,21 @@ int rpc_packet_write_to_stream(struct rpc_packet *packet, struct rpc_stream *str
 	int bytes_written;
 	uint32_t tmp;
 
-	ff_assert(packet->payload_size <= MAX_PACKET_SIZE);
+	ff_assert(packet->size <= MAX_PACKET_SIZE);
 
 	bytes_written = rpc_stream_write(stream, &packet->request_id, 1);
 	if (bytes_written != 1)
 	{
 		goto end;
 	}
-	tmp = ((uint32_t) packet->type) | (((uint32_t) packet->payload_size) << 2);
+	tmp = ((uint32_t) packet->type) | (((uint32_t) packet->size) << 2);
 	bytes_written = rpc_uint32_serialize(tmp, stream);
 	if (bytes_written == -1)
 	{
 		goto end;
 	}
-	bytes_written = rpc_stream_write(stream, packet->buf, packet->payload_size);
-	if (bytes_written != packet->payload_size)
+	bytes_written = rpc_stream_write(stream, packet->buf, packet->size);
+	if (bytes_written != packet->size)
 	{
 		goto end;
 	}
