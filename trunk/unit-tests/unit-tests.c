@@ -11,6 +11,7 @@
 #include "ff/ff_file.h"
 #include "ff/arch/ff_arch_net_addr.h"
 #include "ff/ff_tcp.h"
+#include "ff/ff_stream_tcp.h"
 #include "ff/ff_udp.h"
 
 #include <stdio.h>
@@ -1250,6 +1251,115 @@ static void test_tcp_all()
 /* end of ff_tcp tests */
 #pragma endregion
 
+#pragma region ff_stream_tcp tests
+
+static void test_stream_tcp_create_delete()
+{
+	struct ff_tcp *tcp;
+	struct ff_stream *stream;
+
+	ff_core_initialize(LOG_FILENAME);
+	tcp = ff_tcp_create();
+	stream = ff_stream_tcp_create(tcp);
+	ff_stream_delete(stream);
+	/* there is no need to call ff_tcp_delete() here,
+	 * because ff_stream_delete() should already make this call
+	 */
+	ff_core_shutdown();
+}
+
+struct stream_tcp_basic_data
+{
+	struct ff_tcp *server_tcp;
+	struct ff_event *event;
+};
+
+static void stream_tcp_basic_func(void *ctx)
+{
+	struct stream_tcp_basic_data *data;
+	struct ff_tcp *client_tcp;
+	struct ff_arch_net_addr *remote_addr;
+	struct ff_stream *client_stream;
+	uint8_t buf[3];
+	int is_success;
+	int is_equal;
+
+	data = (struct stream_tcp_basic_data *) ctx;
+	remote_addr = ff_arch_net_addr_create();
+	client_tcp = ff_tcp_accept(data->server_tcp, remote_addr);
+	ASSERT(client_tcp != NULL, "cannot accept local TCP connection");
+	client_stream = ff_stream_tcp_create(client_tcp);
+	is_success = ff_stream_write(client_stream, "foo", 3);
+	ASSERT(is_success, "error when writing to tcp stream");
+	is_success = ff_stream_flush(client_stream);
+	ASSERT(is_success, "error when flushing tcp stream");
+	is_success = ff_stream_read(client_stream, buf, 3);
+	ASSERT(is_success, "error when reading tcp stream");
+	is_equal = (memcmp(buf, "bar", 3) == 0);
+	ASSERT(is_equal, "wrong data received from tcp stream");
+	ff_stream_disconnect(client_stream);
+	is_success = ff_stream_read(client_stream, buf, 3);
+	ASSERT(!is_success, "stream didn't disconnected");
+	is_success = ff_stream_write(client_stream, "foo", 3);
+	ASSERT(!is_success, "stream didn't disconnected");
+	ff_stream_delete(client_stream);
+	ff_event_wait(data->event);
+	ff_arch_net_addr_delete(remote_addr);
+}
+
+static void test_stream_tcp_basic()
+{
+	struct stream_tcp_basic_data data;
+	struct ff_arch_net_addr *addr;
+	struct ff_tcp *client_tcp;
+	struct ff_stream *client_stream;
+	uint8_t buf[3];
+	int is_success;
+	int is_equal;
+
+	ff_core_initialize(LOG_FILENAME);
+	data.server_tcp = ff_tcp_create();
+	data.event = ff_event_create(FF_EVENT_AUTO);
+	addr = ff_arch_net_addr_create();
+	is_success = ff_arch_net_addr_resolve(addr, L"localhost", 8393);
+	ASSERT(is_success, "cannot resolve localhost address");
+	is_success = ff_tcp_bind(data.server_tcp, addr, FF_TCP_SERVER);
+	ASSERT(is_success, "cannot bind server tcp");
+	ff_core_fiberpool_execute_async(stream_tcp_basic_func, &data);
+	client_tcp = ff_tcp_create();
+	is_success = ff_tcp_connect(client_tcp, addr);
+	ASSERT(is_success, "cannot connect to local tcp");
+	client_stream = ff_stream_tcp_create(client_tcp);
+	is_success = ff_stream_read(client_stream, buf, 3);
+	ASSERT(is_success, "cannot read data from the stream");
+	is_equal = (memcmp(buf, "foo", 3) == 0);
+	ASSERT(is_equal, "unexpected data received from the stream");
+	is_success = ff_stream_write(client_stream, "bar", 3);
+	ASSERT(is_success, "cannot write data to the stream");
+	is_success = ff_stream_flush(client_stream);
+	ASSERT(is_success, "cannot flush the stream");
+	is_success = ff_stream_read(client_stream, buf, 3);
+	ASSERT(!is_success, "stream should be disconnected");
+	ff_stream_disconnect(client_stream);
+	is_success = ff_stream_write(client_stream, "bar", 3);
+	ASSERT(!is_success, "stream should be disconnected");
+	ff_event_set(data.event);
+	ff_stream_delete(client_stream);
+	ff_arch_net_addr_delete(addr);
+	ff_event_delete(data.event);
+	ff_tcp_delete(data.server_tcp);
+	ff_core_shutdown();
+}
+
+static void test_stream_tcp_all()
+{
+	test_stream_tcp_create_delete();
+	test_stream_tcp_basic();
+}
+
+/* end of ff_stream_tcp tests */
+#pragma endregion
+
 #pragma region ff_udp tests
 
 static void test_udp_create_delete()
@@ -1368,6 +1478,7 @@ static void test_all()
 	test_file_all();
 	test_arch_net_addr_all();
 	test_tcp_all();
+	test_stream_tcp_all();
 	test_udp_all();
 }
 

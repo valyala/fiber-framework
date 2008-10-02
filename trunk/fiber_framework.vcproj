@@ -257,6 +257,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\ff_stream.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\ff_stream_tcp.c"
+				>
+			</File>
+			<File
 				RelativePath=".\src\ff_tcp.c"
 				>
 			</File>
@@ -656,6 +664,14 @@
 					>
 				</File>
 				<File
+					RelativePath=".\include\private\ff_stream.h"
+					>
+				</File>
+				<File
+					RelativePath=".\include\private\ff_stream_tcp.h"
+					>
+				</File>
+				<File
 					RelativePath=".\include\private\ff_tcp.h"
 					>
 				</File>
@@ -761,6 +777,14 @@
 				</File>
 				<File
 					RelativePath=".\include\ff\ff_semaphore.h"
+					>
+				</File>
+				<File
+					RelativePath=".\include\ff\ff_stream.h"
+					>
+				</File>
+				<File
+					RelativePath=".\include\ff\ff_stream_tcp.h"
 					>
 				</File>
 				<File
