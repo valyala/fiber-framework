@@ -2,6 +2,8 @@
 
 #include "private/ff_stream.h"
 
+#define BUF_SIZE 0x10000
+
 struct ff_stream
 {
 	struct ff_stream_vtable *vtable;
@@ -60,4 +62,36 @@ int ff_stream_flush(struct ff_stream *stream)
 void ff_stream_disconnect(struct ff_stream *stream)
 {
 	stream->vtable->disconnect(stream);
+}
+
+int ff_stream_copy(struct ff_stream *src_stream, struct ff_stream *dst_stream, int len)
+{
+	int is_success = 0;
+	uint8_t *buf;
+
+	ff_assert(len >= 0);
+
+	buf = (uint8_t *) ff_malloc(BUF_SIZE);
+	while (len > 0)
+	{
+		int chunk_size;
+
+		chunk_size = len > BUF_SIZE ? BUF_SIZE : len;
+		is_success = ff_stream_read(src_stream, buf, chunk_size);
+		if (!is_success)
+		{
+			goto end;
+		}
+		is_success = ff_stream_write(dst_stream, buf, chunk_size);
+		if (!is_success)
+		{
+			goto end;
+		}
+		len -= chunk_size;
+	}
+	is_success = 1;
+
+end:
+	ff_free(buf);
+	return is_success;
 }
