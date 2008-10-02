@@ -936,7 +936,6 @@ static void test_file_basic()
 	int64_t size;
 	uint8_t data[] = "hello, world!\n";
 	uint8_t buf[sizeof(data) - 1];
-	int len;
 	int is_equal;
 	int is_success;
 
@@ -946,18 +945,18 @@ static void test_file_basic()
 	ASSERT(file != NULL, "file should be created");
 	size = ff_file_get_size(file);
 	ASSERT(size == 0, "file should be empty");
-	len = ff_file_write(file, data, sizeof(data) - 1);
-	ASSERT(len == sizeof(data) - 1, "all the data should be written to the file");
-	len = ff_file_flush(file);
-	ASSERT(len != -1, "file should be flushed successfully");
+	is_success = ff_file_write(file, data, sizeof(data) - 1);
+	ASSERT(is_success, "all the data should be written to the file");
+	is_success = ff_file_flush(file);
+	ASSERT(is_success, "file should be flushed successfully");
 	ff_file_close(file);
 
 	file = ff_file_open(L"test.txt", FF_FILE_READ);
 	ASSERT(file != NULL, "file should exist");
 	size = ff_file_get_size(file);
 	ASSERT(size == sizeof(data) - 1, "wrong file size");
-	len = ff_file_read(file, buf, sizeof(data) - 1);
-	ASSERT(len == sizeof(data) - 1, "unexpected length of data read from the file");
+	is_success = ff_file_read(file, buf, sizeof(data) - 1);
+	ASSERT(is_success, "unexpected length of data read from the file");
 	is_equal = (memcmp(data, buf, sizeof(data) - 1) == 0);
 	ASSERT(is_equal, "wrong data read from the file");
 	ff_file_close(file);
@@ -973,8 +972,8 @@ static void test_file_basic()
 
 	file = ff_file_open(L"test1.txt", FF_FILE_READ);
 	ASSERT(file != NULL, "file copy should exist");
-	len = ff_file_read(file, buf, sizeof(data) - 1);
-	ASSERT(len = sizeof(data) - 1, "unexpected length of file copy");
+	is_success = ff_file_read(file, buf, sizeof(data) - 1);
+	ASSERT(is_success, "unexpected length of file copy");
 	is_equal = (memcmp(data, buf, sizeof(data) - 1) == 0);
 	ASSERT(is_equal, "wrong contents of the file copy");
 	ff_file_close(file);
@@ -1128,19 +1127,20 @@ static void fiberpool_tcp_func(void *ctx)
 {
 	struct ff_tcp *tcp_server, *tcp_client;
 	struct ff_arch_net_addr *client_addr;
-	int len;
 	uint8_t buf[4];
 	int is_equal;
+	int is_success;
 
 	tcp_server = (struct ff_tcp *) ctx;
 	client_addr = ff_arch_net_addr_create();
 	tcp_client = ff_tcp_accept(tcp_server, client_addr);
 	ASSERT(tcp_client != NULL, "ff_tcp_accept() should return valid tcp_client");
-	len = ff_tcp_write(tcp_client, "test", 4);
-	len = ff_tcp_flush(tcp_client);
-	ASSERT(len != -1, "ff_tcp_flush() returned unexpected value");
-	len = ff_tcp_read(tcp_client, buf, 4);
-	ASSERT(len == 4, "ff_tcp_read() returned unexpected data length");
+	is_success = ff_tcp_write(tcp_client, "test", 4);
+	ASSERT(is_success, "cannot write data to the tcp");
+	is_success = ff_tcp_flush(tcp_client);
+	ASSERT(is_success, "ff_tcp_flush() returned unexpected value");
+	is_success = ff_tcp_read(tcp_client, buf, 4);
+	ASSERT(is_success, "ff_tcp_read() returned unexpected data length");
 	is_equal = (memcmp("test", buf, 4) == 0);
 	ASSERT(is_equal, "wrong data received from the client");
 	ff_tcp_delete(tcp_client);
@@ -1152,7 +1152,6 @@ static void test_tcp_basic()
 	struct ff_tcp *tcp_server, *tcp_client;
 	struct ff_arch_net_addr *addr;
 	int is_success;
-	int len;
 	int is_equal;
 	uint8_t buf[4];
 
@@ -1170,14 +1169,14 @@ static void test_tcp_basic()
 	ASSERT(tcp_client != NULL, "client should be created");
 	is_success = ff_tcp_connect(tcp_client, addr);
 	ASSERT(is_success, "client should connect to the server");
-	len = ff_tcp_read_with_timeout(tcp_client, buf, 4, 100000);
-	ASSERT(len == 4, "unexpected data received from the server");
+	is_success = ff_tcp_read_with_timeout(tcp_client, buf, 4, 100000);
+	ASSERT(is_success, "unexpected data received from the server");
 	is_equal = (memcmp(buf, "test", 4) == 0);
 	ASSERT(is_equal, "wrong data received from the server");
-	len = ff_tcp_write_with_timeout(tcp_client, buf, 4, 100);
-	ASSERT(len == 4, "written all data to the server");
-	len = ff_tcp_flush_with_timeout(tcp_client, 100);
-	ASSERT(len != -1, "data should be flushed");
+	is_success = ff_tcp_write_with_timeout(tcp_client, buf, 4, 100);
+	ASSERT(is_success, "written all data to the server");
+	is_success = ff_tcp_flush_with_timeout(tcp_client, 100);
+	ASSERT(is_success, "data should be flushed");
 	ff_tcp_delete(tcp_client);
 	ff_tcp_delete(tcp_server);
 	ff_arch_net_addr_delete(addr);

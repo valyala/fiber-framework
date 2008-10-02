@@ -88,33 +88,33 @@ void ff_file_close(struct ff_file *file)
 
 int ff_file_read(struct ff_file *file, void *buf, int len)
 {
-	int bytes_read;
+	int is_success;
 
 	ff_assert(file->access_mode == FF_FILE_READ);
 	ff_assert(len >= 0);
 
-	bytes_read = ff_read_stream_buffer_read(file->buffers.read_buffer, buf, len);
-	return bytes_read;
+	is_success = ff_read_stream_buffer_read(file->buffers.read_buffer, buf, len);
+	return is_success;
 }
 
 int ff_file_write(struct ff_file *file, const void *buf, int len)
 {
-	int bytes_written;
+	int is_success;
 
 	ff_assert(file->access_mode == FF_FILE_WRITE);
 	ff_assert(len >= 0);
 
-	bytes_written = ff_write_stream_buffer_write(file->buffers.write_buffer, buf, len);
-	return bytes_written;
+	is_success = ff_write_stream_buffer_write(file->buffers.write_buffer, buf, len);
+	return is_success;
 }
 
 int ff_file_flush(struct ff_file *file)
 {
-	int bytes_written;
+	int is_success;
 
 	ff_assert(file->access_mode == FF_FILE_WRITE);
-	bytes_written = ff_write_stream_buffer_flush(file->buffers.write_buffer);
-	return bytes_written;
+	is_success = ff_write_stream_buffer_flush(file->buffers.write_buffer);
+	return is_success;
 }
 
 int ff_file_erase(const wchar_t *path)
