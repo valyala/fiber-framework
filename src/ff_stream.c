@@ -39,17 +39,6 @@ int ff_stream_read(struct ff_stream *stream, void *buf, int len)
 	return is_success;
 }
 
-int ff_stream_read_with_timeout(struct ff_stream *stream, void *buf, int len, int timeout)
-{
-	int is_success;
-
-	ff_assert(len >= 0);
-	ff_assert(timeout > 0);
-
-	is_success = stream->vtable->read_with_timeout(stream, buf, len, timeout);
-	return is_success;
-}
-
 int ff_stream_write(struct ff_stream *stream, const void *buf, int len)
 {
 	int is_success;
@@ -57,17 +46,6 @@ int ff_stream_write(struct ff_stream *stream, const void *buf, int len)
 	ff_assert(len >= 0);
 
 	is_success = stream->vtable->write(stream, buf, len);
-	return is_success;
-}
-
-int ff_stream_write_with_timeout(struct ff_stream *stream, const void *buf, int len, int timeout)
-{
-	int is_success;
-
-	ff_assert(len >= 0);
-	ff_assert(timeout > 0);
-
-	is_success = stream->vtable->write_with_timeout(stream, buf, len, timeout);
 	return is_success;
 }
 

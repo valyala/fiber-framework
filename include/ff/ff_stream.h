@@ -23,24 +23,10 @@ struct ff_stream_vtable
 	int (*read)(struct ff_stream *stream, void *buf, int len);
 
 	/**
-	 * the read_with_timeout() callback should read exactly len bytes from the stream into buf.
-	 * It should return 0 if the data cannot be read during the given timeout.
-	 * It should return 1 on success, 0 on error.
-	 */
-	int (*read_with_timeout)(struct ff_stream *stream, void *buf, int len, int timeout);
-
-	/**
 	 * the write() callback should write exactly len bytes from the buf into the stream.
 	 * It should return 1 on success, 0 on error.
 	 */
 	int (*write)(struct ff_stream *stream, const void *buf, int len);
-
-	/**
-	 * the write_with_timeout() callback should write exactly len bytes from the buf into the stream.
-	 * It should return 0 if the data cannot be written during the given timeout.
-	 * It should return 1 on success, 0 on error.
-	 */
-	int (*write_with_timeout)(struct ff_stream *stream, const void *buf, int len, int timeout);
 
 	/**
 	 * the flush() callback should flush stream's write buffer.
@@ -79,24 +65,10 @@ FF_API void *ff_stream_get_ctx(struct ff_stream *stream);
 FF_API int ff_stream_read(struct ff_stream *stream, void *buf, int len);
 
 /**
- * Reads exactly len bytes from the stream into the buf.
- * Returns 0 if the data cannot be read during the given timeout milliseconds.
- * Returns 1 on success, 0 on error.
- */
-FF_API int ff_stream_read_with_timeout(struct ff_stream *stream, void *buf, int len, int timeout);
-
-/**
  * Writes exactly len bytes from the buf into the stream.
  * Returns 1 on success, 0 on error.
  */
 FF_API int ff_stream_write(struct ff_stream *stream, const void *buf, int len);
-
-/**
- * Writes exactly len bytes from the buf into the stream.
- * Returns 0 of the data cannot be written during the given timeout milliseconds.
- * Returns 1 on success, 0 on error.
- */
-FF_API int ff_stream_write_with_timeout(struct ff_stream *stream, const void *buf, int len, int timeout);
 
 /**
  * Flushes the stream's write buffer.
