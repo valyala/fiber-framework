@@ -36,82 +36,100 @@ void ff_write_stream_buffer_delete(struct ff_write_stream_buffer *buffer)
 int ff_write_stream_buffer_write(struct ff_write_stream_buffer *buffer, const void *buf, int len)
 {
 	char *char_buf;
-	int total_bytes_written;
+	int is_success = 0;
 
 	ff_assert(len >= 0);
 
-	total_bytes_written = len;
 	char_buf = (char *) buf;
-	for (;;)
+	while (len > 0)
 	{
 		int bytes_written;
 		int free_bytes_cnt;
 
+		ff_assert(buffer->capacity > 0);
+		ff_assert(buffer->start_pos >= 0);
+		ff_assert(buffer->start_pos <= buffer->capacity);
+
 		if (buffer->capacity == buffer->start_pos)
 		{
-			bytes_written = ff_write_stream_buffer_flush(buffer);
-			if (bytes_written == -1)
+			/* the buffer is full, so flush its contents to the underlying stream */
+			is_success = ff_write_stream_buffer_flush(buffer);
+			if (!is_success)
 			{
-				total_bytes_written = -1;
 				goto end;
 			}
 			ff_assert(buffer->start_pos == 0);
 
+			/* write data directly from the char_buf to the underlying stream
+			 * until len is greater than buffer capacity. This allows to avoid superflous
+			 * copying of data into the buffer before flushing it to the underlying stream.
+			 */
 			while (len >= buffer->capacity)
 			{
 				bytes_written = buffer->write_func(buffer->func_ctx, char_buf, len);
 				if (bytes_written == -1)
 				{
-					total_bytes_written = -1;
 					goto end;
 				}
-
+				ff_assert(bytes_written > 0);
+				ff_assert(bytes_written <= len);
 				char_buf += bytes_written;
 				len -= bytes_written;
 			}
+			if (len == 0)
+			{
+				/* all requested data has been written directly to the underlying stream */
+				break;
+			}
 		}
-		if (len == 0)
-		{
-			goto end;
-		}
+		ff_assert(buffer->start_pos < buffer->capacity);
 
+		/* there is the room in the buffer for data. Copy it to the buffer */
 		free_bytes_cnt = buffer->capacity - buffer->start_pos;
 		ff_assert(free_bytes_cnt > 0);
 		bytes_written = (free_bytes_cnt > len) ? len : free_bytes_cnt;
 		memcpy(buffer->buf + buffer->start_pos, char_buf, bytes_written);
 
 		buffer->start_pos += bytes_written;
-		
 		char_buf += bytes_written;
 		len -= bytes_written;
 	}
+	is_success = 1;
 
 end:
-	return total_bytes_written;
+	return is_success;
 }
 
 
 int ff_write_stream_buffer_flush(struct ff_write_stream_buffer *buffer)
 {
 	int total_bytes_written = 0;
+	int is_success = 0;
+	int bytes_to_write;
 
-	while (buffer->start_pos > 0)
+	ff_assert(buffer->capacity > 0);
+	ff_assert(buffer->start_pos >= 0);
+	ff_assert(buffer->start_pos <= buffer->capacity);
+
+	bytes_to_write = buffer->start_pos;
+	while (bytes_to_write > 0)
 	{
 		int bytes_written;
 
-		bytes_written = buffer->write_func(buffer->func_ctx, buffer->buf + total_bytes_written, buffer->start_pos);
+		bytes_written = buffer->write_func(buffer->func_ctx, buffer->buf + total_bytes_written, bytes_to_write);
 		if (bytes_written == -1)
 		{
-			total_bytes_written = -1;
 			goto end;
 		}
+		ff_assert(bytes_written > 0);
+		ff_assert(bytes_written <= bytes_to_write);
 
-		buffer->start_pos -= bytes_written;
-		ff_assert(buffer->start_pos >= 0);
-
+		bytes_to_write -= bytes_written;
 		total_bytes_written += bytes_written;
 	}
+	buffer->start_pos = 0;
+	is_success = 1;
 
 end:
-	return total_bytes_written;
+	return is_success;
 }
