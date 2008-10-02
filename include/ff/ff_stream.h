@@ -83,6 +83,12 @@ FF_API int ff_stream_flush(struct ff_stream *stream);
  */
 FF_API void ff_stream_disconnect(struct ff_stream *stream);
 
+/**
+ * Copies exactly len bytes from the src_stream to the dst_stream.
+ * Returns 1 on success, 0 on error.
+ */
+FF_API int ff_stream_copy(struct ff_stream *src_stream, struct ff_stream *dst_stream, int len);
+
 #ifdef __cplusplus
 }
 #endif
