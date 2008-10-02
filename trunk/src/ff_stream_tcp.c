@@ -22,19 +22,6 @@ static int read_from_tcp(struct ff_stream *stream, void *buf, int len)
 	return is_success;
 }
 
-static int read_from_tcp_with_timeout(struct ff_stream *stream, void *buf, int len, int timeout)
-{
-	struct ff_tcp *tcp;
-	int is_success;
-
-	ff_assert(len >= 0);
-	ff_assert(timeout > 0);
-
-	tcp = (struct ff_tcp *) ff_stream_get_ctx(stream);
-	is_success = ff_tcp_read_with_timeout(tcp, buf, len, timeout);
-	return is_success;
-}
-
 static int write_to_tcp(struct ff_stream *stream, const void *buf, int len)
 {
 	struct ff_tcp *tcp;
@@ -44,19 +31,6 @@ static int write_to_tcp(struct ff_stream *stream, const void *buf, int len)
 
 	tcp = (struct ff_tcp *) ff_stream_get_ctx(stream);
 	is_success = ff_tcp_write(tcp, buf, len);
-	return is_success;
-}
-
-static int write_to_tcp_with_timeout(struct ff_stream *stream, const void *buf, int len, int timeout)
-{
-	struct ff_tcp *tcp;
-	int is_success;
-
-	ff_assert(len >= 0);
-	ff_assert(timeout > 0);
-
-	tcp = (struct ff_tcp *) ff_stream_get_ctx(stream);
-	is_success = ff_tcp_write_with_timeout(tcp, buf, len, timeout);
 	return is_success;
 }
 
@@ -82,9 +56,7 @@ static struct ff_stream_vtable tcp_stream_vtable =
 {
 	delete_tcp,
 	read_from_tcp,
-	read_from_tcp_with_timeout,
 	write_to_tcp,
-	write_to_tcp_with_timeout,
 	flush_tcp,
 	disconnect_tcp
 };
