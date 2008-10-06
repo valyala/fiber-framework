@@ -2,6 +2,7 @@
 
 #include "private/ff_stream.h"
 #include "private/ff_hash.h"
+#include "private/ff_log.h"
 
 #define BUF_SIZE 0x10000
 
@@ -81,11 +82,13 @@ int ff_stream_copy(struct ff_stream *src_stream, struct ff_stream *dst_stream, i
 		is_success = ff_stream_read(src_stream, buf, chunk_size);
 		if (!is_success)
 		{
+			ff_log_warning(L"error when copying streams: cannot read from src_stream");
 			goto end;
 		}
 		is_success = ff_stream_write(dst_stream, buf, chunk_size);
 		if (!is_success)
 		{
+			ff_log_warning(L"error when copying streams: cannot write to the dst_stream");
 			goto end;
 		}
 		len -= chunk_size;
@@ -115,6 +118,7 @@ int ff_stream_get_hash(struct ff_stream *stream, int len, uint32_t start_value, 
 		is_success = ff_stream_read(stream, buf, chunk_size);
 		if (!is_success)
 		{
+			ff_log_warning(L"error when calculating hash: cannot read from the stream");
 			goto end;
 		}
 		hash = ff_hash_uint8(hash, buf, chunk_size);
