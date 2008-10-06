@@ -25,7 +25,7 @@ static uint32_t get_bucket_num(struct ff_dictionary *dictionary, const void *key
 	uint32_t hash;
 	uint32_t bucket_num;
 
-	hash = ff_hash(0, (const uint32_t *) &key, WORDS_PER_PTR);
+	hash = ff_hash_uint32(0, (const uint32_t *) &key, WORDS_PER_PTR);
 	bucket_num = hash & MASK(dictionary->order);
 	return bucket_num;
 }

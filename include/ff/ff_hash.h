@@ -7,7 +7,11 @@
 extern "C" {
 #endif
 
-uint32_t ff_hash(uint32_t start_value, const uint32_t *buf, int buf_size);
+FF_API uint32_t ff_hash_uint32(uint32_t start_value, const uint32_t *buf, int buf_size);
+
+FF_API uint32_t ff_hash_uint16(uint32_t start_value, const uint16_t *buf, int buf_size);
+
+FF_API uint32_t ff_hash_uint8(uint32_t start_value, const uint8_t *buf, int buf_size);
 
 #ifdef __cplusplus
 }
