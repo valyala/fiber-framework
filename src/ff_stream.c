@@ -1,6 +1,7 @@
 #include "private/ff_common.h"
 
 #include "private/ff_stream.h"
+#include "private/ff_hash.h"
 
 #define BUF_SIZE 0x10000
 
@@ -89,6 +90,37 @@ int ff_stream_copy(struct ff_stream *src_stream, struct ff_stream *dst_stream, i
 		}
 		len -= chunk_size;
 	}
+	is_success = 1;
+
+end:
+	ff_free(buf);
+	return is_success;
+}
+
+int ff_stream_get_hash(struct ff_stream *stream, int len, uint32_t start_value, uint32_t *hash_value)
+{
+	uint8_t *buf;
+	uint32_t hash;
+	int is_success = 0;
+
+	ff_assert(len >= 0);
+
+	hash = start_value;
+	buf = (uint8_t *) ff_malloc(BUF_SIZE);
+	while (len > 0)
+	{
+		int chunk_size;
+
+		chunk_size = len > BUF_SIZE ? BUF_SIZE : len;
+		is_success = ff_stream_read(stream, buf, chunk_size);
+		if (!is_success)
+		{
+			goto end;
+		}
+		hash = ff_hash_uint8(hash, buf, chunk_size);
+		len -= chunk_size;
+	}
+	*hash_value = hash;
 	is_success = 1;
 
 end:

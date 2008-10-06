@@ -89,6 +89,13 @@ FF_API void ff_stream_disconnect(struct ff_stream *stream);
  */
 FF_API int ff_stream_copy(struct ff_stream *src_stream, struct ff_stream *dst_stream, int len);
 
+/**
+ * Calculates hash value for len bytes from the stream using start_value as the hash seed.
+ * Stores the hash value in the hash_value.
+ * Returns 1 on success, 0 on error.
+ */
+FF_API int ff_stream_get_hash(struct ff_stream *stream, int len, uint32_t start_value, uint32_t *hash_value);
+
 #ifdef __cplusplus
 }
 #endif
