@@ -26,15 +26,15 @@ void ff_write_stream_buffer_delete(struct ff_write_stream_buffer *buffer);
 
 /**
  * Writes exactly len bytes to the buffer.
- * Returns 1 on success, 0 on error.
+ * Returns FF_SUCCESS on success, FF_FAILURE on error.
  */
-int ff_write_stream_buffer_write(struct ff_write_stream_buffer *buffer, const void *buf, int len);
+enum ff_result ff_write_stream_buffer_write(struct ff_write_stream_buffer *buffer, const void *buf, int len);
 
 /**
  * Flushes the buffer.
- * Returns 1 on success, 0 on error.
+ * Returns FF_SUCCESS on success, FF_FAILURE on error.
  */
-int ff_write_stream_buffer_flush(struct ff_write_stream_buffer *buffer);
+enum ff_result ff_write_stream_buffer_flush(struct ff_write_stream_buffer *buffer);
 
 #ifdef __cplusplus
 }

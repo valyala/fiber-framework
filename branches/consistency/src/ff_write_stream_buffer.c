@@ -33,10 +33,10 @@ void ff_write_stream_buffer_delete(struct ff_write_stream_buffer *buffer)
 	ff_free(buffer);
 }
 
-int ff_write_stream_buffer_write(struct ff_write_stream_buffer *buffer, const void *buf, int len)
+enum ff_result ff_write_stream_buffer_write(struct ff_write_stream_buffer *buffer, const void *buf, int len)
 {
 	char *char_buf;
-	int is_success = 0;
+	enum ff_result result = FF_FAILURE;
 
 	ff_assert(len >= 0);
 
@@ -53,8 +53,8 @@ int ff_write_stream_buffer_write(struct ff_write_stream_buffer *buffer, const vo
 		if (buffer->capacity == buffer->start_pos)
 		{
 			/* the buffer is full, so flush its contents to the underlying stream */
-			is_success = ff_write_stream_buffer_flush(buffer);
-			if (!is_success)
+			result = ff_write_stream_buffer_flush(buffer);
+			if (result == FF_FAILURE)
 			{
 				goto end;
 			}
@@ -94,18 +94,18 @@ int ff_write_stream_buffer_write(struct ff_write_stream_buffer *buffer, const vo
 		char_buf += bytes_written;
 		len -= bytes_written;
 	}
-	is_success = 1;
+	result = FF_SUCCESS;
 
 end:
-	return is_success;
+	return result;
 }
 
 
-int ff_write_stream_buffer_flush(struct ff_write_stream_buffer *buffer)
+enum ff_result ff_write_stream_buffer_flush(struct ff_write_stream_buffer *buffer)
 {
 	int total_bytes_written = 0;
-	int is_success = 0;
 	int bytes_to_write;
+	enum ff_result result = FF_FAILURE;
 
 	ff_assert(buffer->capacity > 0);
 	ff_assert(buffer->start_pos >= 0);
@@ -128,8 +128,8 @@ int ff_write_stream_buffer_flush(struct ff_write_stream_buffer *buffer)
 		total_bytes_written += bytes_written;
 	}
 	buffer->start_pos = 0;
-	is_success = 1;
+	result = FF_SUCCESS;
 
 end:
-	return is_success;
+	return result;
 }

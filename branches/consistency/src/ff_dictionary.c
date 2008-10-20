@@ -76,11 +76,11 @@ void ff_dictionary_put(struct ff_dictionary *dictionary, const void *key, const 
 	dictionary->entries_cnt++;
 }
 
-int ff_dictionary_get(struct ff_dictionary *dictionary, const void *key, const void **value)
+enum ff_result ff_dictionary_get(struct ff_dictionary *dictionary, const void *key, const void **value)
 {
-	int is_found = 0;
 	struct dictionary_entry *entry;
 	uint32_t bucket_num;
+	enum ff_result result = FF_FAILURE;
 
 	bucket_num = get_bucket_num(dictionary, key);
 	entry = dictionary->buckets[bucket_num];
@@ -89,20 +89,20 @@ int ff_dictionary_get(struct ff_dictionary *dictionary, const void *key, const v
 		if (entry->key == key)
 		{
 			*value = entry->value;
-			is_found = 1;
+			result = FF_SUCCESS;
 			break;
 		}
 		entry = entry->next;
 	}
-	return is_found;
+	return result;
 }
 
-int ff_dictionary_remove_entry(struct ff_dictionary *dictionary, const void *key, const void **value)
+enum ff_result ff_dictionary_remove_entry(struct ff_dictionary *dictionary, const void *key, const void **value)
 {
-	int is_removed = 0;
 	struct dictionary_entry **entry_ptr;
 	struct dictionary_entry *entry;
 	uint32_t bucket_num;
+	enum ff_result result = FF_FAILURE;
 
 	bucket_num = get_bucket_num(dictionary, key);
 	entry_ptr = &dictionary->buckets[bucket_num];
@@ -114,12 +114,12 @@ int ff_dictionary_remove_entry(struct ff_dictionary *dictionary, const void *key
 			*entry_ptr = entry->next;
 			*value = entry->value;
 			ff_free(entry);
-			is_removed = 1;
+			result = FF_SUCCESS;
 			dictionary->entries_cnt--;
 			break;
 		}
 		entry_ptr = &entry->next;
 		entry = entry->next;
 	}
-	return is_removed;
+	return result;
 }

@@ -26,9 +26,9 @@ void ff_read_stream_buffer_delete(struct ff_read_stream_buffer *buffer);
 
 /**
  * Reads exactly len bytes from the buffer to the buf.
- * Returns 1 on success, 0 on error.
+ * Returns FF_SUCCESS on success, FF_FAILURE on error.
  */
-int ff_read_stream_buffer_read(struct ff_read_stream_buffer *buffer, void *buf, int len);
+enum ff_result ff_read_stream_buffer_read(struct ff_read_stream_buffer *buffer, void *buf, int len);
 
 #ifdef __cplusplus
 }

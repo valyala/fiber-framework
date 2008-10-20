@@ -18,25 +18,25 @@ struct ff_stream_vtable
 
 	/**
 	 * the read() callback should read exactly len bytes from the stream into buf.
-	 * It should return 1 on success, 0 on error.
+	 * It should return FF_SUCCESS on success, FF_FAILURE on error.
 	 */
-	int (*read)(struct ff_stream *stream, void *buf, int len);
+	enum ff_result (*read)(struct ff_stream *stream, void *buf, int len);
 
 	/**
 	 * the write() callback should write exactly len bytes from the buf into the stream.
-	 * It should return 1 on success, 0 on error.
+	 * It should return FF_SUCCESS on success, FF_FAILURE on error.
 	 */
-	int (*write)(struct ff_stream *stream, const void *buf, int len);
+	enum ff_result (*write)(struct ff_stream *stream, const void *buf, int len);
 
 	/**
 	 * the flush() callback should flush stream's write buffer.
-	 * It should return 1 on success, 0 on error.
+	 * It should return FF_SUCCESS on success, FF_FAILURE on error.
 	 */
-	int (*flush)(struct ff_stream *stream);
+	enum ff_result (*flush)(struct ff_stream *stream);
 
 	/**
 	 * the disconnect() callback should unblock all pending write*() and read*() calls.
-	 * All subsequent write*() and read*() calls should return 0 (error) immediately.
+	 * All subsequent write*() and read*() calls should return FF_FAILURE immediately.
 	 */
 	void (*disconnect)(struct ff_stream *stream);
 };
@@ -60,41 +60,41 @@ FF_API void *ff_stream_get_ctx(struct ff_stream *stream);
 
 /**
  * Reads exactly len bytes from the stream into the buf.
- * Returns 1 on success, 0 on error.
+ * Returns FF_SUCCESS on success, FF_FAILURE on error.
  */
-FF_API int ff_stream_read(struct ff_stream *stream, void *buf, int len);
+FF_API enum ff_result ff_stream_read(struct ff_stream *stream, void *buf, int len);
 
 /**
  * Writes exactly len bytes from the buf into the stream.
- * Returns 1 on success, 0 on error.
+ * Returns FF_SUCCESS on success, FF_FAILURE on error.
  */
-FF_API int ff_stream_write(struct ff_stream *stream, const void *buf, int len);
+FF_API enum ff_result ff_stream_write(struct ff_stream *stream, const void *buf, int len);
 
 /**
  * Flushes the stream's write buffer.
- * Returns 1 on success, 0 on error.
+ * Returns FF_SUCCESS on success, FF_FAILURE on error.
  */
-FF_API int ff_stream_flush(struct ff_stream *stream);
+FF_API enum ff_result ff_stream_flush(struct ff_stream *stream);
 
 /**
  * Disconnects the stream.
  * It unblocks all ff_stream_read*() and ff_stream_write*() pending calls.
- * Subsequent calls to the ff_stream_read*() and ff_stream_write*() will return 0 (error) immediately.
+ * Subsequent calls to the ff_stream_read*() and ff_stream_write*() will return FF_FAILURE immediately.
  */
 FF_API void ff_stream_disconnect(struct ff_stream *stream);
 
 /**
  * Copies exactly len bytes from the src_stream to the dst_stream.
- * Returns 1 on success, 0 on error.
+ * Returns FF_SUCCESS on success, FF_FAILURE on error.
  */
-FF_API int ff_stream_copy(struct ff_stream *src_stream, struct ff_stream *dst_stream, int len);
+FF_API enum ff_result ff_stream_copy(struct ff_stream *src_stream, struct ff_stream *dst_stream, int len);
 
 /**
  * Calculates hash value for len bytes from the stream using start_value as the hash seed.
  * Stores the hash value in the hash_value.
- * Returns 1 on success, 0 on error.
+ * Returns FF_SUCCESS on success, FF_FAILURE on error.
  */
-FF_API int ff_stream_get_hash(struct ff_stream *stream, int len, uint32_t start_value, uint32_t *hash_value);
+FF_API enum ff_result ff_stream_get_hash(struct ff_stream *stream, int len, uint32_t start_value, uint32_t *hash_value);
 
 #ifdef __cplusplus
 }

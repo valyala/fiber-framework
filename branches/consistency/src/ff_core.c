@@ -250,18 +250,18 @@ struct ff_core_timeout_operation_data *ff_core_register_timeout_operation(int ti
 	return timeout_operation_data;
 }
 
-int ff_core_deregister_timeout_operation(struct ff_core_timeout_operation_data *timeout_operation_data)
+enum ff_result ff_core_deregister_timeout_operation(struct ff_core_timeout_operation_data *timeout_operation_data)
 {
-	int is_success;
+	enum ff_result result;
 
 	ff_mutex_lock(core_ctx.timeout_operations_mutex);
 	ff_container_remove_entry(timeout_operation_data->timeout_operation_entry);
 	ff_mutex_unlock(core_ctx.timeout_operations_mutex);
 	ff_semaphore_down(core_ctx.timeout_operations_semaphore);
 
-	is_success = !timeout_operation_data->is_expired;
+	result = timeout_operation_data->is_expired ? FF_FAILURE : FF_SUCCESS;
 	ff_free(timeout_operation_data);
-	return is_success;
+	return result;
 }
 
 void ff_core_schedule_fiber(struct ff_fiber *fiber)
