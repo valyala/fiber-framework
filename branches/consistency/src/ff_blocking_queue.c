@@ -36,7 +36,7 @@ void ff_blocking_queue_delete(struct ff_blocking_queue *queue)
 void ff_blocking_queue_get(struct ff_blocking_queue *queue, const void **data)
 {
 	ff_semaphore_down(queue->producer_semaphore);
-	*data = ff_queue_front(queue->simple_queue);
+	ff_queue_front(queue->simple_queue, data);
 	ff_queue_pop(queue->simple_queue);
 	ff_semaphore_up(queue->consumer_semaphore);
 }
@@ -50,7 +50,7 @@ int ff_blocking_queue_get_with_timeout(struct ff_blocking_queue *queue, const vo
 	is_success = ff_semaphore_down_with_timeout(queue->producer_semaphore, timeout);
 	if (is_success)
 	{
-		*data = ff_queue_front(queue->simple_queue);
+		ff_queue_front(queue->simple_queue, data);
 		ff_queue_pop(queue->simple_queue);
 		ff_semaphore_up(queue->consumer_semaphore);
 	}
