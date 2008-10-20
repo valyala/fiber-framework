@@ -13,7 +13,7 @@ void ff_queue_delete(struct ff_queue *queue);
 
 void ff_queue_push(struct ff_queue *queue, const void *data);
 
-void ff_queue_front(struct ff_queue *queue, const void **data);
+void *ff_queue_front(struct ff_queue *queue);
 
 void ff_queue_pop(struct ff_queue *queue);
 

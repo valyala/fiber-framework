@@ -45,11 +45,14 @@ void ff_queue_push(struct ff_queue *queue, const void *data)
 	queue->back_ptr = &entry->next;
 }
 
-void ff_queue_front(struct ff_queue *queue, const void **data)
+void *ff_queue_front(struct ff_queue *queue)
 {
+	void *data;
+
 	ff_assert(queue->front != NULL);
 
-	*data = queue->front->data;
+	data = (void *) queue->front->data;
+	return data;
 }
 
 void ff_queue_pop(struct ff_queue *queue)
