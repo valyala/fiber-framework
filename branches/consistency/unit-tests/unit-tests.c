@@ -1430,7 +1430,7 @@ static void test_stream_tcp_with_timeout_basic()
 	data.server_tcp = ff_tcp_create();
 	data.event = ff_event_create(FF_EVENT_AUTO);
 	addr = ff_arch_net_addr_create();
-	result = ff_arch_net_addr_resolve(addr, L"localhost", 8393);
+	result = ff_arch_net_addr_resolve(addr, L"localhost", 8394);
 	ASSERT(result == FF_SUCCESS, "cannot resolve localhost address");
 	result = ff_tcp_bind(data.server_tcp, addr, FF_TCP_SERVER);
 	ASSERT(result == FF_SUCCESS, "cannot bind server tcp");
