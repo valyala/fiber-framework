@@ -34,22 +34,15 @@ struct ff_dictionary *ff_dictionary_create(int order)
 {
 	struct ff_dictionary *dictionary;
 	uint32_t buckets_cnt;
-	uint32_t i;
-	size_t buckets_size;
 
 	ff_assert(order >= 0);
 	ff_assert(order < 20);
 	buckets_cnt = 1ul << order;
-	buckets_size = sizeof(*dictionary->buckets) * buckets_cnt;
 
 	dictionary = (struct ff_dictionary *) ff_malloc(sizeof(*dictionary));
 	dictionary->order = order;
 	dictionary->entries_cnt = 0;
-	dictionary->buckets = (struct dictionary_entry **) ff_malloc(buckets_size);
-	for (i = 0; i < buckets_cnt; i++)
-	{
-		dictionary->buckets[i] = NULL;
-	}
+	dictionary->buckets = (struct dictionary_entry **) ff_calloc(buckets_cnt, sizeof(dictionary->buckets[0]));
 
 	return dictionary;
 }

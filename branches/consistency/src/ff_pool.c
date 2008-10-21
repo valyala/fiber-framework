@@ -31,7 +31,7 @@ struct ff_pool *ff_pool_create(int max_size, ff_pool_entry_constructor entry_con
 	pool->entry_constructor_ctx = entry_constructor_ctx;
 	pool->semaphore = ff_semaphore_create(max_size);
 	pool->mutex = ff_mutex_create();
-	pool->entries = (void **) ff_malloc(max_size * sizeof(pool->entries[0]));
+	pool->entries = (void **) ff_calloc(max_size, sizeof(pool->entries[0]));
 	pool->max_size = max_size;
 	pool->current_size = 0;
 	pool->busy_entries_cnt = 0;

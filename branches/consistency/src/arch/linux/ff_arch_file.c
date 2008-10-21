@@ -104,7 +104,7 @@ static void threadpool_copy_file_func(void *ctx)
 		return;
 	}
 
-	buf = (char *) ff_malloc(FILE_COPY_BUF_SIZE);
+	buf = (char *) ff_calloc(FILE_COPY_BUF_SIZE, sizeof(buf[0]));
 	for (;;)
 	{
 		ssize_t bytes_read, bytes_written;

@@ -18,6 +18,13 @@ void *ff_malloc(size_t size)
 	return mem;
 }
 
+void *ff_calloc(size_t nmemb, size_t size)
+{
+	void *mem = calloc(nmemb, size);
+	check_mem(mem);
+	return mem;
+}
+
 void ff_free(void *mem)
 {
 	check_mem(mem);

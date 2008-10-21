@@ -106,7 +106,7 @@ const wchar_t *ff_arch_net_addr_to_string(const struct ff_arch_net_addr *addr)
 	str = inet_ntoa(addr->addr.sin_addr);
 	ff_assert(str != NULL);
 	port = ntohs(addr->addr.sin_port);
-	buf = (wchar_t *) ff_malloc(ADDR_TO_STRING_BUF_SIZE * sizeof(buf[0]));
+	buf = (wchar_t *) ff_calloc(ADDR_TO_STRING_BUF_SIZE, sizeof(buf[0]));
 	len = swprintf(buf, ADDR_TO_STRING_BUF_SIZE, L"%s:%hu", str, port);
 	ff_assert(len > 0);
 

@@ -21,7 +21,7 @@ struct ff_read_stream_buffer *ff_read_stream_buffer_create(ff_read_stream_func r
 	buffer = (struct ff_read_stream_buffer *) ff_malloc(sizeof(*buffer));
 	buffer->read_func = read_func;
 	buffer->func_ctx = func_ctx;
-	buffer->buf = (char *) ff_malloc(capacity);
+	buffer->buf = (char *) ff_calloc(capacity, sizeof(buffer->buf[0]));
 	buffer->capacity = capacity;
 	buffer->size = 0;
 	buffer->start_pos = 0;

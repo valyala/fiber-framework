@@ -73,7 +73,7 @@ int ff_arch_misc_get_cpus_cnt()
 			goto end;
 		}
 
-		line = (char *) ff_malloc(MAX_CPUINFO_LINE_SIZE);
+		line = (char *) ff_calloc(MAX_CPUINFO_LINE_SIZE, sizeof(line[0]));
 
 		for (;;)
 		{
@@ -108,7 +108,7 @@ char *ff_linux_misc_wide_to_multibyte_string(const wchar_t *wide_str)
 
 	mb_str_len = wcstombs(NULL, wide_str, 0) + 1;
 	ff_assert(mb_str_len != 0);
-	mb_str = (char *) ff_malloc(mb_str_len);
+	mb_str = (char *) ff_calloc(mb_str_len, sizeof(mb_str[0]));
 	len = wcstombs(mb_str, wide_str, mb_str_len);
 	ff_assert(len + 1 == mb_str_len);
 
