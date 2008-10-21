@@ -108,8 +108,10 @@ uint32_t ff_hash_uint8(uint32_t start_value, const uint8_t *buf, int buf_size)
 				break;
 			case 2:
 				tail_uint32 = (((uint32_t) tail[0]) << 8) | ((uint32_t) tail[1]);
+				break;
 			case 1:
 				tail_uint32 = (uint32_t) tail[0];
+				break;
 		}
 		hash = ff_hash_uint32(hash, &tail_uint32, 1);
 	}
