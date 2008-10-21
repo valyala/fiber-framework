@@ -49,11 +49,11 @@ struct ff_core_timeout_operation_data *ff_core_register_timeout_operation(int ti
 /**
  * @public
  * Deregisters the timeout operation, which was registered using ff_core_register_timeout_operation()
- * Returns 1 on success, 0 on error.
+ * Returns FF_SUCCESS on success, FF_FAILURE on error.
  * Usually this function is called in the same function as the ff_core_register_timeout_operation()
  * after completing the given operation.
  */
-int ff_core_deregister_timeout_operation(struct ff_core_timeout_operation_data *timeout_operation_data);
+enum ff_result ff_core_deregister_timeout_operation(struct ff_core_timeout_operation_data *timeout_operation_data);
 
 #ifdef __cplusplus
 }

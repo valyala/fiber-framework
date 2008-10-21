@@ -50,10 +50,10 @@ void ff_arch_completion_port_get(struct ff_arch_completion_port *completion_port
 
 	if (overlapped != NULL)
 	{
-		int is_found;
+		enum ff_result result;
 
-		is_found = ff_dictionary_get(completion_port->overlapped_dictionary, overlapped, data);
-		ff_assert(is_found);
+		result = ff_dictionary_get(completion_port->overlapped_dictionary, overlapped, data);
+		ff_assert(result == FF_SUCCESS);
 	}
 	else
 	{
@@ -79,10 +79,10 @@ void ff_win_completion_port_register_overlapped_data(struct ff_arch_completion_p
 void ff_win_completion_port_deregister_overlapped_data(struct ff_arch_completion_port *completion_port, LPOVERLAPPED overlapped)
 {
 	void *data;
-	int is_removed;
+	enum ff_result result;
 
-	is_removed = ff_dictionary_remove_entry(completion_port->overlapped_dictionary, overlapped, &data);
-	ff_assert(is_removed);
+	result = ff_dictionary_remove_entry(completion_port->overlapped_dictionary, overlapped, &data);
+	ff_assert(result == FF_SUCCESS);
 }
 
 void ff_win_completion_port_register_handle(struct ff_arch_completion_port *completion_port, HANDLE handle)

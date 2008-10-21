@@ -19,7 +19,7 @@ void ff_stack_top(struct ff_stack *stack, const void **data);
 
 void ff_stack_pop(struct ff_stack *stack);
 
-int ff_stack_remove_entry(struct ff_stack *stack, const void *data);
+enum ff_result ff_stack_remove_entry(struct ff_stack *stack, const void *data);
 
 #ifdef __cplusplus
 }

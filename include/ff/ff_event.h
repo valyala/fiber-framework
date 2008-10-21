@@ -61,9 +61,9 @@ FF_API void ff_event_wait(struct ff_event *event);
 /**
  * @public
  * waits while the given event will be set during the timeout;
- * Returns 0 if the event wasn't set. Otherwise returns 1.
+ * Returns FF_FAILURE if the event wasn't set. Otherwise returns FF_SUCCESS.
  */
-FF_API int ff_event_wait_with_timeout(struct ff_event *event, int timeout);
+FF_API enum ff_result ff_event_wait_with_timeout(struct ff_event *event, int timeout);
 
 /**
  * @public

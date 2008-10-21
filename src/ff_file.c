@@ -86,59 +86,59 @@ void ff_file_close(struct ff_file *file)
 	ff_free(file);
 }
 
-int ff_file_read(struct ff_file *file, void *buf, int len)
+enum ff_result ff_file_read(struct ff_file *file, void *buf, int len)
 {
-	int is_success;
+	enum ff_result result;
 
 	ff_assert(file->access_mode == FF_FILE_READ);
 	ff_assert(len >= 0);
 
-	is_success = ff_read_stream_buffer_read(file->buffers.read_buffer, buf, len);
-	return is_success;
+	result = ff_read_stream_buffer_read(file->buffers.read_buffer, buf, len);
+	return result;
 }
 
-int ff_file_write(struct ff_file *file, const void *buf, int len)
+enum ff_result ff_file_write(struct ff_file *file, const void *buf, int len)
 {
-	int is_success;
+	enum ff_result result;
 
 	ff_assert(file->access_mode == FF_FILE_WRITE);
 	ff_assert(len >= 0);
 
-	is_success = ff_write_stream_buffer_write(file->buffers.write_buffer, buf, len);
-	return is_success;
+	result = ff_write_stream_buffer_write(file->buffers.write_buffer, buf, len);
+	return result;
 }
 
-int ff_file_flush(struct ff_file *file)
+enum ff_result ff_file_flush(struct ff_file *file)
 {
-	int is_success;
+	enum ff_result result;
 
 	ff_assert(file->access_mode == FF_FILE_WRITE);
-	is_success = ff_write_stream_buffer_flush(file->buffers.write_buffer);
-	return is_success;
+	result = ff_write_stream_buffer_flush(file->buffers.write_buffer);
+	return result;
 }
 
-int ff_file_erase(const wchar_t *path)
+enum ff_result ff_file_erase(const wchar_t *path)
 {
-	int is_success;
+	enum ff_result result;
 
-	is_success = ff_arch_file_erase(path);
-	return is_success;
+	result = ff_arch_file_erase(path);
+	return result;
 }
 
-int ff_file_copy(const wchar_t *src_path, const wchar_t *dst_path)
+enum ff_result ff_file_copy(const wchar_t *src_path, const wchar_t *dst_path)
 {
-	int is_success;
+	enum ff_result result;
 
-	is_success = ff_arch_file_copy(src_path, dst_path);
-	return is_success;
+	result = ff_arch_file_copy(src_path, dst_path);
+	return result;
 }
 
-int ff_file_move(const wchar_t *src_path, const wchar_t *dst_path)
+enum ff_result ff_file_move(const wchar_t *src_path, const wchar_t *dst_path)
 {
-	int is_success;
+	enum ff_result result;
 
-	is_success = ff_arch_file_move(src_path, dst_path);
-	return is_success;
+	result = ff_arch_file_move(src_path, dst_path);
+	return result;
 }
 
 int64_t ff_file_get_size(struct ff_file *file)

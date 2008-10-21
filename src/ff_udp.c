@@ -35,12 +35,12 @@ void ff_udp_delete(struct ff_udp *udp)
 	ff_free(udp);
 }
 
-int ff_udp_bind(struct ff_udp *udp, const struct ff_arch_net_addr *addr)
+enum ff_result ff_udp_bind(struct ff_udp *udp, const struct ff_arch_net_addr *addr)
 {
-	int is_success;
+	enum ff_result result;
 
-	is_success = ff_arch_udp_bind(udp->udp, addr);
-	return is_success;
+	result = ff_arch_udp_bind(udp->udp, addr);
+	return result;
 }
 
 int ff_udp_read(struct ff_udp *udp, struct ff_arch_net_addr *peer_addr, void *buf, int len)

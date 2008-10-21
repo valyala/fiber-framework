@@ -41,20 +41,20 @@ void ff_blocking_queue_get(struct ff_blocking_queue *queue, const void **data)
 	ff_semaphore_up(queue->consumer_semaphore);
 }
 
-int ff_blocking_queue_get_with_timeout(struct ff_blocking_queue *queue, const void **data, int timeout)
+enum ff_result ff_blocking_queue_get_with_timeout(struct ff_blocking_queue *queue, const void **data, int timeout)
 {
-	int is_success;
+	enum ff_result result;
 
 	ff_assert(timeout > 0);
 	
-	is_success = ff_semaphore_down_with_timeout(queue->producer_semaphore, timeout);
-	if (is_success)
+	result = ff_semaphore_down_with_timeout(queue->producer_semaphore, timeout);
+	if (result == FF_SUCCESS)
 	{
 		ff_queue_front(queue->simple_queue, data);
 		ff_queue_pop(queue->simple_queue);
 		ff_semaphore_up(queue->consumer_semaphore);
 	}
-	return is_success;
+	return result;
 }
 
 void ff_blocking_queue_put(struct ff_blocking_queue *queue, const void *data)
@@ -64,19 +64,19 @@ void ff_blocking_queue_put(struct ff_blocking_queue *queue, const void *data)
 	ff_semaphore_up(queue->producer_semaphore);
 }
 
-int ff_blocking_queue_put_with_timeout(struct ff_blocking_queue *queue, const void *data, int timeout)
+enum ff_result ff_blocking_queue_put_with_timeout(struct ff_blocking_queue *queue, const void *data, int timeout)
 {
-	int is_success;
+	enum ff_result result;
 
 	ff_assert(timeout > 0);
 
-	is_success = ff_semaphore_down_with_timeout(queue->consumer_semaphore, timeout);
-	if (is_success)
+	result = ff_semaphore_down_with_timeout(queue->consumer_semaphore, timeout);
+	if (result == FF_SUCCESS)
 	{
 		ff_queue_push(queue->simple_queue, data);
 		ff_semaphore_up(queue->producer_semaphore);
 	}
-	return is_success;
+	return result;
 }
 
 int ff_blocking_queue_is_empty(struct ff_blocking_queue *queue)

@@ -380,19 +380,19 @@ static void test_event_auto_basic()
 static void test_event_manual_timeout()
 {
 	struct ff_event *event;
-	int is_success;
+	enum ff_result result;
 	int is_set;
 
 	ff_core_initialize(LOG_FILENAME);
 
 	event = ff_event_create(FF_EVENT_MANUAL);
-	is_success = ff_event_wait_with_timeout(event, 100);
-	ASSERT(!is_success, "event should timeout");
+	result = ff_event_wait_with_timeout(event, 100);
+	ASSERT(result == FF_FAILURE, "event should timeout");
 	is_set = ff_event_is_set(event);
 	ASSERT(!is_set, "event should remain 'not set' after timeout");
 	ff_event_set(event);
-	is_success = ff_event_wait_with_timeout(event, 100);
-	ASSERT(is_success, "event shouldn't timeout");
+	result = ff_event_wait_with_timeout(event, 100);
+	ASSERT(result == FF_SUCCESS, "event shouldn't timeout");
 	is_set = ff_event_is_set(event);
 	ASSERT(is_set, "manual event should remain set after ff_event_wait_with_timeout");
 	ff_event_delete(event);
@@ -403,19 +403,19 @@ static void test_event_manual_timeout()
 static void test_event_auto_timeout()
 {
 	struct ff_event *event;
-	int is_success;
+	enum ff_result result;
 	int is_set;
 
 	ff_core_initialize(LOG_FILENAME);
 
 	event = ff_event_create(FF_EVENT_AUTO);
-	is_success = ff_event_wait_with_timeout(event, 100);
-	ASSERT(!is_success, "event should timeout");
+	result = ff_event_wait_with_timeout(event, 100);
+	ASSERT(result == FF_FAILURE, "event should timeout");
 	is_set = ff_event_is_set(event);
 	ASSERT(!is_set, "event should remain 'not set' after timeout");
 	ff_event_set(event);
-	is_success = ff_event_wait_with_timeout(event, 100);
-	ASSERT(is_success, "event shouldn't timeout");
+	result = ff_event_wait_with_timeout(event, 100);
+	ASSERT(result == FF_SUCCESS, "event shouldn't timeout");
 	is_set = ff_event_is_set(event);
 	ASSERT(!is_set, "auto reset event should be 'not set' after ff_event_wait_with_timeout");
 	ff_event_delete(event);
@@ -471,7 +471,6 @@ static void test_event_auto_multiple()
 	struct ff_event *event, *done_event;
 	int i;
 	int a = 0;
-	int is_success;
 	void *data[3];
 
 	ff_core_initialize(LOG_FILENAME);
@@ -487,9 +486,11 @@ static void test_event_auto_multiple()
 	ASSERT(a == 0, "a shouldn't change while event isn't set");
 	for (i = 0; i < 14; i++)
 	{
+		enum ff_result result;
+
 		ff_event_set(event);
-		is_success = ff_event_wait_with_timeout(done_event, 1);
-		ASSERT(!is_success, "done_event should remain 'not set'");
+		result = ff_event_wait_with_timeout(done_event, 1);
+		ASSERT(result == FF_FAILURE, "done_event should remain 'not set'");
 	}
 	ff_event_set(event);
 	ff_event_wait(done_event);
@@ -598,25 +599,25 @@ static void test_semaphore_create_delete()
 static void test_semaphore_basic()
 {
 	int i;
-	int is_success;
+	enum ff_result result;
 	struct ff_semaphore *semaphore;
 
 	ff_core_initialize(LOG_FILENAME);
 	semaphore = ff_semaphore_create(0);
-	is_success = ff_semaphore_down_with_timeout(semaphore, 1);
-	ASSERT(!is_success, "semaphore with 0 value cannot be down");
+	result = ff_semaphore_down_with_timeout(semaphore, 1);
+	ASSERT(result == FF_FAILURE, "semaphore with 0 value cannot be down");
 	for (i = 0; i < 10; i++)
 	{
 		ff_semaphore_up(semaphore);
 	}
-	is_success = ff_semaphore_down_with_timeout(semaphore, 1);
-	ASSERT(is_success, "semaphore should be down");
+	result = ff_semaphore_down_with_timeout(semaphore, 1);
+	ASSERT(result == FF_SUCCESS, "semaphore should be down");
 	for (i = 0; i < 9; i++)
 	{
 		ff_semaphore_down(semaphore);
 	}
-	is_success = ff_semaphore_down_with_timeout(semaphore, 1);
-	ASSERT(!is_success, "semaphore cannot be down");
+	result = ff_semaphore_down_with_timeout(semaphore, 1);
+	ASSERT(result == FF_FAILURE, "semaphore cannot be down");
 	ff_semaphore_delete(semaphore);
 	ff_core_shutdown();
 }
@@ -646,7 +647,7 @@ static void test_blocking_queue_create_delete()
 static void test_blocking_queue_basic()
 {
 	int64_t i;
-	int is_success;
+	enum ff_result result;
 	int64_t data = 0;
 	struct ff_blocking_queue *queue;
 	int is_empty;
@@ -661,8 +662,8 @@ static void test_blocking_queue_basic()
 	}
 	is_empty = ff_blocking_queue_is_empty(queue);
 	ASSERT(!is_empty, "queue shouldn't be empty");
-	is_success = ff_blocking_queue_put_with_timeout(queue, (void *)123, 1);
-	ASSERT(!is_success, "queue should be full");
+	result = ff_blocking_queue_put_with_timeout(queue, (void *)123, 1);
+	ASSERT(result == FF_FAILURE, "queue should be full");
 	for (i = 0; i < 10; i++)
 	{
 		ff_blocking_queue_get(queue, (const void **)&data);
@@ -670,8 +671,8 @@ static void test_blocking_queue_basic()
 	}
 	is_empty = ff_blocking_queue_is_empty(queue);
 	ASSERT(is_empty, "queue should be empty");
-	is_success = ff_blocking_queue_get_with_timeout(queue, (const void **)&data, 1);
-	ASSERT(!is_success, "queue should be empty");
+	result = ff_blocking_queue_get_with_timeout(queue, (const void **)&data, 1);
+	ASSERT(result == FF_FAILURE, "queue should be empty");
 	ff_blocking_queue_delete(queue);
 	ff_core_shutdown();
 }
@@ -687,18 +688,18 @@ static void fiberpool_blocking_queue_func(void *ctx)
 static void test_blocking_queue_fiberpool()
 {
 	int64_t data = 0;
-	int is_success;
+	enum ff_result result;
 	struct ff_blocking_queue *queue;
 
 	ff_core_initialize(LOG_FILENAME);
 	queue = ff_blocking_queue_create(1);
-	is_success = ff_blocking_queue_get_with_timeout(queue, (const void **)&data, 1);
-	ASSERT(!is_success, "queue should be empty");
+	result = ff_blocking_queue_get_with_timeout(queue, (const void **)&data, 1);
+	ASSERT(result == FF_FAILURE, "queue should be empty");
 	ff_core_fiberpool_execute_async(fiberpool_blocking_queue_func, queue);
 	ff_blocking_queue_get(queue, (const void **)&data);
 	ASSERT(data == 543, "unexpected value received from the queue");
-	is_success = ff_blocking_queue_get_with_timeout(queue, (const void **)&data, 1);
-	ASSERT(!is_success, "queue shouldn't have values");
+	result = ff_blocking_queue_get_with_timeout(queue, (const void **)&data, 1);
+	ASSERT(result == FF_FAILURE, "queue shouldn't have values");
 	ff_blocking_queue_delete(queue);
 	ff_core_shutdown();
 }
@@ -729,7 +730,7 @@ static void test_blocking_stack_create_delete()
 static void test_blocking_stack_basic()
 {
 	int64_t i;
-	int is_success;
+	enum ff_result result;
 	int64_t data = 0;
 	struct ff_blocking_stack *stack;
 
@@ -739,15 +740,15 @@ static void test_blocking_stack_basic()
 	{
 		ff_blocking_stack_push(stack, *(void **)&i);
 	}
-	is_success = ff_blocking_stack_push_with_timeout(stack, (void *)1234, 1);
-	ASSERT(!is_success, "stack should be fulll");
+	result = ff_blocking_stack_push_with_timeout(stack, (void *)1234, 1);
+	ASSERT(result == FF_FAILURE, "stack should be fulll");
 	for (i = 9; i >= 0; i--)
 	{
 		ff_blocking_stack_pop(stack, (const void **)&data);
 		ASSERT(data == i, "wrong value retrieved from the stack");
 	}
-	is_success = ff_blocking_stack_pop_with_timeout(stack, (const void **)&data, 1);
-	ASSERT(!is_success, "stack should be empty");
+	result = ff_blocking_stack_pop_with_timeout(stack, (const void **)&data, 1);
+	ASSERT(result == FF_FAILURE, "stack should be empty");
 	ff_blocking_stack_delete(stack);
 	ff_core_shutdown();
 }
@@ -763,18 +764,18 @@ static void fiberpool_blocking_stack_func(void *ctx)
 static void test_blocking_stack_fiberpool()
 {
 	int64_t data = 0;
-	int is_success;
+	enum ff_result result;
 	struct ff_blocking_stack *stack;
 
 	ff_core_initialize(LOG_FILENAME);
 	stack = ff_blocking_stack_create(1);
-	is_success = ff_blocking_stack_pop_with_timeout(stack, (const void **)&data, 1);
-	ASSERT(!is_success, "stack should be empty");
+	result = ff_blocking_stack_pop_with_timeout(stack, (const void **)&data, 1);
+	ASSERT(result == FF_FAILURE, "stack should be empty");
 	ff_core_fiberpool_execute_async(fiberpool_blocking_stack_func, stack);
 	ff_blocking_stack_pop(stack, (const void **)&data);
 	ASSERT(data == 543, "unexpected value received from the stack");
-	is_success = ff_blocking_stack_pop_with_timeout(stack, (const void **)&data, 1);
-	ASSERT(!is_success, "stack shouldn't have values");
+	result = ff_blocking_stack_pop_with_timeout(stack, (const void **)&data, 1);
+	ASSERT(result == FF_FAILURE, "stack shouldn't have values");
 	ff_blocking_stack_delete(stack);
 	ff_core_shutdown();
 }
@@ -917,17 +918,17 @@ static void test_file_open_read_fail()
 static void test_file_create_delete()
 {
 	struct ff_file *file;
-	int is_success;
+	enum ff_result result;
 
 	ff_core_initialize(LOG_FILENAME);
 
 	file = ff_file_open(L"test.txt", FF_FILE_WRITE);
 	ASSERT(file != NULL, "file should be created");
 	ff_file_close(file);
-	is_success = ff_file_erase(L"test.txt");
-	ASSERT(is_success, "file should be deleted");
-	is_success = ff_file_erase(L"test.txt");
-	ASSERT(!is_success, "file already deleted");
+	result = ff_file_erase(L"test.txt");
+	ASSERT(result == FF_SUCCESS, "file should be deleted");
+	result = ff_file_erase(L"test.txt");
+	ASSERT(result == FF_FAILURE, "file already deleted");
 
 	ff_core_shutdown();
 }
@@ -939,7 +940,7 @@ static void test_file_basic()
 	uint8_t data[] = "hello, world!\n";
 	uint8_t buf[sizeof(data) - 1];
 	int is_equal;
-	int is_success;
+	enum ff_result result;
 
 	ff_core_initialize(LOG_FILENAME);
 
@@ -947,35 +948,35 @@ static void test_file_basic()
 	ASSERT(file != NULL, "file should be created");
 	size = ff_file_get_size(file);
 	ASSERT(size == 0, "file should be empty");
-	is_success = ff_file_write(file, data, sizeof(data) - 1);
-	ASSERT(is_success, "all the data should be written to the file");
-	is_success = ff_file_flush(file);
-	ASSERT(is_success, "file should be flushed successfully");
+	result = ff_file_write(file, data, sizeof(data) - 1);
+	ASSERT(result == FF_SUCCESS, "all the data should be written to the file");
+	result = ff_file_flush(file);
+	ASSERT(result == FF_SUCCESS, "file should be flushed successfully");
 	ff_file_close(file);
 
 	file = ff_file_open(L"test.txt", FF_FILE_READ);
 	ASSERT(file != NULL, "file should exist");
 	size = ff_file_get_size(file);
 	ASSERT(size == sizeof(data) - 1, "wrong file size");
-	is_success = ff_file_read(file, buf, sizeof(data) - 1);
-	ASSERT(is_success, "unexpected length of data read from the file");
+	result = ff_file_read(file, buf, sizeof(data) - 1);
+	ASSERT(result == FF_SUCCESS, "unexpected length of data read from the file");
 	is_equal = (memcmp(data, buf, sizeof(data) - 1) == 0);
 	ASSERT(is_equal, "wrong data read from the file");
 	ff_file_close(file);
 
-	is_success = ff_file_copy(L"test.txt", L"test1.txt");
-	ASSERT(is_success, "file should be copied");
-	is_success = ff_file_copy(L"test.txt", L"test1.txt");
-	ASSERT(!is_success, "cannot copy to existing file");
-	is_success = ff_file_move(L"test.txt", L"test2.txt");
-	ASSERT(is_success, "file should be moved");
-	is_success = ff_file_move(L"test.txt", L"test2.txt");
-	ASSERT(!is_success, "cannot move to existing file");
+	result = ff_file_copy(L"test.txt", L"test1.txt");
+	ASSERT(result == FF_SUCCESS, "file should be copied");
+	result = ff_file_copy(L"test.txt", L"test1.txt");
+	ASSERT(result == FF_FAILURE, "cannot copy to existing file");
+	result = ff_file_move(L"test.txt", L"test2.txt");
+	ASSERT(result == FF_SUCCESS, "file should be moved");
+	result = ff_file_move(L"test.txt", L"test2.txt");
+	ASSERT(result == FF_FAILURE, "cannot move to existing file");
 
 	file = ff_file_open(L"test1.txt", FF_FILE_READ);
 	ASSERT(file != NULL, "file copy should exist");
-	is_success = ff_file_read(file, buf, sizeof(data) - 1);
-	ASSERT(is_success, "unexpected length of file copy");
+	result = ff_file_read(file, buf, sizeof(data) - 1);
+	ASSERT(result == FF_SUCCESS, "unexpected length of file copy");
 	is_equal = (memcmp(data, buf, sizeof(data) - 1) == 0);
 	ASSERT(is_equal, "wrong contents of the file copy");
 	ff_file_close(file);
@@ -986,10 +987,10 @@ static void test_file_basic()
 	ASSERT(size == 0, "truncated file should be empty");
 	ff_file_close(file);
 
-	is_success = ff_file_erase(L"test1.txt");
-	ASSERT(is_success, "file1 should be deleted");
-	is_success = ff_file_erase(L"test2.txt");
-	ASSERT(is_success, "file2 should be deleted");
+	result = ff_file_erase(L"test1.txt");
+	ASSERT(result == FF_SUCCESS, "file1 should be deleted");
+	result = ff_file_erase(L"test2.txt");
+	ASSERT(result == FF_SUCCESS, "file2 should be deleted");
 
 	ff_core_shutdown();
 }
@@ -1020,20 +1021,20 @@ static void test_arch_net_addr_create_delete()
 static void test_arch_net_addr_resolve_success()
 {
 	struct ff_arch_net_addr *addr1, *addr2;
-	int is_success;
+	enum ff_result result;
 	int is_equal;
 
 	ff_core_initialize(LOG_FILENAME);
 	addr1 = ff_arch_net_addr_create();
 	addr2 = ff_arch_net_addr_create();
-	is_success = ff_arch_net_addr_resolve(addr1, L"localhost", 80);
-	ASSERT(is_success, "localhost address should be resolved successfully");
-	is_success = ff_arch_net_addr_resolve(addr2, L"127.0.0.1", 80);
-	ASSERT(is_success, "127.0.0.1 address should be resolved successfully");
+	result = ff_arch_net_addr_resolve(addr1, L"localhost", 80);
+	ASSERT(result == FF_SUCCESS, "localhost address should be resolved successfully");
+	result = ff_arch_net_addr_resolve(addr2, L"127.0.0.1", 80);
+	ASSERT(result == FF_SUCCESS, "127.0.0.1 address should be resolved successfully");
 	is_equal = ff_arch_net_addr_is_equal(addr1, addr2);
 	ASSERT(is_equal, "addresses should be equal");
-	is_success = ff_arch_net_addr_resolve(addr2, L"123.45.1.1", 0);
-	ASSERT(is_success, "numeric address should be resolved successfully");
+	result = ff_arch_net_addr_resolve(addr2, L"123.45.1.1", 0);
+	ASSERT(result == FF_SUCCESS, "numeric address should be resolved successfully");
 	is_equal = ff_arch_net_addr_is_equal(addr1, addr2);
 	ASSERT(!is_equal, "addresses shouldn't be equivalent");
 	ff_arch_net_addr_delete(addr1);
@@ -1044,12 +1045,12 @@ static void test_arch_net_addr_resolve_success()
 static void test_arch_net_addr_resolve_fail()
 {
 	struct ff_arch_net_addr *addr;
-	int is_success;
+	enum ff_result result;
 
 	ff_core_initialize(LOG_FILENAME);
 	addr = ff_arch_net_addr_create();
-	is_success = ff_arch_net_addr_resolve(addr, L"non.existant,address", 123);
-	ASSERT(!is_success, "address shouldn't be resolved");
+	result = ff_arch_net_addr_resolve(addr, L"non.existant,address", 123);
+	ASSERT(result == FF_FAILURE, "address shouldn't be resolved");
 	ff_arch_net_addr_delete(addr);
 	ff_core_shutdown();
 }
@@ -1057,7 +1058,7 @@ static void test_arch_net_addr_resolve_fail()
 static void test_arch_net_addr_broadcast()
 {
 	struct ff_arch_net_addr *addr, *net_mask, *broadcast_addr;
-	int is_success;
+	enum ff_result result;
 	int is_equal;
 
 	ff_core_initialize(LOG_FILENAME);
@@ -1065,13 +1066,13 @@ static void test_arch_net_addr_broadcast()
 	net_mask = ff_arch_net_addr_create();
 	broadcast_addr = ff_arch_net_addr_create();
 
-	is_success = ff_arch_net_addr_resolve(addr, L"123.45.67.89", 123);
-	ASSERT(is_success, "address should be resolved");
-	is_success = ff_arch_net_addr_resolve(net_mask, L"255.255.0.0", 0);
-	ASSERT(is_success, "net mask should be resolved");
+	result = ff_arch_net_addr_resolve(addr, L"123.45.67.89", 123);
+	ASSERT(result == FF_SUCCESS, "address should be resolved");
+	result = ff_arch_net_addr_resolve(net_mask, L"255.255.0.0", 0);
+	ASSERT(result == FF_SUCCESS, "net mask should be resolved");
 	ff_arch_net_addr_get_broadcast_addr(addr, net_mask, broadcast_addr);
-	is_success = ff_arch_net_addr_resolve(addr, L"123.45.255.255", 123);
-	ASSERT(is_success, "broadcast address should be resolved");
+	result = ff_arch_net_addr_resolve(addr, L"123.45.255.255", 123);
+	ASSERT(result == FF_SUCCESS, "broadcast address should be resolved");
 	is_equal = ff_arch_net_addr_is_equal(addr, broadcast_addr);
 	ASSERT(is_equal, "addresses should be equal");
 
@@ -1085,13 +1086,13 @@ static void test_arch_net_addr_to_string()
 {
 	struct ff_arch_net_addr *addr;
 	const wchar_t *str;
-	int is_success;
+	enum ff_result result;
 	int is_equal;
 
 	ff_core_initialize(LOG_FILENAME);
 	addr = ff_arch_net_addr_create();
-	is_success = ff_arch_net_addr_resolve(addr, L"12.34.56.78", 90);
-	ASSERT(is_success, "address should be resolved");
+	result = ff_arch_net_addr_resolve(addr, L"12.34.56.78", 90);
+	ASSERT(result == FF_SUCCESS, "address should be resolved");
 	str = ff_arch_net_addr_to_string(addr);
 	is_equal = (wcscmp(L"12.34.56.78:90", str) == 0);
 	ASSERT(is_equal, "wrong string");
@@ -1131,18 +1132,18 @@ static void fiberpool_tcp_func(void *ctx)
 	struct ff_arch_net_addr *client_addr;
 	uint8_t buf[4];
 	int is_equal;
-	int is_success;
+	enum ff_result result;
 
 	tcp_server = (struct ff_tcp *) ctx;
 	client_addr = ff_arch_net_addr_create();
 	tcp_client = ff_tcp_accept(tcp_server, client_addr);
 	ASSERT(tcp_client != NULL, "ff_tcp_accept() should return valid tcp_client");
-	is_success = ff_tcp_write(tcp_client, "test", 4);
-	ASSERT(is_success, "cannot write data to the tcp");
-	is_success = ff_tcp_flush(tcp_client);
-	ASSERT(is_success, "ff_tcp_flush() returned unexpected value");
-	is_success = ff_tcp_read(tcp_client, buf, 4);
-	ASSERT(is_success, "ff_tcp_read() returned unexpected data length");
+	result = ff_tcp_write(tcp_client, "test", 4);
+	ASSERT(result == FF_SUCCESS, "cannot write data to the tcp");
+	result = ff_tcp_flush(tcp_client);
+	ASSERT(result == FF_SUCCESS, "ff_tcp_flush() returned unexpected value");
+	result = ff_tcp_read(tcp_client, buf, 4);
+	ASSERT(result == FF_SUCCESS, "ff_tcp_read() failed");
 	is_equal = (memcmp("test", buf, 4) == 0);
 	ASSERT(is_equal, "wrong data received from the client");
 	ff_tcp_delete(tcp_client);
@@ -1153,32 +1154,32 @@ static void test_tcp_basic()
 {
 	struct ff_tcp *tcp_server, *tcp_client;
 	struct ff_arch_net_addr *addr;
-	int is_success;
+	enum ff_result result;
 	int is_equal;
 	uint8_t buf[4];
 
 	ff_core_initialize(LOG_FILENAME);
 	addr = ff_arch_net_addr_create();
-	is_success = ff_arch_net_addr_resolve(addr, L"127.0.0.1", 43210);
-	ASSERT(is_success, "localhost address should be resolved successfully");
+	result = ff_arch_net_addr_resolve(addr, L"127.0.0.1", 43210);
+	ASSERT(result == FF_SUCCESS, "localhost address should be resolved successfully");
 	tcp_server = ff_tcp_create();
 	ASSERT(tcp_server != NULL, "server should be created");
-	is_success = ff_tcp_bind(tcp_server, addr, FF_TCP_SERVER);
-	ASSERT(is_success, "server should be bound to local address");
+	result = ff_tcp_bind(tcp_server, addr, FF_TCP_SERVER);
+	ASSERT(result == FF_SUCCESS, "server should be bound to local address");
 	ff_core_fiberpool_execute_async(fiberpool_tcp_func, tcp_server);
 
 	tcp_client = ff_tcp_create();
 	ASSERT(tcp_client != NULL, "client should be created");
-	is_success = ff_tcp_connect(tcp_client, addr);
-	ASSERT(is_success, "client should connect to the server");
-	is_success = ff_tcp_read_with_timeout(tcp_client, buf, 4, 100000);
-	ASSERT(is_success, "unexpected data received from the server");
+	result = ff_tcp_connect(tcp_client, addr);
+	ASSERT(result == FF_SUCCESS, "client should connect to the server");
+	result = ff_tcp_read_with_timeout(tcp_client, buf, 4, 100000);
+	ASSERT(result == FF_SUCCESS, "unexpected data received from the server");
 	is_equal = (memcmp(buf, "test", 4) == 0);
 	ASSERT(is_equal, "wrong data received from the server");
-	is_success = ff_tcp_write_with_timeout(tcp_client, buf, 4, 100);
-	ASSERT(is_success, "written all data to the server");
-	is_success = ff_tcp_flush_with_timeout(tcp_client, 100);
-	ASSERT(is_success, "data should be flushed");
+	result = ff_tcp_write_with_timeout(tcp_client, buf, 4, 100);
+	ASSERT(result == FF_SUCCESS, "written all data to the server");
+	result = ff_tcp_flush_with_timeout(tcp_client, 100);
+	ASSERT(result == FF_SUCCESS, "data should be flushed");
 	ff_tcp_delete(tcp_client);
 	ff_tcp_delete(tcp_server);
 	ff_arch_net_addr_delete(addr);
@@ -1213,20 +1214,21 @@ static void test_tcp_server_shutdown()
 {
 	struct ff_arch_net_addr *addr1, *addr2;
 	struct tcp_server_shutdown_data data;
-	int is_success;
+	enum ff_result result;
 
 	ff_core_initialize(LOG_FILENAME);
 	addr1 = ff_arch_net_addr_create();
 	addr2 = ff_arch_net_addr_create();
-	is_success = ff_arch_net_addr_resolve(addr1, L"127.0.0.1", 43211);
-	ASSERT(is_success, "localhost address should be resolved successfully");
-	is_success = ff_arch_net_addr_resolve(addr2, L"127.0.0.1", 43212);
-	ASSERT(is_success, "localhost address should be resolved successfully");
+	result = ff_arch_net_addr_resolve(addr1, L"127.0.0.1", 43211);
+	ASSERT(result == FF_SUCCESS, "localhost address should be resolved successfully");
+	result = ff_arch_net_addr_resolve(addr2, L"127.0.0.1", 43212);
+	ASSERT(result == FF_SUCCESS, "localhost address should be resolved successfully");
 	data.tcp_server1 = ff_tcp_create();
 	data.tcp_server2 = ff_tcp_create();
-	is_success = ff_tcp_bind(data.tcp_server1, addr1, FF_TCP_SERVER);
-	ASSERT(is_success, "server should be bound to local address");
-	is_success = ff_tcp_bind(data.tcp_server2, addr2, FF_TCP_SERVER);
+	result = ff_tcp_bind(data.tcp_server1, addr1, FF_TCP_SERVER);
+	ASSERT(result == FF_SUCCESS, "server should be bound to local address");
+	result = ff_tcp_bind(data.tcp_server2, addr2, FF_TCP_SERVER);
+	ASSERT(result == FF_SUCCESS, "cannot bind server to local address");
 	data.event = ff_event_create(FF_EVENT_AUTO);
 	ff_core_fiberpool_execute_async(fiberpool_tcp_server_shutdown_func, &data);
 	ff_tcp_disconnect(data.tcp_server1);
@@ -1282,7 +1284,7 @@ static void stream_tcp_basic_func(void *ctx)
 	struct ff_arch_net_addr *remote_addr;
 	struct ff_stream *client_stream;
 	uint8_t buf[3];
-	int is_success;
+	enum ff_result result;
 	int is_equal;
 
 	data = (struct stream_tcp_basic_data *) ctx;
@@ -1290,19 +1292,19 @@ static void stream_tcp_basic_func(void *ctx)
 	client_tcp = ff_tcp_accept(data->server_tcp, remote_addr);
 	ASSERT(client_tcp != NULL, "cannot accept local TCP connection");
 	client_stream = ff_stream_tcp_create(client_tcp);
-	is_success = ff_stream_write(client_stream, "foo", 3);
-	ASSERT(is_success, "error when writing to tcp stream");
-	is_success = ff_stream_flush(client_stream);
-	ASSERT(is_success, "error when flushing tcp stream");
-	is_success = ff_stream_read(client_stream, buf, 3);
-	ASSERT(is_success, "error when reading tcp stream");
+	result = ff_stream_write(client_stream, "foo", 3);
+	ASSERT(result == FF_SUCCESS, "error when writing to tcp stream");
+	result = ff_stream_flush(client_stream);
+	ASSERT(result == FF_SUCCESS, "error when flushing tcp stream");
+	result = ff_stream_read(client_stream, buf, 3);
+	ASSERT(result == FF_SUCCESS, "error when reading tcp stream");
 	is_equal = (memcmp(buf, "bar", 3) == 0);
 	ASSERT(is_equal, "wrong data received from tcp stream");
 	ff_stream_disconnect(client_stream);
-	is_success = ff_stream_read(client_stream, buf, 3);
-	ASSERT(!is_success, "stream didn't disconnected");
-	is_success = ff_stream_write(client_stream, "foo", 3);
-	ASSERT(!is_success, "stream didn't disconnected");
+	result = ff_stream_read(client_stream, buf, 3);
+	ASSERT(result == FF_FAILURE, "stream didn't disconnected");
+	result = ff_stream_write(client_stream, "foo", 3);
+	ASSERT(result == FF_FAILURE, "stream didn't disconnected");
 	ff_stream_delete(client_stream);
 	ff_event_wait(data->event);
 	ff_arch_net_addr_delete(remote_addr);
@@ -1315,35 +1317,35 @@ static void test_stream_tcp_basic()
 	struct ff_tcp *client_tcp;
 	struct ff_stream *client_stream;
 	uint8_t buf[3];
-	int is_success;
+	enum ff_result result;
 	int is_equal;
 
 	ff_core_initialize(LOG_FILENAME);
 	data.server_tcp = ff_tcp_create();
 	data.event = ff_event_create(FF_EVENT_AUTO);
 	addr = ff_arch_net_addr_create();
-	is_success = ff_arch_net_addr_resolve(addr, L"localhost", 8393);
-	ASSERT(is_success, "cannot resolve localhost address");
-	is_success = ff_tcp_bind(data.server_tcp, addr, FF_TCP_SERVER);
-	ASSERT(is_success, "cannot bind server tcp");
+	result = ff_arch_net_addr_resolve(addr, L"localhost", 8393);
+	ASSERT(result == FF_SUCCESS, "cannot resolve localhost address");
+	result = ff_tcp_bind(data.server_tcp, addr, FF_TCP_SERVER);
+	ASSERT(result == FF_SUCCESS, "cannot bind server tcp");
 	ff_core_fiberpool_execute_async(stream_tcp_basic_func, &data);
 	client_tcp = ff_tcp_create();
-	is_success = ff_tcp_connect(client_tcp, addr);
-	ASSERT(is_success, "cannot connect to local tcp");
+	result = ff_tcp_connect(client_tcp, addr);
+	ASSERT(result == FF_SUCCESS, "cannot connect to local tcp");
 	client_stream = ff_stream_tcp_create(client_tcp);
-	is_success = ff_stream_read(client_stream, buf, 3);
-	ASSERT(is_success, "cannot read data from the stream");
+	result = ff_stream_read(client_stream, buf, 3);
+	ASSERT(result == FF_SUCCESS, "cannot read data from the stream");
 	is_equal = (memcmp(buf, "foo", 3) == 0);
 	ASSERT(is_equal, "unexpected data received from the stream");
-	is_success = ff_stream_write(client_stream, "bar", 3);
-	ASSERT(is_success, "cannot write data to the stream");
-	is_success = ff_stream_flush(client_stream);
-	ASSERT(is_success, "cannot flush the stream");
-	is_success = ff_stream_read(client_stream, buf, 3);
-	ASSERT(!is_success, "stream should be disconnected");
+	result = ff_stream_write(client_stream, "bar", 3);
+	ASSERT(result == FF_SUCCESS, "cannot write data to the stream");
+	result = ff_stream_flush(client_stream);
+	ASSERT(result == FF_SUCCESS, "cannot flush the stream");
+	result = ff_stream_read(client_stream, buf, 3);
+	ASSERT(result == FF_FAILURE, "stream should be disconnected");
 	ff_stream_disconnect(client_stream);
-	is_success = ff_stream_write(client_stream, "bar", 3);
-	ASSERT(!is_success, "stream should be disconnected");
+	result = ff_stream_write(client_stream, "bar", 3);
+	ASSERT(result == FF_FAILURE, "stream should be disconnected");
 	ff_event_set(data.event);
 	ff_stream_delete(client_stream);
 	ff_arch_net_addr_delete(addr);
@@ -1391,7 +1393,7 @@ static void stream_tcp_with_timeout_basic_func(void *ctx)
 	struct ff_arch_net_addr *remote_addr;
 	struct ff_stream *client_stream;
 	uint8_t buf[3];
-	int is_success;
+	enum ff_result result;
 	int is_equal;
 
 	data = (struct stream_tcp_with_timeout_basic_data *) ctx;
@@ -1399,16 +1401,16 @@ static void stream_tcp_with_timeout_basic_func(void *ctx)
 	client_tcp = ff_tcp_accept(data->server_tcp, remote_addr);
 	ASSERT(client_tcp != NULL, "cannot accept local TCP connection");
 	client_stream = ff_stream_tcp_with_timeout_create(client_tcp, 500, 500);
-	is_success = ff_stream_write(client_stream, "foo", 3);
-	ASSERT(is_success, "error when writing to tcp stream");
-	is_success = ff_stream_flush(client_stream);
-	ASSERT(is_success, "error when flushing tcp stream");
-	is_success = ff_stream_read(client_stream, buf, 3);
-	ASSERT(is_success, "error when reading tcp stream");
+	result = ff_stream_write(client_stream, "foo", 3);
+	ASSERT(result == FF_SUCCESS, "error when writing to tcp stream");
+	result = ff_stream_flush(client_stream);
+	ASSERT(result == FF_SUCCESS, "error when flushing tcp stream");
+	result = ff_stream_read(client_stream, buf, 3);
+	ASSERT(result == FF_SUCCESS, "error when reading tcp stream");
 	is_equal = (memcmp(buf, "bar", 3) == 0);
 	ASSERT(is_equal, "wrong data received from tcp stream");
-	is_success = ff_stream_read(client_stream, buf, 3);
-	ASSERT(!is_success, "stream shouldn't provide any data");
+	result = ff_stream_read(client_stream, buf, 3);
+	ASSERT(result == FF_FAILURE, "stream shouldn't provide any data");
 	ff_event_wait(data->event);
 	ff_stream_delete(client_stream);
 	ff_arch_net_addr_delete(remote_addr);
@@ -1421,32 +1423,32 @@ static void test_stream_tcp_with_timeout_basic()
 	struct ff_tcp *client_tcp;
 	struct ff_stream *client_stream;
 	uint8_t buf[3];
-	int is_success;
+	enum ff_result result;
 	int is_equal;
 
 	ff_core_initialize(LOG_FILENAME);
 	data.server_tcp = ff_tcp_create();
 	data.event = ff_event_create(FF_EVENT_AUTO);
 	addr = ff_arch_net_addr_create();
-	is_success = ff_arch_net_addr_resolve(addr, L"localhost", 8393);
-	ASSERT(is_success, "cannot resolve localhost address");
-	is_success = ff_tcp_bind(data.server_tcp, addr, FF_TCP_SERVER);
-	ASSERT(is_success, "cannot bind server tcp");
+	result = ff_arch_net_addr_resolve(addr, L"localhost", 8393);
+	ASSERT(result == FF_SUCCESS, "cannot resolve localhost address");
+	result = ff_tcp_bind(data.server_tcp, addr, FF_TCP_SERVER);
+	ASSERT(result == FF_SUCCESS, "cannot bind server tcp");
 	ff_core_fiberpool_execute_async(stream_tcp_with_timeout_basic_func, &data);
 	client_tcp = ff_tcp_create();
-	is_success = ff_tcp_connect(client_tcp, addr);
-	ASSERT(is_success, "cannot connect to local tcp");
+	result = ff_tcp_connect(client_tcp, addr);
+	ASSERT(result == FF_SUCCESS, "cannot connect to local tcp");
 	client_stream = ff_stream_tcp_with_timeout_create(client_tcp, 200, 200);
-	is_success = ff_stream_read(client_stream, buf, 3);
-	ASSERT(is_success, "cannot read data from the stream");
+	result = ff_stream_read(client_stream, buf, 3);
+	ASSERT(result == FF_SUCCESS, "cannot read data from the stream");
 	is_equal = (memcmp(buf, "foo", 3) == 0);
 	ASSERT(is_equal, "unexpected data received from the stream");
-	is_success = ff_stream_write(client_stream, "bar", 3);
-	ASSERT(is_success, "cannot write data to the stream");
-	is_success = ff_stream_flush(client_stream);
-	ASSERT(is_success, "cannot flush the stream");
-	is_success = ff_stream_read(client_stream, buf, 3);
-	ASSERT(!is_success, "stream shouldn't provide any data");
+	result = ff_stream_write(client_stream, "bar", 3);
+	ASSERT(result == FF_SUCCESS, "cannot write data to the stream");
+	result = ff_stream_flush(client_stream);
+	ASSERT(result == FF_SUCCESS, "cannot flush the stream");
+	result = ff_stream_read(client_stream, buf, 3);
+	ASSERT(result == FF_FAILURE, "stream shouldn't provide any data");
 	ff_event_set(data.event);
 	ff_stream_delete(client_stream);
 	ff_arch_net_addr_delete(addr);
@@ -1511,7 +1513,7 @@ static void fiberpool_udp_func(void *ctx)
 static void test_udp_basic()
 {
 	struct ff_udp *udp_client, *udp_server;
-	int is_success;
+	enum ff_result result;
 	int len;
 	int is_equal;
 	struct ff_arch_net_addr *server_addr, *client_addr, *net_mask;
@@ -1521,12 +1523,13 @@ static void test_udp_basic()
 	server_addr = ff_arch_net_addr_create();
 	client_addr = ff_arch_net_addr_create();
 	net_mask = ff_arch_net_addr_create();
-	is_success = ff_arch_net_addr_resolve(net_mask, L"255.0.0.0", 0);
-	ASSERT(is_success, "network mask should be resolved");
-	is_success = ff_arch_net_addr_resolve(server_addr, L"127.0.0.1", 5432);
-	ASSERT(is_success, "localhost address should be resolved");
+	result = ff_arch_net_addr_resolve(net_mask, L"255.0.0.0", 0);
+	ASSERT(result == FF_SUCCESS, "network mask should be resolved");
+	result = ff_arch_net_addr_resolve(server_addr, L"127.0.0.1", 5432);
+	ASSERT(result == FF_SUCCESS, "localhost address should be resolved");
 	udp_server = ff_udp_create(FF_UDP_UNICAST);
-	is_success = ff_udp_bind(udp_server, server_addr);
+	result = ff_udp_bind(udp_server, server_addr);
+	ASSERT(result == FF_SUCCESS, "cannot bind local udp address");
 	ff_core_fiberpool_execute_async(fiberpool_udp_func, udp_server);
 
 	udp_client = ff_udp_create(FF_UDP_UNICAST);

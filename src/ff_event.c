@@ -15,11 +15,11 @@ struct ff_event
 static void cancel_event_wait(struct ff_fiber *fiber, void *ctx)
 {
 	struct ff_event *event;
-	int is_removed;
+	enum ff_result result;
 	
 	event = (struct ff_event *) ctx;
-	is_removed = ff_stack_remove_entry(event->pending_fibers, fiber);
-	if (is_removed)
+	result = ff_stack_remove_entry(event->pending_fibers, fiber);
+	if (result == FF_SUCCESS)
 	{
 		ff_core_schedule_fiber(fiber);
 	}
@@ -77,15 +77,15 @@ void ff_event_reset(struct ff_event *event)
 
 void ff_event_wait(struct ff_event *event)
 {
-	int is_success;
+	enum ff_result result;
 
-	is_success = ff_event_wait_with_timeout(event, 0);
-	ff_assert(is_success);
+	result = ff_event_wait_with_timeout(event, 0);
+	ff_assert(result == FF_SUCCESS);
 }
 
-int ff_event_wait_with_timeout(struct ff_event *event, int timeout)
+enum ff_result ff_event_wait_with_timeout(struct ff_event *event, int timeout)
 {
-	int is_success = 1;
+	enum ff_result result = FF_SUCCESS;
 
 	ff_assert(timeout >= 0);
 
@@ -103,15 +103,15 @@ int ff_event_wait_with_timeout(struct ff_event *event, int timeout)
 		ff_core_yield_fiber();
 		if (timeout > 0)
 		{
-			is_success = ff_core_deregister_timeout_operation(timeout_operation_data);
+			result = ff_core_deregister_timeout_operation(timeout_operation_data);
 		}
 	}
-	if (event->event_type == FF_EVENT_AUTO && is_success)
+	if (event->event_type == FF_EVENT_AUTO && result == FF_SUCCESS)
 	{
 		ff_assert(event->is_set);
 		event->is_set = 0;
 	}
-	return is_success;
+	return result;
 }
 
 int ff_event_is_set(struct ff_event *event)

@@ -30,15 +30,15 @@ FF_API void ff_tcp_delete(struct ff_tcp *tcp);
  * Binds the given tcp to the given addr.
  * If the type is FF_TCP_SERVER, then it also enables listening mode for the tcp
  * in order to be able to call ff_tcp_accept() on the given tcp.
- * Returns 1 on success, 0 on error.
+ * Returns FF_SUCCESS on success, FF_FAILURE on error.
  */
-FF_API int ff_tcp_bind(struct ff_tcp *tcp, const struct ff_arch_net_addr *addr, enum ff_tcp_type type);
+FF_API enum ff_result ff_tcp_bind(struct ff_tcp *tcp, const struct ff_arch_net_addr *addr, enum ff_tcp_type type);
 
 /**
  * Connects the given tcp to the given addr.
- * Returns 1 on success, 0 on error.
+ * Returns FF_SUCCESS on success, FF_FAILURE on error.
  */
-FF_API int ff_tcp_connect(struct ff_tcp *tcp, const struct ff_arch_net_addr *addr);
+FF_API enum ff_result ff_tcp_connect(struct ff_tcp *tcp, const struct ff_arch_net_addr *addr);
 
 /**
  * Accepts tcp connection from remote peer.
@@ -49,48 +49,48 @@ FF_API struct ff_tcp *ff_tcp_accept(struct ff_tcp *tcp, struct ff_arch_net_addr 
 
 /**
  * Reads exactly len bytes from the tcp into the buf.
- * Returns 1 on success, 0 on error.
+ * Returns FF_SUCCESS on success, FF_FAILURE on error.
  */
-FF_API int ff_tcp_read(struct ff_tcp *tcp, void *buf, int len);
+FF_API enum ff_result ff_tcp_read(struct ff_tcp *tcp, void *buf, int len);
 
 /**
  * Reads exactly len bytes from the tcp into the buf.
- * If the data cannot be read during the timeout milliseconds, then returns 0.
- * Returns 1 on success, 0 on error.
+ * If the data cannot be read during the timeout milliseconds, then returns FF_FAILURE.
+ * Returns FF_SUCCESS on success, FF_FAILURE on error.
  */
-FF_API int ff_tcp_read_with_timeout(struct ff_tcp *tcp, void *buf, int len, int timeout);
+FF_API enum ff_result ff_tcp_read_with_timeout(struct ff_tcp *tcp, void *buf, int len, int timeout);
 
 /**
  * Writes exactly len bytes from the buf into the tcp.
- * Returns 1 on success, 0 on error.
+ * Returns FF_SUCCESS on success, FF_FAILURE on error.
  */
-FF_API int ff_tcp_write(struct ff_tcp *tcp, const void *buf, int len);
+FF_API enum ff_result ff_tcp_write(struct ff_tcp *tcp, const void *buf, int len);
 
 /**
  * Writes exactly len bytes from the buf into the tcp.
- * If the data cannot be written during the timeout milliseconds, then returns 0.
- * Returns 1 on success, 0 on error.
+ * If the data cannot be written during the timeout milliseconds, then returns FF_FAILURE.
+ * Returns FF_SUCCESS on success, FF_FAILURE on error.
  */
-FF_API int ff_tcp_write_with_timeout(struct ff_tcp *tcp, const void *buf, int len, int timeout);
+FF_API enum ff_result ff_tcp_write_with_timeout(struct ff_tcp *tcp, const void *buf, int len, int timeout);
 
 /**
  * Flushes the tcp write buffer.
- * Returns 1 on success, 0 on error.
+ * Returns FF_SUCCESS on success, FF_FAILURE on error.
  */
-FF_API int ff_tcp_flush(struct ff_tcp *tcp);
+FF_API enum ff_result ff_tcp_flush(struct ff_tcp *tcp);
 
 /**
  * Flushes the tcp write buffer.
- * If the buffer cannot be flushed during the timeout milliseconds, then returns 0.
- * Returns 1 on success, 0 on error.
+ * If the buffer cannot be flushed during the timeout milliseconds, then returns FF_FAILURE.
+ * Returns FF_SUCCESS on success, FF_FAILURE on error.
  */
-FF_API int ff_tcp_flush_with_timeout(struct ff_tcp *tcp, int timeout);
+FF_API enum ff_result ff_tcp_flush_with_timeout(struct ff_tcp *tcp, int timeout);
 
 /**
  * Disconnects the tcp.
  * It unblocks blocked ff_tcp_accept(), ff_tcp_read*(), ff_tcp_write*() and ff_tcp_flush*() calls,
- * so they immediately return 0 (failure).
- * Subsequent calls to the ff_tcp_read*(), ff_tcp_write*() and ff_tcp_flush*() will return 0.
+ * so they immediately return FF_FAILURE.
+ * Subsequent calls to the ff_tcp_read*(), ff_tcp_write*() and ff_tcp_flush*() will return FF_FAILURE.
  */
 FF_API void ff_tcp_disconnect(struct ff_tcp *tcp);
 

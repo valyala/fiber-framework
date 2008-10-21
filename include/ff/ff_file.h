@@ -28,39 +28,39 @@ FF_API void ff_file_close(struct ff_file *file);
 
 /**
  * Reads exaclty len bytes from the file into the buf.
- * Returns 1 on success, 0 on error.
+ * Returns FF_SUCCESS on success, FF_FAILURE on error.
  */
-FF_API int ff_file_read(struct ff_file *file, void *buf, int len);
+FF_API enum ff_result ff_file_read(struct ff_file *file, void *buf, int len);
 
 /**
  * Writes exaclty len bytes from the buf into the file.
- * Returns 1 on success, 0 on error.
+ * Returns FF_SUCCESS on success, FF_FAILURE on error.
  */
-FF_API int ff_file_write(struct ff_file *file, const void *buf, int len);
+FF_API enum ff_result ff_file_write(struct ff_file *file, const void *buf, int len);
 
 /**
  * Flushes write buffer of the file.
- * Returns 1 on success, 0 on error.
+ * Returns FF_SUCCESS on success, FF_FAILURE on error.
  */
-FF_API int ff_file_flush(struct ff_file *file);
+FF_API enum ff_result ff_file_flush(struct ff_file *file);
 
 /**
  * Erases the file on the given path.
- * Returns 1 on success, 0 on error.
+ * Returns FF_SUCCESS on success, FF_FAILURE on error.
  */
-FF_API int ff_file_erase(const wchar_t *path);
+FF_API enum ff_result ff_file_erase(const wchar_t *path);
 
 /**
  * Copies the file from the src_path to the dst_path.
- * Returns 1 on success, 0 on error.
+ * Returns FF_SUCCESS on success, FF_FAILURE on error.
  */
-FF_API int ff_file_copy(const wchar_t *src_path, const wchar_t *dst_path);
+FF_API enum ff_result ff_file_copy(const wchar_t *src_path, const wchar_t *dst_path);
 
 /**
  * Moves the file from the src_path to the dst_path.
- * Returns 1 on success, 0 on error.
+ * Returns FF_SUCCESS on success, FF_FAILURE on error.
  */
-FF_API int ff_file_move(const wchar_t *src_path, const wchar_t *dst_path);
+FF_API enum ff_result ff_file_move(const wchar_t *src_path, const wchar_t *dst_path);
 
 /**
  * Returns the size of the file.

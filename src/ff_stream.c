@@ -33,32 +33,32 @@ void *ff_stream_get_ctx(struct ff_stream *stream)
 	return stream->ctx;
 }
 
-int ff_stream_read(struct ff_stream *stream, void *buf, int len)
+enum ff_result ff_stream_read(struct ff_stream *stream, void *buf, int len)
 {
-	int is_success;
+	enum ff_result result;
 
 	ff_assert(len >= 0);
 
-	is_success = stream->vtable->read(stream, buf, len);
-	return is_success;
+	result = stream->vtable->read(stream, buf, len);
+	return result;
 }
 
-int ff_stream_write(struct ff_stream *stream, const void *buf, int len)
+enum ff_result ff_stream_write(struct ff_stream *stream, const void *buf, int len)
 {
-	int is_success;
+	enum ff_result result;
 
 	ff_assert(len >= 0);
 
-	is_success = stream->vtable->write(stream, buf, len);
-	return is_success;
+	result = stream->vtable->write(stream, buf, len);
+	return result;
 }
 
-int ff_stream_flush(struct ff_stream *stream)
+enum ff_result ff_stream_flush(struct ff_stream *stream)
 {
-	int is_success;
+	enum ff_result result;
 
-	is_success = stream->vtable->flush(stream);
-	return is_success;
+	result = stream->vtable->flush(stream);
+	return result;
 }
 
 void ff_stream_disconnect(struct ff_stream *stream)
@@ -66,10 +66,10 @@ void ff_stream_disconnect(struct ff_stream *stream)
 	stream->vtable->disconnect(stream);
 }
 
-int ff_stream_copy(struct ff_stream *src_stream, struct ff_stream *dst_stream, int len)
+enum ff_result ff_stream_copy(struct ff_stream *src_stream, struct ff_stream *dst_stream, int len)
 {
-	int is_success = 0;
 	uint8_t *buf;
+	enum ff_result result = FF_FAILURE;
 
 	ff_assert(len >= 0);
 
@@ -79,32 +79,32 @@ int ff_stream_copy(struct ff_stream *src_stream, struct ff_stream *dst_stream, i
 		int chunk_size;
 
 		chunk_size = len > BUF_SIZE ? BUF_SIZE : len;
-		is_success = ff_stream_read(src_stream, buf, chunk_size);
-		if (!is_success)
+		result = ff_stream_read(src_stream, buf, chunk_size);
+		if (result == FF_FAILURE)
 		{
 			ff_log_warning(L"error when copying streams: cannot read from src_stream");
 			goto end;
 		}
-		is_success = ff_stream_write(dst_stream, buf, chunk_size);
-		if (!is_success)
+		result = ff_stream_write(dst_stream, buf, chunk_size);
+		if (result == FF_FAILURE)
 		{
 			ff_log_warning(L"error when copying streams: cannot write to the dst_stream");
 			goto end;
 		}
 		len -= chunk_size;
 	}
-	is_success = 1;
+	result = FF_SUCCESS;
 
 end:
 	ff_free(buf);
-	return is_success;
+	return result;
 }
 
-int ff_stream_get_hash(struct ff_stream *stream, int len, uint32_t start_value, uint32_t *hash_value)
+enum ff_result ff_stream_get_hash(struct ff_stream *stream, int len, uint32_t start_value, uint32_t *hash_value)
 {
 	uint8_t *buf;
 	uint32_t hash;
-	int is_success = 0;
+	enum ff_result result = FF_FAILURE;
 
 	ff_assert(len >= 0);
 
@@ -115,8 +115,8 @@ int ff_stream_get_hash(struct ff_stream *stream, int len, uint32_t start_value, 
 		int chunk_size;
 
 		chunk_size = len > BUF_SIZE ? BUF_SIZE : len;
-		is_success = ff_stream_read(stream, buf, chunk_size);
-		if (!is_success)
+		result = ff_stream_read(stream, buf, chunk_size);
+		if (result == FF_FAILURE)
 		{
 			ff_log_warning(L"error when calculating hash: cannot read from the stream");
 			goto end;
@@ -125,9 +125,9 @@ int ff_stream_get_hash(struct ff_stream *stream, int len, uint32_t start_value, 
 		len -= chunk_size;
 	}
 	*hash_value = hash;
-	is_success = 1;
+	result = FF_SUCCESS;
 
 end:
 	ff_free(buf);
-	return is_success;
+	return result;
 }

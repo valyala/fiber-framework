@@ -25,4 +25,10 @@ typedef unsigned __int16 uint16_t;
 typedef unsigned __int8 uint8_t;
 #endif
 
+enum ff_result
+{
+	FF_SUCCESS,
+	FF_FAILURE
+};
+
 #endif
