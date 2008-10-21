@@ -66,11 +66,11 @@ void ff_stack_pop(struct ff_stack *stack)
 	ff_free(entry);
 }
 
-int ff_stack_remove_entry(struct ff_stack *stack, const void *data)
+enum ff_result ff_stack_remove_entry(struct ff_stack *stack, const void *data)
 {
-	int is_removed = 0;
 	struct stack_entry **entry_ptr;
 	struct stack_entry *entry;
+	enum ff_result result = FF_FAILURE;
 
 	entry_ptr = &stack->top;
 	entry = stack->top;
@@ -80,12 +80,12 @@ int ff_stack_remove_entry(struct ff_stack *stack, const void *data)
 		{
 			*entry_ptr = entry->next;
 			ff_free(entry);
-			is_removed = 1;
+			result = FF_SUCCESS;
 			break;
 		}
 		entry_ptr = &entry->next;
 		entry = entry->next;
 	}
 
-	return is_removed;
+	return result;
 }

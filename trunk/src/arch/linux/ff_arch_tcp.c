@@ -59,10 +59,10 @@ void ff_arch_tcp_delete(struct ff_arch_tcp *tcp)
 	ff_free(tcp);
 }
 
-int ff_arch_tcp_bind(struct ff_arch_tcp *tcp, const struct ff_arch_net_addr *addr, int is_listening)
+enum ff_result ff_arch_tcp_bind(struct ff_arch_tcp *tcp, const struct ff_arch_net_addr *addr, int is_listening)
 {
 	int rv;
-	int is_success = 0;
+	enum ff_result result = FF_FAILURE;
 
 	rv = bind(tcp->sd_rd, (struct sockaddr *) &addr->addr, sizeof(addr->addr));
 	if (rv != -1)
@@ -72,16 +72,16 @@ int ff_arch_tcp_bind(struct ff_arch_tcp *tcp, const struct ff_arch_net_addr *add
 			rv = listen(tcp->sd_rd, SOMAXCONN);
 			ff_linux_fatal_error_check(rv != -1, L"error in the listen()");
 		}
-		is_success = 1;
+		result = FF_SUCCESS;
 	}
 
-	return is_success;
+	return result;
 }
 
-int ff_arch_tcp_connect(struct ff_arch_tcp *tcp, const struct ff_arch_net_addr *addr)
+enum ff_result ff_arch_tcp_connect(struct ff_arch_tcp *tcp, const struct ff_arch_net_addr *addr)
 {
 	int rv;
-	int is_success = 1;
+	enum ff_result result = FF_SUCCESS;
 
 again:
 	rv = connect(tcp->sd_wr, (struct sockaddr *) &addr->addr, sizeof(addr->addr));
@@ -92,7 +92,7 @@ again:
 			goto again;
 		}
 
-		is_success = 0;
+		result = FF_FAILURE;
 		if (errno == EINPROGRESS)
 		{
 			int err;
@@ -104,12 +104,12 @@ again:
 			ff_assert(optlen == sizeof(err));
 			if (err == 0)
 			{
-				is_success = 1;
+				result = FF_SUCCESS;
 			}
 		}
 	}
 
-	return is_success;
+	return result;
 }
 
 struct ff_arch_tcp *ff_arch_tcp_accept(struct ff_arch_tcp *tcp, struct ff_arch_net_addr *remote_addr)

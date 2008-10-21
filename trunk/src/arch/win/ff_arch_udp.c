@@ -43,10 +43,10 @@ void ff_arch_udp_delete(struct ff_arch_udp *udp)
 	ff_free(udp);
 }
 
-int ff_arch_udp_bind(struct ff_arch_udp *udp, const struct ff_arch_net_addr *addr)
+enum ff_result ff_arch_udp_bind(struct ff_arch_udp *udp, const struct ff_arch_net_addr *addr)
 {
 	int rv;
-	int is_success = 0;
+	enum ff_result result = FF_FAILURE;
 
 	if (!udp->is_working)
 	{
@@ -56,11 +56,11 @@ int ff_arch_udp_bind(struct ff_arch_udp *udp, const struct ff_arch_net_addr *add
 	rv = bind(udp->handle, (struct sockaddr *) &addr->addr, sizeof(addr->addr));
 	if (rv != SOCKET_ERROR)
 	{
-		is_success = 1;
+		result = FF_SUCCESS;
 	}
 
 end:
-	return is_success;
+	return result;
 }
 
 int ff_arch_udp_read(struct ff_arch_udp *udp, struct ff_arch_net_addr *peer_addr, void *buf, int len)

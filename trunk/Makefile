@@ -37,6 +37,9 @@ MAIN_OBJS= \
 	$(SRC_DIR)/ff_read_stream_buffer.o \
 	$(SRC_DIR)/ff_semaphore.o \
 	$(SRC_DIR)/ff_stack.o \
+	$(SRC_DIR)/ff_stream.o \
+	$(SRC_DIR)/ff_stream_tcp.o \
+	$(SRC_DIR)/ff_stream_tcp_with_timeout.o \
 	$(SRC_DIR)/ff_tcp.o \
 	$(SRC_DIR)/ff_threadpool.o \
 	$(SRC_DIR)/ff_udp.o \

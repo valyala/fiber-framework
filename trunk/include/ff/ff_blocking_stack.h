@@ -15,11 +15,11 @@ FF_API void ff_blocking_stack_delete(struct ff_blocking_stack *stack);
 
 FF_API void ff_blocking_stack_pop(struct ff_blocking_stack *stack, const void **data);
 
-FF_API int ff_blocking_stack_pop_with_timeout(struct ff_blocking_stack *stack, const void **data, int timeout);
+FF_API enum ff_result ff_blocking_stack_pop_with_timeout(struct ff_blocking_stack *stack, const void **data, int timeout);
 
 FF_API void ff_blocking_stack_push(struct ff_blocking_stack *stack, const void *data);
 
-FF_API int ff_blocking_stack_push_with_timeout(struct ff_blocking_stack *stack, const void *data, int timeout);
+FF_API enum ff_result ff_blocking_stack_push_with_timeout(struct ff_blocking_stack *stack, const void *data, int timeout);
 
 #ifdef __cplusplus
 }

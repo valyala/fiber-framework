@@ -10,38 +10,38 @@ static void delete_tcp(struct ff_stream *stream)
 	ff_tcp_delete(tcp);
 }
 
-static int read_from_tcp(struct ff_stream *stream, void *buf, int len)
+static enum ff_result read_from_tcp(struct ff_stream *stream, void *buf, int len)
 {
 	struct ff_tcp *tcp;
-	int is_success;
+	enum ff_result result;
 
 	ff_assert(len >= 0);
 
 	tcp = (struct ff_tcp *) ff_stream_get_ctx(stream);
-	is_success = ff_tcp_read(tcp, buf, len);
-	return is_success;
+	result = ff_tcp_read(tcp, buf, len);
+	return result;
 }
 
-static int write_to_tcp(struct ff_stream *stream, const void *buf, int len)
+static enum ff_result write_to_tcp(struct ff_stream *stream, const void *buf, int len)
 {
 	struct ff_tcp *tcp;
-	int is_success;
+	enum ff_result result;
 
 	ff_assert(len >= 0);
 
 	tcp = (struct ff_tcp *) ff_stream_get_ctx(stream);
-	is_success = ff_tcp_write(tcp, buf, len);
-	return is_success;
+	result = ff_tcp_write(tcp, buf, len);
+	return result;
 }
 
-static int flush_tcp(struct ff_stream *stream)
+static enum ff_result flush_tcp(struct ff_stream *stream)
 {
 	struct ff_tcp *tcp;
-	int is_success;
+	enum ff_result result;
 
 	tcp = (struct ff_tcp *) ff_stream_get_ctx(stream);
-	is_success = ff_tcp_flush(tcp);
-	return is_success;
+	result = ff_tcp_flush(tcp);
+	return result;
 }
 
 static void disconnect_tcp(struct ff_stream *stream)

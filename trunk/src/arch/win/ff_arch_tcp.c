@@ -33,10 +33,10 @@ void ff_arch_tcp_delete(struct ff_arch_tcp *tcp)
 	ff_free(tcp);
 }
 
-int ff_arch_tcp_bind(struct ff_arch_tcp *tcp, const struct ff_arch_net_addr *addr, int is_listening)
+enum ff_result ff_arch_tcp_bind(struct ff_arch_tcp *tcp, const struct ff_arch_net_addr *addr, int is_listening)
 {
 	int rv;
-	int is_success = 0;
+	enum ff_result result = FF_FAILURE;
 
 	if (!tcp->is_working)
 	{
@@ -51,28 +51,28 @@ int ff_arch_tcp_bind(struct ff_arch_tcp *tcp, const struct ff_arch_net_addr *add
 			rv = listen(tcp->handle, SOMAXCONN);
 			ff_winsock_fatal_error_check(rv != SOCKET_ERROR, L"cannot enable listening mode for the tcp socket");
 		}
-		is_success = 1;
+		result = FF_SUCCESS;
 	}
 
 end:
-	return is_success;
+	return result;
 }
 
-int ff_arch_tcp_connect(struct ff_arch_tcp *tcp, const struct ff_arch_net_addr *addr)
+enum ff_result ff_arch_tcp_connect(struct ff_arch_tcp *tcp, const struct ff_arch_net_addr *addr)
 {
-	int is_connected = 0;
+	enum ff_result result = FF_FAILURE;
 	
 	if (tcp->is_working)
 	{
-		is_connected = ff_win_net_connect(tcp->handle, &addr->addr);
+		result = ff_win_net_connect(tcp->handle, &addr->addr);
 	}
-	return is_connected;
+	return result;
 }
 
 struct ff_arch_tcp *ff_arch_tcp_accept(struct ff_arch_tcp *tcp, struct ff_arch_net_addr *remote_addr)
 {
 	struct ff_arch_tcp *remote_tcp = NULL;
-	int is_success;
+	enum ff_result result;
 
 	if (!tcp->is_working)
 	{
@@ -80,8 +80,8 @@ struct ff_arch_tcp *ff_arch_tcp_accept(struct ff_arch_tcp *tcp, struct ff_arch_n
 	}
 
 	remote_tcp = ff_arch_tcp_create();
-	is_success = ff_win_net_accept(tcp->handle, remote_tcp->handle, &remote_addr->addr);
-	if (!is_success)
+	result = ff_win_net_accept(tcp->handle, remote_tcp->handle, &remote_addr->addr);
+	if (result == FF_FAILURE)
 	{
 		ff_arch_tcp_delete(remote_tcp);
 		remote_tcp = NULL;

@@ -41,20 +41,20 @@ void ff_blocking_stack_pop(struct ff_blocking_stack *stack, const void **data)
 	ff_semaphore_up(stack->consumer_semaphore);
 }
 
-int ff_blocking_stack_pop_with_timeout(struct ff_blocking_stack *stack, const void **data, int timeout)
+enum ff_result ff_blocking_stack_pop_with_timeout(struct ff_blocking_stack *stack, const void **data, int timeout)
 {
-	int is_success;
+	enum ff_result result;
 
 	ff_assert(timeout > 0);
 
-	is_success = ff_semaphore_down_with_timeout(stack->producer_semaphore, timeout);
-	if (is_success)
+	result = ff_semaphore_down_with_timeout(stack->producer_semaphore, timeout);
+	if (result == FF_SUCCESS)
 	{
 		ff_stack_top(stack->simple_stack, data);
 		ff_stack_pop(stack->simple_stack);
 		ff_semaphore_up(stack->consumer_semaphore);
 	}
-	return is_success;
+	return result;
 }
 
 void ff_blocking_stack_push(struct ff_blocking_stack *stack, const void *data)
@@ -64,17 +64,17 @@ void ff_blocking_stack_push(struct ff_blocking_stack *stack, const void *data)
 	ff_semaphore_up(stack->producer_semaphore);
 }
 
-int ff_blocking_stack_push_with_timeout(struct ff_blocking_stack *stack, const void *data, int timeout)
+enum ff_result ff_blocking_stack_push_with_timeout(struct ff_blocking_stack *stack, const void *data, int timeout)
 {
-	int is_success;
+	enum ff_result result;
 
 	ff_assert(timeout > 0);
 
-	is_success = ff_semaphore_down_with_timeout(stack->consumer_semaphore, timeout);
-	if (is_success)
+	result = ff_semaphore_down_with_timeout(stack->consumer_semaphore, timeout);
+	if (result == FF_SUCCESS)
 	{
 		ff_stack_push(stack->simple_stack, data);
 		ff_semaphore_up(stack->producer_semaphore);
 	}
-	return is_success;
+	return result;
 }

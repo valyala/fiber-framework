@@ -93,14 +93,14 @@ int ff_win_net_complete_overlapped_io(SOCKET socket, WSAOVERLAPPED *overlapped)
 	return int_bytes_transferred;
 }
 
-int ff_win_net_connect(SOCKET socket, const struct sockaddr_in *addr)
+enum ff_result ff_win_net_connect(SOCKET socket, const struct sockaddr_in *addr)
 {
-	int is_connected = 0;
-	BOOL result;
+	BOOL is_connected;
 	WSAOVERLAPPED overlapped;
 	int bytes_transferred;
 	struct sockaddr_in local_addr;
 	int rv;
+	enum ff_result result = FF_FAILURE;
 
 	memset(&local_addr, 0, sizeof(local_addr));
 	local_addr.sin_family = AF_INET;
@@ -110,8 +110,8 @@ int ff_win_net_connect(SOCKET socket, const struct sockaddr_in *addr)
 	ff_winsock_fatal_error_check(rv != SOCKET_ERROR, L"cannot bind arbitrary address");
 
 	memset(&overlapped, 0, sizeof(overlapped));
-	result = net_ctx.connect_ex(socket, (struct sockaddr *) addr, sizeof(*addr), NULL, 0, NULL, &overlapped);
-	if (result == FALSE)
+	is_connected = net_ctx.connect_ex(socket, (struct sockaddr *) addr, sizeof(*addr), NULL, 0, NULL, &overlapped);
+	if (is_connected == FALSE)
 	{
 		int last_error;
 
@@ -127,20 +127,19 @@ int ff_win_net_connect(SOCKET socket, const struct sockaddr_in *addr)
 	{
 		goto end;
 	}
-
-	is_connected = 1;
+	result = FF_SUCCESS;
 
 end:
-	return is_connected;
+	return result;
 }
 
-int ff_win_net_accept(SOCKET listen_socket, SOCKET remote_socket, struct sockaddr_in *remote_addr)
+enum ff_result ff_win_net_accept(SOCKET listen_socket, SOCKET remote_socket, struct sockaddr_in *remote_addr)
 {
 	WSAOVERLAPPED overlapped;
 	DWORD local_addr_len;
 	DWORD remote_addr_len;
 	DWORD bytes_read;
-	BOOL result;
+	BOOL is_accepted;
 	size_t addr_buf_size;
 	char *addr_buf;
 	int bytes_transferred;
@@ -148,7 +147,7 @@ int ff_win_net_accept(SOCKET listen_socket, SOCKET remote_socket, struct sockadd
 	int remote_sockaddr_len;
 	struct sockaddr *local_addr_ptr;
 	struct sockaddr *remote_addr_ptr;
-	int is_success = 0;
+	enum ff_result result = FF_FAILURE;
 
 	local_addr_len = sizeof(*remote_addr) + 16;
 	remote_addr_len = sizeof(*remote_addr) + 16;
@@ -156,8 +155,8 @@ int ff_win_net_accept(SOCKET listen_socket, SOCKET remote_socket, struct sockadd
 	addr_buf = (char *) ff_calloc(addr_buf_size, sizeof(addr_buf[0]));
 
 	memset(&overlapped, 0, sizeof(overlapped));
-	result = net_ctx.accept_ex(listen_socket, remote_socket, addr_buf, 0, local_addr_len, remote_addr_len, &bytes_read, &overlapped);
-	if (result == FALSE)
+	is_accepted = net_ctx.accept_ex(listen_socket, remote_socket, addr_buf, 0, local_addr_len, remote_addr_len, &bytes_read, &overlapped);
+	if (is_accepted == FALSE)
 	{
 		int last_error;
 
@@ -180,9 +179,9 @@ int ff_win_net_accept(SOCKET listen_socket, SOCKET remote_socket, struct sockadd
 	ff_assert(remote_sockaddr_len == sizeof(*remote_addr));
 	memcpy(remote_addr, remote_addr_ptr, sizeof(*remote_addr));
 
-	is_success = 1;
+	result = FF_SUCCESS;
 
 end:
 	ff_free(addr_buf);
-	return is_success;
+	return result;
 }

@@ -31,21 +31,21 @@ struct threadpool_open_file_data
 struct threadpool_erase_file_data
 {
 	const char *path;
-	int is_success;
+	enum ff_result result;
 };
 
 struct threadpool_copy_file_data
 {
 	const char *src_path;
 	const char *dst_path;
-	int is_success;
+	enum ff_result result;
 };
 
 struct threadpool_move_file_data
 {
 	const char *src_path;
 	const char *dst_path;
-	int is_success;
+	enum ff_result result;
 };
 
 struct file_data
@@ -79,7 +79,7 @@ static void threadpool_erase_file_func(void *ctx)
 
 	data = (struct threadpool_erase_file_data *) ctx;
 	rv = unlink(data->path);
-	data->is_success = (rv == -1) ? 0 : 1;
+	data->result = (rv == -1) ? FF_FAILURE : FF_SUCCESS;
 }
 
 static void threadpool_copy_file_func(void *ctx)
@@ -90,7 +90,7 @@ static void threadpool_copy_file_func(void *ctx)
 	char *buf;
 
 	data = (struct threadpool_copy_file_data *) ctx;
-	data->is_success = 0;
+	data->result = FF_FAILURE;
 	src_fd = open(data->src_path, O_RDONLY | O_LARGEFILE);
 	if (src_fd == -1)
 	{
@@ -119,7 +119,7 @@ static void threadpool_copy_file_func(void *ctx)
 		}
 		if (bytes_read == 0)
 		{
-			data->is_success = 1;
+			data->result = FF_SUCCESS;
 			break;
 		}
 		if (bytes_read == -1)
@@ -165,7 +165,7 @@ static void threadpool_move_file_func(void *ctx)
 
 	data = (struct threadpool_move_file_data *) ctx;
 	rv = rename(data->src_path, data->dst_path);
-	data->is_success = (rv == -1) ? 0 : 1;
+	data->result = (rv == -1) ? FF_FAILURE : FF_SUCCESS;
 }
 
 static void wait_for_file_io(struct ff_arch_file *file)
@@ -274,21 +274,21 @@ again:
 	return bytes_written;
 }
 
-int ff_arch_file_erase(const wchar_t *path)
+enum ff_result ff_arch_file_erase(const wchar_t *path)
 {
 	char *mb_path;
 	struct threadpool_erase_file_data data;
 
 	mb_path = ff_linux_misc_wide_to_multibyte_string(path);
 	data.path = mb_path;
-	data.is_success = 0;
+	data.result = FF_FAILURE;
 	ff_core_threadpool_execute(threadpool_erase_file_func, &data);
 	ff_free(mb_path);
 
-	return data.is_success;
+	return data.result;
 }
 
-int ff_arch_file_copy(const wchar_t *src_path, const wchar_t *dst_path)
+enum ff_result ff_arch_file_copy(const wchar_t *src_path, const wchar_t *dst_path)
 {
 	char *mb_src_path;
 	char *mb_dst_path;
@@ -298,15 +298,15 @@ int ff_arch_file_copy(const wchar_t *src_path, const wchar_t *dst_path)
 	mb_dst_path = ff_linux_misc_wide_to_multibyte_string(dst_path);
 	data.src_path = mb_src_path;
 	data.dst_path = mb_dst_path;
-	data.is_success = 0;
+	data.result = FF_FAILURE;
 	ff_core_threadpool_execute(threadpool_copy_file_func, &data);
 	ff_free(mb_src_path);
 	ff_free(mb_dst_path);
 
-	return data.is_success;
+	return data.result;
 }
 
-int ff_arch_file_move(const wchar_t *src_path, const wchar_t *dst_path)
+enum ff_result ff_arch_file_move(const wchar_t *src_path, const wchar_t *dst_path)
 {
 	char *mb_src_path;
 	char *mb_dst_path;
@@ -316,12 +316,12 @@ int ff_arch_file_move(const wchar_t *src_path, const wchar_t *dst_path)
 	mb_dst_path = ff_linux_misc_wide_to_multibyte_string(dst_path);
 	data.src_path = mb_src_path;
 	data.dst_path = mb_dst_path;
-	data.is_success = 0;
+	data.result = FF_FAILURE;
 	ff_core_threadpool_execute(threadpool_move_file_func, &data);
 	ff_free(mb_src_path);
 	ff_free(mb_dst_path);
 
-	return data.is_success;
+	return data.result;
 }
 
 int64_t ff_arch_file_get_size(struct ff_arch_file *file)
@@ -337,3 +337,4 @@ int64_t ff_arch_file_get_size(struct ff_arch_file *file)
 
 	return size;
 }
+

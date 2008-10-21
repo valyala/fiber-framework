@@ -35,10 +35,10 @@ void ff_read_stream_buffer_delete(struct ff_read_stream_buffer *buffer)
 	ff_free(buffer);
 }
 
-int ff_read_stream_buffer_read(struct ff_read_stream_buffer *buffer, void *buf, int len)
+enum ff_result ff_read_stream_buffer_read(struct ff_read_stream_buffer *buffer, void *buf, int len)
 {
 	char *char_buf;
-	int is_success = 0;
+	enum ff_result result = FF_FAILURE;
 
 	ff_assert(len >= 0);
 
@@ -116,8 +116,8 @@ int ff_read_stream_buffer_read(struct ff_read_stream_buffer *buffer, void *buf, 
 		char_buf += bytes_read;
 		len -= bytes_read;
 	}
-	is_success = 1;
+	result = FF_SUCCESS;
 
 end:
-	return is_success;
+	return result;
 }

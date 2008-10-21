@@ -12,16 +12,16 @@ struct threadpool_addr_resolve_data
 	struct ff_arch_net_addr *addr;
 	const wchar_t *host;
 	int port;
-	int is_success;
+	enum ff_result result;
 };
 
-static int resolve_addr(struct ff_arch_net_addr *addr, const wchar_t *host, int port)
+static enum ff_result resolve_addr(struct ff_arch_net_addr *addr, const wchar_t *host, int port)
 {
-	int is_success = 0;
 	int rv;
 	ADDRINFOW hint;
 	PADDRINFOW addr_info_ptr;
 	wchar_t str_port[MAX_STR_PORT_SIZE];
+	enum ff_result result = FF_FAILURE;
 
 	ff_assert(port >= 0);
 	ff_assert(port < 0x10000);
@@ -42,10 +42,10 @@ static int resolve_addr(struct ff_arch_net_addr *addr, const wchar_t *host, int 
 	ff_assert(addr_info_ptr->ai_addrlen == sizeof(addr->addr));
 	memcpy(&addr->addr, addr_info_ptr->ai_addr, sizeof(addr->addr));
 	FreeAddrInfoW(addr_info_ptr);
-	is_success = 1;
+	result = FF_SUCCESS;
 
 end:
-	return is_success;
+	return result;
 }
 
 static void threadpool_addr_resolve_func(void *ctx)
@@ -53,7 +53,7 @@ static void threadpool_addr_resolve_func(void *ctx)
 	struct threadpool_addr_resolve_data *data;
 
 	data = (struct threadpool_addr_resolve_data *) ctx;
-	data->is_success = resolve_addr(data->addr, data->host, data->port);
+	data->result = resolve_addr(data->addr, data->host, data->port);
 }
 
 struct ff_arch_net_addr *ff_arch_net_addr_create()
@@ -70,16 +70,17 @@ void ff_arch_net_addr_delete(struct ff_arch_net_addr *addr)
 	ff_free(addr);
 }
 
-int ff_arch_net_addr_resolve(struct ff_arch_net_addr *addr, const wchar_t *host, int port)
+enum ff_result ff_arch_net_addr_resolve(struct ff_arch_net_addr *addr, const wchar_t *host, int port)
 {
 	struct threadpool_addr_resolve_data data;
+
 	data.addr = addr;
 	data.host = host;
 	data.port = port;
-	data.is_success = 0;
+	data.result = FF_FAILURE;
 	ff_core_threadpool_execute(threadpool_addr_resolve_func, &data);
 
-	return data.is_success;
+	return data.result;
 }
 
 void ff_arch_net_addr_get_broadcast_addr(const struct ff_arch_net_addr *addr, const struct ff_arch_net_addr *net_mask, struct ff_arch_net_addr *broadcast_addr)

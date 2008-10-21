@@ -81,34 +81,34 @@ void ff_tcp_delete(struct ff_tcp *tcp)
 	ff_free(tcp);
 }
 
-int ff_tcp_bind(struct ff_tcp *tcp, const struct ff_arch_net_addr *addr, enum ff_tcp_type type)
+enum ff_result ff_tcp_bind(struct ff_tcp *tcp, const struct ff_arch_net_addr *addr, enum ff_tcp_type type)
 {
-	int is_success;
 	int is_listening;
+	enum ff_result result;
 
 	ff_assert(!tcp->is_active);
 
 	is_listening = ((type == FF_TCP_SERVER) ? 1 : 0);
-	is_success = ff_arch_tcp_bind(tcp->tcp, addr, is_listening);
-	if (is_success && is_listening)
+	result = ff_arch_tcp_bind(tcp->tcp, addr, is_listening);
+	if (result == FF_SUCCESS && is_listening)
 	{
 		tcp->is_active = 1;
 	}
-	return is_success;
+	return result;
 }
 
-int ff_tcp_connect(struct ff_tcp *tcp, const struct ff_arch_net_addr *addr)
+enum ff_result ff_tcp_connect(struct ff_tcp *tcp, const struct ff_arch_net_addr *addr)
 {
-	int is_success;
+	enum ff_result result;
 
 	ff_assert(!tcp->is_active);
 
-	is_success = ff_arch_tcp_connect(tcp->tcp, addr);
-	if (is_success)
+	result = ff_arch_tcp_connect(tcp->tcp, addr);
+	if (result == FF_SUCCESS)
 	{
 		tcp->is_active = 1;
 	}
-	return is_success;
+	return result;
 }
 
 struct ff_tcp *ff_tcp_accept(struct ff_tcp *tcp, struct ff_arch_net_addr *remote_addr)
@@ -128,85 +128,85 @@ struct ff_tcp *ff_tcp_accept(struct ff_tcp *tcp, struct ff_arch_net_addr *remote
 	return remote_tcp;
 }
 
-int ff_tcp_read(struct ff_tcp *tcp, void *buf, int len)
+enum ff_result ff_tcp_read(struct ff_tcp *tcp, void *buf, int len)
 {
-	int is_success = 0;
+	enum ff_result result = FF_FAILURE;
 
 	ff_assert(len >= 0);
 
 	if (tcp->is_active)
 	{
-		is_success = ff_read_stream_buffer_read(tcp->read_buffer, buf, len);
+		result = ff_read_stream_buffer_read(tcp->read_buffer, buf, len);
 	}
-	return is_success;
+	return result;
 }
 
-int ff_tcp_read_with_timeout(struct ff_tcp *tcp, void *buf, int len, int timeout)
+enum ff_result ff_tcp_read_with_timeout(struct ff_tcp *tcp, void *buf, int len, int timeout)
 {
 	struct ff_core_timeout_operation_data *timeout_operation_data;
-	int is_success;
+	enum ff_result result;
 
 	ff_assert(len >= 0);
 	ff_assert(timeout > 0);
 
 	timeout_operation_data = ff_core_register_timeout_operation(timeout, cancel_tcp_operation, tcp);
-	is_success = ff_tcp_read(tcp, buf, len);
+	result = ff_tcp_read(tcp, buf, len);
 	ff_core_deregister_timeout_operation(timeout_operation_data);
 
-	return is_success;
+	return result;
 }
 
-int ff_tcp_write(struct ff_tcp *tcp, const void *buf, int len)
+enum ff_result ff_tcp_write(struct ff_tcp *tcp, const void *buf, int len)
 {
-	int is_success = 0;
+	enum ff_result result = FF_FAILURE;
 
 	ff_assert(len >= 0);
 
 	if (tcp->is_active)
 	{
-		is_success = ff_write_stream_buffer_write(tcp->write_buffer, buf, len);
+		result = ff_write_stream_buffer_write(tcp->write_buffer, buf, len);
 	}
-	return is_success;
+	return result;
 }
 
-int ff_tcp_write_with_timeout(struct ff_tcp *tcp, const void *buf, int len, int timeout)
+enum ff_result ff_tcp_write_with_timeout(struct ff_tcp *tcp, const void *buf, int len, int timeout)
 {
 	struct ff_core_timeout_operation_data *timeout_operation_data;
-	int is_success;
+	enum ff_result result;
 
 	ff_assert(len >= 0);
 	ff_assert(timeout > 0);
 
 	timeout_operation_data = ff_core_register_timeout_operation(timeout, cancel_tcp_operation, tcp);
-	is_success = ff_tcp_write(tcp, buf, len);
+	result = ff_tcp_write(tcp, buf, len);
 	ff_core_deregister_timeout_operation(timeout_operation_data);
 
-	return is_success;
+	return result;
 }
 
-int ff_tcp_flush(struct ff_tcp *tcp)
+enum ff_result ff_tcp_flush(struct ff_tcp *tcp)
 {
-	int is_success = 0;
+	enum ff_result result = FF_FAILURE;
 
 	if (tcp->is_active)
 	{
-		is_success = ff_write_stream_buffer_flush(tcp->write_buffer);
+		result = ff_write_stream_buffer_flush(tcp->write_buffer);
 	}
-	return is_success;
+	return result;
 }
 
-int ff_tcp_flush_with_timeout(struct ff_tcp *tcp, int timeout)
+enum ff_result ff_tcp_flush_with_timeout(struct ff_tcp *tcp, int timeout)
 {
 	struct ff_core_timeout_operation_data *timeout_operation_data;
-	int is_success;
+	enum ff_result result;
 
 	ff_assert(timeout > 0);
 
 	timeout_operation_data = ff_core_register_timeout_operation(timeout, cancel_tcp_operation, tcp);
-	is_success = ff_tcp_flush(tcp);
+	result = ff_tcp_flush(tcp);
 	ff_core_deregister_timeout_operation(timeout_operation_data);
 
-	return is_success;
+	return result;
 }
 
 void ff_tcp_disconnect(struct ff_tcp *tcp)
