@@ -77,34 +77,37 @@ void ff_event_reset(struct ff_event *event)
 
 void ff_event_wait(struct ff_event *event)
 {
-	enum ff_result result;
+	if (!event->is_set)
+	{
+		struct ff_fiber *current_fiber;
 
-	result = ff_event_wait_with_timeout(event, 0);
-	ff_assert(result == FF_SUCCESS);
+		current_fiber = ff_fiber_get_current();
+		ff_stack_push(event->pending_fibers, current_fiber);
+		ff_core_yield_fiber();
+	}
+	if (event->event_type == FF_EVENT_AUTO)
+	{
+		ff_assert(event->is_set);
+		event->is_set = 0;
+	}
 }
 
 enum ff_result ff_event_wait_with_timeout(struct ff_event *event, int timeout)
 {
 	enum ff_result result = FF_SUCCESS;
 
-	ff_assert(timeout >= 0);
+	ff_assert(timeout > 0);
 
 	if (!event->is_set)
 	{
 		struct ff_fiber *current_fiber;
-		struct ff_core_timeout_operation_data *timeout_operation_data = NULL;
+		struct ff_core_timeout_operation_data *timeout_operation_data;
 
 		current_fiber = ff_fiber_get_current();
 		ff_stack_push(event->pending_fibers, current_fiber);
-		if (timeout > 0)
-		{
-			timeout_operation_data = ff_core_register_timeout_operation(timeout, cancel_event_wait, event);
-		}
+		timeout_operation_data = ff_core_register_timeout_operation(timeout, cancel_event_wait, event);
 		ff_core_yield_fiber();
-		if (timeout > 0)
-		{
-			result = ff_core_deregister_timeout_operation(timeout_operation_data);
-		}
+		result = ff_core_deregister_timeout_operation(timeout_operation_data);
 	}
 	if (event->event_type == FF_EVENT_AUTO && result == FF_SUCCESS)
 	{
