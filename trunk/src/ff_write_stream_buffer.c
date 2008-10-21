@@ -20,7 +20,7 @@ struct ff_write_stream_buffer *ff_write_stream_buffer_create(ff_write_stream_fun
 	buffer = (struct ff_write_stream_buffer *) ff_malloc(sizeof(*buffer));
 	buffer->write_func = write_func;
 	buffer->func_ctx = func_ctx;
-	buffer->buf = (char *) ff_malloc(capacity);
+	buffer->buf = (char *) ff_calloc(capacity, sizeof(buffer->buf[0]));
 	buffer->capacity = capacity;
 	buffer->start_pos = 0;
 

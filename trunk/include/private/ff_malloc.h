@@ -16,7 +16,16 @@ void *ff_malloc(size_t size);
 
 /**
  * @public
- * frees the memory, which was allocated by ff_malloc()
+ * allocates memory for an array of nmemb elements of size bytes each
+ * and returns a pointer to the allocated memory.
+ * The memory is set to zero.
+ * Always returns correct result.
+ */
+void *ff_calloc(size_t nmemb, size_t size);
+
+/**
+ * @public
+ * frees the memory, which was allocated by ff_malloc() or ff_calloc()
  */
 void ff_free(void *mem);
 

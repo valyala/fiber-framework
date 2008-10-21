@@ -77,7 +77,7 @@ struct ff_threadpool *ff_threadpool_create(int max_threads_cnt)
 	threadpool = (struct ff_threadpool *) ff_malloc(sizeof(*threadpool));
 	threadpool->completion_port = ff_arch_completion_port_create(cpus_cnt);
 	threadpool->mutex = ff_arch_mutex_create();
-	threadpool->threads = (struct ff_arch_thread **) ff_malloc(sizeof(*threadpool->threads) * max_threads_cnt);
+	threadpool->threads = (struct ff_arch_thread **) ff_calloc(max_threads_cnt, sizeof(threadpool->threads[0]));
 	threadpool->max_threads_cnt = max_threads_cnt;
 	threadpool->running_threads_cnt = 0;
 	threadpool->busy_threads_cnt = 0;
