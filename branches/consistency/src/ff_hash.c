@@ -34,6 +34,7 @@
  */
 uint32_t ff_hash_uint32(uint32_t start_value, const uint32_t *buf, int buf_size)
 {
+	uint32_t aligned_array[3];
 	uint32_t a, b, c;
 
 	ff_assert(buf_size >= 0);
@@ -41,19 +42,21 @@ uint32_t ff_hash_uint32(uint32_t start_value, const uint32_t *buf, int buf_size)
 	a = b = c = 0xdeadbeef + (((uint32_t) buf_size) << 2) + start_value;
 	while (buf_size > 3)
 	{
-		a += buf[0];
-		b += buf[1];
-		c += buf[2];
+		memcpy(aligned_array, buf, 3 * sizeof(aligned_array[0]));
+		a += aligned_array[0];
+		b += aligned_array[1];
+		c += aligned_array[2];
 		mix(a, b, c);
 		buf_size -= 3;
 		buf += 3;
 	}
 
+	memcpy(aligned_array, buf, buf_size * sizeof(aligned_array[0]));
 	switch (buf_size)
-	{ 
-		case 3 : c += buf[2];
-		case 2 : b += buf[1];
-		case 1 : a += buf[0];
+	{
+		case 3 : c += aligned_array[2];
+		case 2 : b += aligned_array[1];
+		case 1 : a += aligned_array[0];
 			final(a, b, c);
 		case 0:
 			break;
@@ -69,6 +72,7 @@ uint32_t ff_hash_uint16(uint32_t start_value, const uint16_t *buf, int buf_size)
 	int tail_size;
 
 	ff_assert(buf_size >= 0);
+
 	uint32_chunks_cnt = buf_size >> 1;
 	hash = ff_hash_uint32(start_value, (const uint32_t *) buf, uint32_chunks_cnt);
 	tail_size = buf_size & 0x01;
