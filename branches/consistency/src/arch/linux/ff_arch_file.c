@@ -217,6 +217,7 @@ void ff_arch_file_close(struct ff_arch_file *file)
 
 	rv = close(file->fd);
 	ff_assert(rv != -1);
+	ff_free(file);
 }
 
 int ff_arch_file_read(struct ff_arch_file *file, void *buf, int len)
