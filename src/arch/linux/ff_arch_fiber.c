@@ -39,7 +39,7 @@ struct ff_arch_fiber *ff_arch_fiber_create(ff_arch_fiber_func arch_fiber_func, v
 	ff_assert(stack_size > 0);
 
 	fiber = (struct ff_arch_fiber *) ff_malloc(sizeof(*fiber));
-	fiber->stack = ff_malloc(stack_size);
+	fiber->stack = ff_calloc(stack_size, sizeof(char));
 	getcontext(&fiber->context);
 	fiber->context.uc_stack.ss_sp = fiber->stack;
 	fiber->context.uc_stack.ss_size = stack_size;

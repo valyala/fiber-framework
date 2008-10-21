@@ -73,7 +73,7 @@ int ff_stream_copy(struct ff_stream *src_stream, struct ff_stream *dst_stream, i
 
 	ff_assert(len >= 0);
 
-	buf = (uint8_t *) ff_malloc(BUF_SIZE);
+	buf = (uint8_t *) ff_calloc(BUF_SIZE, sizeof(buf[0]));
 	while (len > 0)
 	{
 		int chunk_size;
@@ -109,7 +109,7 @@ int ff_stream_get_hash(struct ff_stream *stream, int len, uint32_t start_value, 
 	ff_assert(len >= 0);
 
 	hash = start_value;
-	buf = (uint8_t *) ff_malloc(BUF_SIZE);
+	buf = (uint8_t *) ff_calloc(BUF_SIZE, sizeof(buf[0]));
 	while (len > 0)
 	{
 		int chunk_size;

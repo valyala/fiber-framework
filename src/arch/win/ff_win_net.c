@@ -153,7 +153,7 @@ int ff_win_net_accept(SOCKET listen_socket, SOCKET remote_socket, struct sockadd
 	local_addr_len = sizeof(*remote_addr) + 16;
 	remote_addr_len = sizeof(*remote_addr) + 16;
 	addr_buf_size = local_addr_len + remote_addr_len;
-	addr_buf = (char *) ff_malloc(addr_buf_size);
+	addr_buf = (char *) ff_calloc(addr_buf_size, sizeof(addr_buf[0]));
 
 	memset(&overlapped, 0, sizeof(overlapped));
 	result = net_ctx.accept_ex(listen_socket, remote_socket, addr_buf, 0, local_addr_len, remote_addr_len, &bytes_read, &overlapped);

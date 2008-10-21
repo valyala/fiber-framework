@@ -63,7 +63,7 @@ struct ff_fiberpool *ff_fiberpool_create(int max_fibers_cnt)
 
 	fiberpool = (struct ff_fiberpool *) ff_malloc(sizeof(*fiberpool));
 	fiberpool->pending_tasks = ff_blocking_stack_create(PENDING_TASKS_MAX_SIZE);
-	fiberpool->fibers = (struct ff_fiber **) ff_malloc(sizeof(*fiberpool->fibers) * max_fibers_cnt);
+	fiberpool->fibers = (struct ff_fiber **) ff_calloc(max_fibers_cnt, sizeof(fiberpool->fibers[0]));
 	fiberpool->max_fibers_cnt = max_fibers_cnt;
 	fiberpool->running_fibers_cnt = 0;
 	fiberpool->busy_fibers_cnt = 0;
