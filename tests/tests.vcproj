@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8,00"
-	Name="unit-tests"
+	Name="tests"
 	ProjectGUID="{269647F2-06C6-46C9-9C51-90789B87E2CA}"
-	RootNamespace="unittests"
+	RootNamespace="tests"
 	Keyword="Win32Proj"
 	>
 	<Platforms>
@@ -176,7 +176,7 @@
 	</References>
 	<Files>
 		<File
-			RelativePath=".\unit-tests.c"
+			RelativePath=".\tests.c"
 			>
 		</File>
 	</Files>
