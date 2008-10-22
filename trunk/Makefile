@@ -4,7 +4,7 @@ CC=gcc
 
 SRC_DIR=src
 ARCH_DIR=$(SRC_DIR)/arch/linux
-TESTS_DIR=unit-tests
+TESTS_DIR=tests
 
 ARCH_OBJS= \
 	$(ARCH_DIR)/ff_arch_completion_port.o \
