@@ -7,9 +7,6 @@
 
 #include "ff/ff_common.h"
 
-#include "private/ff_malloc.h"
-#include "private/ff_assert.h"
-
 #ifdef HAS_THREAD_KEYWORD
 	#define FF_PER_THREAD __thread
 #else

@@ -25,5 +25,6 @@ enum ff_result
 
 #include "ff/ff_api.h"
 #include "ff/ff_malloc.h"
+#include "ff/ff_assert.h"
 
 #endif
