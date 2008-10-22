@@ -80,13 +80,13 @@ enum ff_result ff_stream_copy(struct ff_stream *src_stream, struct ff_stream *ds
 
 		chunk_size = len > BUF_SIZE ? BUF_SIZE : len;
 		result = ff_stream_read(src_stream, buf, chunk_size);
-		if (result == FF_FAILURE)
+		if (result != FF_SUCCESS)
 		{
 			ff_log_warning(L"error when copying streams: cannot read from src_stream");
 			goto end;
 		}
 		result = ff_stream_write(dst_stream, buf, chunk_size);
-		if (result == FF_FAILURE)
+		if (result != FF_SUCCESS)
 		{
 			ff_log_warning(L"error when copying streams: cannot write to the dst_stream");
 			goto end;
@@ -116,7 +116,7 @@ enum ff_result ff_stream_get_hash(struct ff_stream *stream, int len, uint32_t st
 
 		chunk_size = len > BUF_SIZE ? BUF_SIZE : len;
 		result = ff_stream_read(stream, buf, chunk_size);
-		if (result == FF_FAILURE)
+		if (result != FF_SUCCESS)
 		{
 			ff_log_warning(L"error when calculating hash: cannot read from the stream");
 			goto end;

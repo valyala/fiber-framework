@@ -81,7 +81,7 @@ struct ff_arch_tcp *ff_arch_tcp_accept(struct ff_arch_tcp *tcp, struct ff_arch_n
 
 	remote_tcp = ff_arch_tcp_create();
 	result = ff_win_net_accept(tcp->handle, remote_tcp->handle, &remote_addr->addr);
-	if (result == FF_FAILURE)
+	if (result != FF_SUCCESS)
 	{
 		ff_arch_tcp_delete(remote_tcp);
 		remote_tcp = NULL;
