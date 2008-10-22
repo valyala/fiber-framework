@@ -60,7 +60,7 @@ libfiber-framework.so: $(FF_LIB_OBJS)
 	$(CC) $(FF_LIB_OBJS) $(LDFLAGS) -o $@
 
 tests: libfiber-framework.so
-	$(CC) -g -I./include -DHAS_STDINT_H -lfiber-framework -L. -o $@ $(TESTS_DIR)/unit-tests.c
+	$(CC) -g -I./include -DHAS_STDINT_H -lfiber-framework -L. -o $@ $(TESTS_DIR)/tests.c
 
 clean:
 	rm -f $(ALL_OBJS) libfiber-framework.so tests
