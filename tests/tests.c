@@ -26,7 +26,7 @@
 	#include <assert.h>
 #endif
 
-#define LOG_FILENAME L"ff_unit_tests_log.txt"
+#define LOG_FILENAME L"ff_tests_log.txt"
 
 #define ASSERT(expr, msg) assert((expr) && (msg))
 
