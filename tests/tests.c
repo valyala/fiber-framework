@@ -30,6 +30,57 @@
 
 #define ASSERT(expr, msg) assert((expr) && (msg))
 
+#pragma region ff_malloc tests
+
+static void test_malloc_basic()
+{
+	void *p;
+
+	p = ff_malloc(123);
+	ASSERT(p != NULL, "cannot allocate memory");
+	ff_free(p);
+}
+
+static void test_calloc_basic()
+{
+	void **p;
+	int i;
+
+	p = (void **) ff_calloc(100, sizeof(p[0]));
+	ASSERT(p != NULL, "cannot allocate memory using ff_calloc()");
+
+	for (i = 0; i < 100; i++)
+	{
+		void *tmp;
+
+		tmp = p[i];
+		ASSERT(tmp == NULL, "ff_calloc() didn't cleared memory to zero");
+		tmp = ff_malloc(i * 10);
+		ASSERT(tmp != NULL, "cannot allocate memory");
+		p[i] = tmp;
+	}
+
+	for (i = 0; i < 100; i++)
+	{
+		void *tmp;
+
+		tmp = p[i];
+		ASSERT(tmp != NULL, "unexpected value");
+		ff_free(tmp);
+	}
+
+	ff_free(p);
+}
+
+static void test_malloc_all()
+{
+	test_malloc_basic();
+	test_calloc_basic();
+}
+
+/* end of ff_malloc tests */
+#pragma endregion
+
 #pragma region ff_core_tests
 
 static void test_core_init()
@@ -1573,6 +1624,7 @@ static void test_udp_all()
 
 static void test_all()
 {
+	test_malloc_all();
 	test_core_all();
 	test_log_all();
 	test_fiber_all();
