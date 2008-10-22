@@ -387,7 +387,7 @@ static void test_event_manual_timeout()
 
 	event = ff_event_create(FF_EVENT_MANUAL);
 	result = ff_event_wait_with_timeout(event, 100);
-	ASSERT(result == FF_FAILURE, "event should timeout");
+	ASSERT(result != FF_SUCCESS, "event should timeout");
 	is_set = ff_event_is_set(event);
 	ASSERT(!is_set, "event should remain 'not set' after timeout");
 	ff_event_set(event);
@@ -410,7 +410,7 @@ static void test_event_auto_timeout()
 
 	event = ff_event_create(FF_EVENT_AUTO);
 	result = ff_event_wait_with_timeout(event, 100);
-	ASSERT(result == FF_FAILURE, "event should timeout");
+	ASSERT(result != FF_SUCCESS, "event should timeout");
 	is_set = ff_event_is_set(event);
 	ASSERT(!is_set, "event should remain 'not set' after timeout");
 	ff_event_set(event);
@@ -490,7 +490,7 @@ static void test_event_auto_multiple()
 
 		ff_event_set(event);
 		result = ff_event_wait_with_timeout(done_event, 1);
-		ASSERT(result == FF_FAILURE, "done_event should remain 'not set'");
+		ASSERT(result != FF_SUCCESS, "done_event should remain 'not set'");
 	}
 	ff_event_set(event);
 	ff_event_wait(done_event);
@@ -605,7 +605,7 @@ static void test_semaphore_basic()
 	ff_core_initialize(LOG_FILENAME);
 	semaphore = ff_semaphore_create(0);
 	result = ff_semaphore_down_with_timeout(semaphore, 1);
-	ASSERT(result == FF_FAILURE, "semaphore with 0 value cannot be down");
+	ASSERT(result != FF_SUCCESS, "semaphore with 0 value cannot be down");
 	for (i = 0; i < 10; i++)
 	{
 		ff_semaphore_up(semaphore);
@@ -617,7 +617,7 @@ static void test_semaphore_basic()
 		ff_semaphore_down(semaphore);
 	}
 	result = ff_semaphore_down_with_timeout(semaphore, 1);
-	ASSERT(result == FF_FAILURE, "semaphore cannot be down");
+	ASSERT(result != FF_SUCCESS, "semaphore cannot be down");
 	ff_semaphore_delete(semaphore);
 	ff_core_shutdown();
 }
@@ -663,7 +663,7 @@ static void test_blocking_queue_basic()
 	is_empty = ff_blocking_queue_is_empty(queue);
 	ASSERT(!is_empty, "queue shouldn't be empty");
 	result = ff_blocking_queue_put_with_timeout(queue, (void *)123, 1);
-	ASSERT(result == FF_FAILURE, "queue should be full");
+	ASSERT(result != FF_SUCCESS, "queue should be full");
 	for (i = 0; i < 10; i++)
 	{
 		ff_blocking_queue_get(queue, (const void **)&data);
@@ -672,7 +672,7 @@ static void test_blocking_queue_basic()
 	is_empty = ff_blocking_queue_is_empty(queue);
 	ASSERT(is_empty, "queue should be empty");
 	result = ff_blocking_queue_get_with_timeout(queue, (const void **)&data, 1);
-	ASSERT(result == FF_FAILURE, "queue should be empty");
+	ASSERT(result != FF_SUCCESS, "queue should be empty");
 	ff_blocking_queue_delete(queue);
 	ff_core_shutdown();
 }
@@ -694,12 +694,12 @@ static void test_blocking_queue_fiberpool()
 	ff_core_initialize(LOG_FILENAME);
 	queue = ff_blocking_queue_create(1);
 	result = ff_blocking_queue_get_with_timeout(queue, (const void **)&data, 1);
-	ASSERT(result == FF_FAILURE, "queue should be empty");
+	ASSERT(result != FF_SUCCESS, "queue should be empty");
 	ff_core_fiberpool_execute_async(fiberpool_blocking_queue_func, queue);
 	ff_blocking_queue_get(queue, (const void **)&data);
 	ASSERT(data == 543, "unexpected value received from the queue");
 	result = ff_blocking_queue_get_with_timeout(queue, (const void **)&data, 1);
-	ASSERT(result == FF_FAILURE, "queue shouldn't have values");
+	ASSERT(result != FF_SUCCESS, "queue shouldn't have values");
 	ff_blocking_queue_delete(queue);
 	ff_core_shutdown();
 }
@@ -741,14 +741,14 @@ static void test_blocking_stack_basic()
 		ff_blocking_stack_push(stack, *(void **)&i);
 	}
 	result = ff_blocking_stack_push_with_timeout(stack, (void *)1234, 1);
-	ASSERT(result == FF_FAILURE, "stack should be fulll");
+	ASSERT(result != FF_SUCCESS, "stack should be fulll");
 	for (i = 9; i >= 0; i--)
 	{
 		ff_blocking_stack_pop(stack, (const void **)&data);
 		ASSERT(data == i, "wrong value retrieved from the stack");
 	}
 	result = ff_blocking_stack_pop_with_timeout(stack, (const void **)&data, 1);
-	ASSERT(result == FF_FAILURE, "stack should be empty");
+	ASSERT(result != FF_SUCCESS, "stack should be empty");
 	ff_blocking_stack_delete(stack);
 	ff_core_shutdown();
 }
@@ -770,12 +770,12 @@ static void test_blocking_stack_fiberpool()
 	ff_core_initialize(LOG_FILENAME);
 	stack = ff_blocking_stack_create(1);
 	result = ff_blocking_stack_pop_with_timeout(stack, (const void **)&data, 1);
-	ASSERT(result == FF_FAILURE, "stack should be empty");
+	ASSERT(result != FF_SUCCESS, "stack should be empty");
 	ff_core_fiberpool_execute_async(fiberpool_blocking_stack_func, stack);
 	ff_blocking_stack_pop(stack, (const void **)&data);
 	ASSERT(data == 543, "unexpected value received from the stack");
 	result = ff_blocking_stack_pop_with_timeout(stack, (const void **)&data, 1);
-	ASSERT(result == FF_FAILURE, "stack shouldn't have values");
+	ASSERT(result != FF_SUCCESS, "stack shouldn't have values");
 	ff_blocking_stack_delete(stack);
 	ff_core_shutdown();
 }
@@ -928,7 +928,7 @@ static void test_file_create_delete()
 	result = ff_file_erase(L"test.txt");
 	ASSERT(result == FF_SUCCESS, "file should be deleted");
 	result = ff_file_erase(L"test.txt");
-	ASSERT(result == FF_FAILURE, "file already deleted");
+	ASSERT(result != FF_SUCCESS, "file already deleted");
 
 	ff_core_shutdown();
 }
@@ -967,11 +967,11 @@ static void test_file_basic()
 	result = ff_file_copy(L"test.txt", L"test1.txt");
 	ASSERT(result == FF_SUCCESS, "file should be copied");
 	result = ff_file_copy(L"test.txt", L"test1.txt");
-	ASSERT(result == FF_FAILURE, "cannot copy to existing file");
+	ASSERT(result != FF_SUCCESS, "cannot copy to existing file");
 	result = ff_file_move(L"test.txt", L"test2.txt");
 	ASSERT(result == FF_SUCCESS, "file should be moved");
 	result = ff_file_move(L"test.txt", L"test2.txt");
-	ASSERT(result == FF_FAILURE, "cannot move to existing file");
+	ASSERT(result != FF_SUCCESS, "cannot move to existing file");
 
 	file = ff_file_open(L"test1.txt", FF_FILE_READ);
 	ASSERT(file != NULL, "file copy should exist");
@@ -1050,7 +1050,7 @@ static void test_arch_net_addr_resolve_fail()
 	ff_core_initialize(LOG_FILENAME);
 	addr = ff_arch_net_addr_create();
 	result = ff_arch_net_addr_resolve(addr, L"non.existant,address", 123);
-	ASSERT(result == FF_FAILURE, "address shouldn't be resolved");
+	ASSERT(result != FF_SUCCESS, "address shouldn't be resolved");
 	ff_arch_net_addr_delete(addr);
 	ff_core_shutdown();
 }
@@ -1302,9 +1302,9 @@ static void stream_tcp_basic_func(void *ctx)
 	ASSERT(is_equal, "wrong data received from tcp stream");
 	ff_stream_disconnect(client_stream);
 	result = ff_stream_read(client_stream, buf, 3);
-	ASSERT(result == FF_FAILURE, "stream didn't disconnected");
+	ASSERT(result != FF_SUCCESS, "stream didn't disconnected");
 	result = ff_stream_write(client_stream, "foo", 3);
-	ASSERT(result == FF_FAILURE, "stream didn't disconnected");
+	ASSERT(result != FF_SUCCESS, "stream didn't disconnected");
 	ff_stream_delete(client_stream);
 	ff_event_wait(data->event);
 	ff_arch_net_addr_delete(remote_addr);
@@ -1342,10 +1342,10 @@ static void test_stream_tcp_basic()
 	result = ff_stream_flush(client_stream);
 	ASSERT(result == FF_SUCCESS, "cannot flush the stream");
 	result = ff_stream_read(client_stream, buf, 3);
-	ASSERT(result == FF_FAILURE, "stream should be disconnected");
+	ASSERT(result != FF_SUCCESS, "stream should be disconnected");
 	ff_stream_disconnect(client_stream);
 	result = ff_stream_write(client_stream, "bar", 3);
-	ASSERT(result == FF_FAILURE, "stream should be disconnected");
+	ASSERT(result != FF_SUCCESS, "stream should be disconnected");
 	ff_event_set(data.event);
 	ff_stream_delete(client_stream);
 	ff_arch_net_addr_delete(addr);
@@ -1410,7 +1410,7 @@ static void stream_tcp_with_timeout_basic_func(void *ctx)
 	is_equal = (memcmp(buf, "bar", 3) == 0);
 	ASSERT(is_equal, "wrong data received from tcp stream");
 	result = ff_stream_read(client_stream, buf, 3);
-	ASSERT(result == FF_FAILURE, "stream shouldn't provide any data");
+	ASSERT(result != FF_SUCCESS, "stream shouldn't provide any data");
 	ff_event_wait(data->event);
 	ff_stream_delete(client_stream);
 	ff_arch_net_addr_delete(remote_addr);
@@ -1448,7 +1448,7 @@ static void test_stream_tcp_with_timeout_basic()
 	result = ff_stream_flush(client_stream);
 	ASSERT(result == FF_SUCCESS, "cannot flush the stream");
 	result = ff_stream_read(client_stream, buf, 3);
-	ASSERT(result == FF_FAILURE, "stream shouldn't provide any data");
+	ASSERT(result != FF_SUCCESS, "stream shouldn't provide any data");
 	ff_event_set(data.event);
 	ff_stream_delete(client_stream);
 	ff_arch_net_addr_delete(addr);

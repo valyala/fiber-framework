@@ -67,7 +67,7 @@ enum ff_result ff_semaphore_down_with_timeout(struct ff_semaphore *semaphore, in
 	while (semaphore->value == 0)
 	{
 		result = ff_event_wait_with_timeout(semaphore->event, timeout);
-		if (result == FF_FAILURE)
+		if (result != FF_SUCCESS)
 		{
 			goto end;
 		}

@@ -54,7 +54,7 @@ enum ff_result ff_write_stream_buffer_write(struct ff_write_stream_buffer *buffe
 		{
 			/* the buffer is full, so flush its contents to the underlying stream */
 			result = ff_write_stream_buffer_flush(buffer);
-			if (result == FF_FAILURE)
+			if (result != FF_SUCCESS)
 			{
 				goto end;
 			}
