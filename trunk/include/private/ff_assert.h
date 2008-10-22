@@ -1,17 +1,12 @@
 #ifndef FF_ASSERT_PRIVATE
 #define FF_ASSERT_PRIVATE
 
-#include <assert.h>
+#include "ff/ff_assert.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/**
- * @public
- * The same as assert()
- */
-#define ff_assert assert
 
 #ifdef __cplusplus
 }
