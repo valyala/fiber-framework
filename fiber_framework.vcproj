@@ -740,6 +740,10 @@
 				Name="ff"
 				>
 				<File
+					RelativePath=".\include\ff\ff_api.h"
+					>
+				</File>
+				<File
 					RelativePath=".\include\ff\ff_blocking_queue.h"
 					>
 				</File>
@@ -773,6 +777,10 @@
 				</File>
 				<File
 					RelativePath=".\include\ff\ff_log.h"
+					>
+				</File>
+				<File
+					RelativePath=".\include\ff\ff_malloc.h"
 					>
 				</File>
 				<File
