@@ -209,6 +209,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\ff_endpoint_tcp.c"
+				>
+			</File>
+			<File
 				RelativePath=".\src\ff_event.c"
 				>
 			</File>
@@ -620,6 +624,10 @@
 					>
 				</File>
 				<File
+					RelativePath=".\include\private\ff_endpoint_tcp.h"
+					>
+				</File>
+				<File
 					RelativePath=".\include\private\ff_event.h"
 					>
 				</File>
@@ -765,6 +773,10 @@
 				</File>
 				<File
 					RelativePath=".\include\ff\ff_endpoint.h"
+					>
+				</File>
+				<File
+					RelativePath=".\include\ff\ff_endpoint_tcp.h"
 					>
 				</File>
 				<File
