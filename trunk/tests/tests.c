@@ -12,6 +12,7 @@
 #include "ff/arch/ff_arch_net_addr.h"
 #include "ff/ff_tcp.h"
 #include "ff/ff_stream_tcp.h"
+#include "ff/ff_endpoint_tcp.h"
 #include "ff/ff_udp.h"
 
 #include <stdio.h>
@@ -1414,6 +1415,105 @@ static void test_stream_tcp_all()
 #pragma endregion
 
 
+#pragma region ff_endpoint_tcp tests
+
+static void test_endpoint_tcp_create_delete()
+{
+	struct ff_endpoint *endpoint;
+	struct ff_tcp *tcp_endpoint;
+	struct ff_arch_net_addr *addr;
+	enum ff_result result;
+
+	ff_core_initialize(LOG_FILENAME);
+	addr = ff_arch_net_addr_create();
+	result = ff_arch_net_addr_resolve(addr, L"localhost", 8326);
+	ASSERT(result == FF_SUCCESS, "cannot resolve local address");
+	tcp_endpoint = ff_tcp_create();
+	result = ff_tcp_bind(tcp_endpoint, addr, FF_TCP_SERVER);
+	ASSERT(result == FF_SUCCESS, "cannot bind to the local address");
+	endpoint = ff_endpoint_tcp_create(tcp_endpoint);
+	ASSERT(endpoint != NULL, "endpoint cannot be NULL");
+	ff_endpoint_delete(endpoint);
+	ff_arch_net_addr_delete(addr);
+	ff_core_shutdown();
+}
+
+static void endpoint_tcp_basic_func(void *ctx)
+{
+	struct ff_endpoint *endpoint;
+	struct ff_stream *client_stream;
+	char buf[3];
+	int is_equal;
+	enum ff_result result;
+
+	endpoint = (struct ff_endpoint *) ctx;
+	client_stream = ff_endpoint_accept(endpoint);
+	ASSERT(client_stream != NULL, "client should be connected");
+	result = ff_stream_write(client_stream, "qwe", 3);
+	ASSERT(result == FF_SUCCESS, "cannot write data to the stream");
+	result = ff_stream_flush(client_stream);
+	ASSERT(result == FF_SUCCESS, "cannot flush the stream");
+	result = ff_stream_read(client_stream, buf, 3);
+	ASSERT(result == FF_SUCCESS, "cannot read from the stream");
+	is_equal = (memcmp(buf, "qwe", 3) == 0);
+	ASSERT(is_equal, "wrong data received from the stream");
+	ff_endpoint_disconnect(endpoint);
+	ff_stream_delete(client_stream);
+}
+
+static void test_endpoint_tcp_basic()
+{
+	struct ff_endpoint *endpoint;
+	struct ff_tcp *tcp_endpoint;
+	struct ff_tcp *client_tcp;
+	struct ff_arch_net_addr *addr;
+	struct ff_stream *client_stream;
+	char buf[3];
+	int is_equal;
+	enum ff_result result;
+
+	ff_core_initialize(LOG_FILENAME);
+	addr = ff_arch_net_addr_create();
+	result = ff_arch_net_addr_resolve(addr, L"localhost", 8327);
+	ASSERT(result == FF_SUCCESS, "cannot resolve local address");
+	tcp_endpoint = ff_tcp_create();
+	result = ff_tcp_bind(tcp_endpoint, addr, FF_TCP_SERVER);
+	ASSERT(result == FF_SUCCESS, "cannot bind to the local address");
+	endpoint = ff_endpoint_tcp_create(tcp_endpoint);
+	ASSERT(endpoint != NULL, "endpoint cannot be NULL");
+
+	ff_core_fiberpool_execute_async(endpoint_tcp_basic_func, endpoint);
+	client_tcp = ff_tcp_create();
+	result = ff_tcp_connect(client_tcp, addr);
+	ASSERT(result == FF_SUCCESS, "cannot connect to local address");
+	result = ff_tcp_read(client_tcp, buf, 3);
+	ASSERT(result == FF_SUCCESS, "cannot read data from the client stream");
+	is_equal = (memcmp(buf, "qwe", 3) == 0);
+	ASSERT(is_equal, "wrong data received from the client stream");
+	result = ff_tcp_write(client_tcp, buf, 3);
+	ASSERT(result == FF_SUCCESS, "cannot write data to the client stream");
+	result = ff_tcp_flush(client_tcp);
+	ASSERT(result == FF_SUCCESS, "cannot flush the client stream");
+	ff_tcp_delete(client_tcp);
+
+	client_stream = ff_endpoint_accept(endpoint);
+	ASSERT(client_stream == NULL, "endpoint should be disconnected at the moment");
+
+	ff_endpoint_delete(endpoint);
+	ff_arch_net_addr_delete(addr);
+	ff_core_shutdown();
+}
+
+static void test_endpoint_tcp_all()
+{
+	test_endpoint_tcp_create_delete();
+	test_endpoint_tcp_basic();
+}
+
+/* end of ff_endpoint_tcp tests */
+#pragma endregion
+
+
 #pragma region ff_udp tests
 
 static void test_udp_create_delete()
@@ -1535,6 +1635,7 @@ static void test_all()
 	test_arch_net_addr_all();
 	test_tcp_all();
 	test_stream_tcp_all();
+	test_endpoint_tcp_all();
 	test_udp_all();
 }
 
