@@ -11,7 +11,7 @@ static void delete_tcp_endpoint(struct ff_endpoint *endpoint)
 {
 	struct ff_tcp *tcp_endpoint;
 
-	tcp_endpoint = (struct ff_tcp *tcp) ff_endpoint_get_ctx(endpoint);
+	tcp_endpoint = (struct ff_tcp *) ff_endpoint_get_ctx(endpoint);
 	ff_tcp_delete(tcp_endpoint);
 }
 
@@ -22,7 +22,7 @@ static struct ff_stream *accept_tcp_endpoint(struct ff_endpoint *endpoint)
 	struct ff_arch_net_addr *client_addr;
 	struct ff_stream *client_stream = NULL;
 
-	tcp_endpoint = (struct ff_tcp *tcp) ff_endpoint_get_ctx(endpoint);
+	tcp_endpoint = (struct ff_tcp *) ff_endpoint_get_ctx(endpoint);
 	client_addr = ff_arch_net_addr_create();
 	tcp_client = ff_tcp_accept(tcp_endpoint, client_addr);
 	ff_arch_net_addr_delete(client_addr);
@@ -38,7 +38,7 @@ static void disconnect_tcp_endpoint(struct ff_endpoint *endpoint)
 {
 	struct ff_tcp *tcp_endpoint;
 
-	tcp_endpoint = (struct ff_tcp *tcp) ff_endpoint_get_ctx(endpoint);
+	tcp_endpoint = (struct ff_tcp *) ff_endpoint_get_ctx(endpoint);
 	ff_tcp_disconnect(tcp_endpoint);
 }
 
