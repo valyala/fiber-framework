@@ -205,6 +205,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\ff_endpoint.c"
+				>
+			</File>
+			<File
 				RelativePath=".\src\ff_event.c"
 				>
 			</File>
@@ -616,6 +620,10 @@
 					>
 				</File>
 				<File
+					RelativePath=".\include\private\ff_endpoint.h"
+					>
+				</File>
+				<File
 					RelativePath=".\include\private\ff_event.h"
 					>
 				</File>
@@ -761,6 +769,10 @@
 				</File>
 				<File
 					RelativePath=".\include\ff\ff_core.h"
+					>
+				</File>
+				<File
+					RelativePath=".\include\ff\ff_endpoint.h"
 					>
 				</File>
 				<File
