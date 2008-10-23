@@ -45,7 +45,7 @@ struct ff_stream_vtable
  * Creates a stream using the given vtable and ctx.
  * ctx then can be obtained by ff_stream_get_ctx() function.
  */
-FF_API struct ff_stream *ff_stream_create(struct ff_stream_vtable *vtable, void *ctx);
+FF_API struct ff_stream *ff_stream_create(const struct ff_stream_vtable *vtable, void *ctx);
 
 /**
  * Deletes the stream.

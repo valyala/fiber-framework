@@ -8,11 +8,11 @@
 
 struct ff_stream
 {
-	struct ff_stream_vtable *vtable;
+	const struct ff_stream_vtable *vtable;
 	void *ctx;
 };
 
-struct ff_stream *ff_stream_create(struct ff_stream_vtable *vtable, void *ctx)
+struct ff_stream *ff_stream_create(const struct ff_stream_vtable *vtable, void *ctx)
 {
 	struct ff_stream *stream;
 
