@@ -52,7 +52,7 @@ static void disconnect_tcp(struct ff_stream *stream)
 	ff_tcp_disconnect(tcp);
 }
 
-static struct ff_stream_vtable tcp_stream_vtable =
+static const struct ff_stream_vtable tcp_stream_vtable =
 {
 	delete_tcp,
 	read_from_tcp,

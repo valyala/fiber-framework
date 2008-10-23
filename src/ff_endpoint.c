@@ -5,11 +5,11 @@
 
 struct ff_endpoint
 {
-	struct ff_endpoint_vtable *vtable;
+	const struct ff_endpoint_vtable *vtable;
 	void *ctx;
 };
 
-struct ff_endpoint *ff_endpoint_create(struct ff_endpoint_vtable *vtable, void *ctx)
+struct ff_endpoint *ff_endpoint_create(const struct ff_endpoint_vtable *vtable, void *ctx)
 {
 	struct ff_endpoint *endpoint;
 

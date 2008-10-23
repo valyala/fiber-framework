@@ -35,7 +35,7 @@ struct ff_endpoint_vtable
  * Creates and endpoint using given vtable and ctx.
  * ctx then can be obtained by ff_endpoint_get_ctx() function.
  */
-FF_API struct ff_endpoint *ff_endpoint_create(struct ff_endpoint_vtable *vtable, void *ctx);
+FF_API struct ff_endpoint *ff_endpoint_create(const struct ff_endpoint_vtable *vtable, void *ctx);
 
 /**
  * Returns context passed to the ff_endpoint_create().
