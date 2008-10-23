@@ -25,6 +25,7 @@ MAIN_OBJS= \
 	$(SRC_DIR)/ff_core.o \
 	$(SRC_DIR)/ff_dictionary.o \
 	$(SRC_DIR)/ff_endpoint.o \
+	$(SRC_DIR)/ff_endpoint_tcp.o \
 	$(SRC_DIR)/ff_event.o \
 	$(SRC_DIR)/ff_fiber.o \
 	$(SRC_DIR)/ff_fiberpool.o \
