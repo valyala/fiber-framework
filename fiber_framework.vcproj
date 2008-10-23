@@ -269,10 +269,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\src\ff_stream_tcp_with_timeout.c"
-				>
-			</File>
-			<File
 				RelativePath=".\src\ff_tcp.c"
 				>
 			</File>
@@ -684,10 +680,6 @@
 					>
 				</File>
 				<File
-					RelativePath=".\include\private\ff_stream_tcp_with_timeout.h"
-					>
-				</File>
-				<File
 					RelativePath=".\include\private\ff_tcp.h"
 					>
 				</File>
@@ -817,10 +809,6 @@
 				</File>
 				<File
 					RelativePath=".\include\ff\ff_stream_tcp.h"
-					>
-				</File>
-				<File
-					RelativePath=".\include\ff\ff_stream_tcp_with_timeout.h"
 					>
 				</File>
 				<File
