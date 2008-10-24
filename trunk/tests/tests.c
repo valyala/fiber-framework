@@ -13,6 +13,7 @@
 #include "ff/ff_tcp.h"
 #include "ff/ff_stream_tcp.h"
 #include "ff/ff_endpoint_tcp.h"
+#include "ff/ff_stream_connector_tcp.h"
 #include "ff/ff_udp.h"
 
 #include <stdio.h>
@@ -1561,6 +1562,120 @@ static void test_endpoint_tcp_all()
 /* end of ff_endpoint_tcp tests */
 #pragma endregion
 
+#pragma region ff_stream_connector_tcp tests
+
+static void test_stream_connector_tcp_create_delete()
+{
+	struct ff_stream_connector *stream_connector;
+	struct ff_arch_net_addr *addr;
+	enum ff_result result;
+
+	ff_core_initialize(LOG_FILENAME);
+	addr = ff_arch_net_addr_create();
+	result = ff_arch_net_addr_resolve(addr, L"localhost", 13741);
+	ASSERT(result == FF_SUCCESS, "cannot resolve local address");
+	stream_connector = ff_stream_connector_tcp_create(addr);
+	ASSERT(stream_connector != NULL, "cannot create stream connector");
+	ff_stream_connector_delete(stream_connector);
+	/* there is no need to call the ff_arch_net_addr_delete(addr) herer,
+	 * because ff_stream_connector_delete() already deleted it
+	 */
+	ff_core_shutdown();
+}
+
+static void test_stream_connector_tcp_failure()
+{
+	struct ff_stream_connector *stream_connector;
+	struct ff_arch_net_addr *addr;
+	struct ff_stream *stream;
+	enum ff_result result;
+
+	ff_core_initialize(LOG_FILENAME);
+	addr = ff_arch_net_addr_create();
+	result = ff_arch_net_addr_resolve(addr, L"localhost", 13761);
+	ASSERT(result == FF_SUCCESS, "cannot resolve local address");
+	stream_connector = ff_stream_connector_tcp_create(addr);
+	ASSERT(stream_connector != NULL, "cannot create stream connector");
+	stream = ff_stream_connector_connect(stream_connector);
+	ASSERT(stream == NULL, "unexpected connection established to closed TCP address");
+	ff_stream_connector_delete(stream_connector);
+	/* there is no need to call the ff_arch_net_addr_delete(addr) herer,
+	 * because ff_stream_connector_delete() already deleted it
+	 */
+	ff_core_shutdown();
+}
+
+static void stream_connector_tcp_connect_func(void *ctx)
+{
+	struct ff_tcp *server_tcp;
+	struct ff_arch_net_addr *addr;
+
+	server_tcp = (struct ff_tcp *) ctx;
+	addr = ff_arch_net_addr_create();
+	for (;;)
+	{
+		struct ff_tcp *client_tcp;
+
+		client_tcp = ff_tcp_accept(server_tcp, addr);
+		if (client_tcp == NULL)
+		{
+			break;
+		}
+		ff_tcp_delete(client_tcp);
+	}
+	ff_arch_net_addr_delete(addr);
+	ff_tcp_delete(server_tcp);
+}
+
+static void test_stream_connector_tcp_connect()
+{
+	struct ff_arch_net_addr *addr;
+	struct ff_tcp *server_tcp;
+	struct ff_stream_connector *stream_connector;
+	int i;
+	enum ff_result result;
+
+	ff_core_initialize(LOG_FILENAME);
+	addr = ff_arch_net_addr_create();
+	result = ff_arch_net_addr_resolve(addr, L"localhost", 3214);
+	ASSERT(result == FF_SUCCESS, "cannot resolve local address");
+	server_tcp = ff_tcp_create();
+	result = ff_tcp_bind(server_tcp, addr, FF_TCP_SERVER);
+	ASSERT(result == FF_SUCCESS, "cannot bind to the local address");
+
+	ff_core_fiberpool_execute_async(stream_connector_tcp_connect_func, server_tcp);
+	stream_connector = ff_stream_connector_tcp_create(addr);
+
+	for (i = 0; i < 10; i++)
+	{
+		struct ff_stream *stream;
+
+		stream = ff_stream_connector_connect(stream_connector);
+		ASSERT(stream != NULL, "cannot connect to local server using stream connector");
+		ff_stream_delete(stream);
+	}
+
+	ff_stream_connector_delete(stream_connector);
+	ff_tcp_disconnect(server_tcp);
+
+	/* there is no need to call the ff_arch_net_addr_delete(addr) herer,
+	 * because ff_stream_connector_delete() already deleted it
+	 */
+
+	/* server_tcp will be deleted in the stream_connector_tcp_connect_func */
+	ff_core_shutdown();
+}
+
+static void test_stream_connector_tcp_all()
+{
+	test_stream_connector_tcp_create_delete();
+	test_stream_connector_tcp_failure();
+	test_stream_connector_tcp_connect();
+}
+
+/* end of ff_stream_connector_tcp tests */
+#pragma endregion
+
 
 #pragma region ff_udp tests
 
@@ -1684,6 +1799,7 @@ static void test_all()
 	test_tcp_all();
 	test_stream_tcp_all();
 	test_endpoint_tcp_all();
+	test_stream_connector_tcp_all();
 	test_udp_all();
 }
 
