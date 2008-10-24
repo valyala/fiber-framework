@@ -18,17 +18,29 @@ struct ff_endpoint_vtable
 	void (*delete)(struct ff_endpoint *endpoint);
 
 	/**
-	 * the accept() callback should return next accepted stream or NULL on error
-	 * or after the ff_endpoint_disconnect() was called.
+	 * the initialize() callback should initialize the endpoint for subsequent usage
+	 * of the ff_endpoint_accept() method.
+	 * This method is called before the first call into the accept() callback
+	 * and after the shutdown() call.
+	 * The function should return FF_SUCCESS on success, FF_FAILURE on error.
 	 */
-	struct ff_stream *(*accept)(struct ff_endpoint *endpoint);
+	enum ff_result (*initialize)(struct ff_endpoint *endpoint);
 
 	/**
-	 * the disconnect() callback should unblock the currently blocked ff_endpoint_accept()
+	 * the shutdown() callback should unblock the currently blocked ff_endpoint_accept()
 	 * functions. These functions should return NULL and subsequent calls to the ff_endpoint_accept()
 	 * should immediately return NULL without blocking.
+	 * Subsequent call to the initialize() callback should restore ff_endpoint_accept()
+	 * functionality.
 	 */
-	void (*disconnect)(struct ff_endpoint *endpoint);
+	void (*shutdown)(struct ff_endpoint *endpoint);
+
+	/**
+	 * the accept() callback should return next accepted stream or NULL on error
+	 * or after the ff_endpoint_shutdown() was called or if the ff_endpoint_initialize()
+	 * wasn't called before.
+	 */
+	struct ff_stream *(*accept)(struct ff_endpoint *endpoint);
 };
 
 /**
@@ -38,14 +50,31 @@ struct ff_endpoint_vtable
 FF_API struct ff_endpoint *ff_endpoint_create(const struct ff_endpoint_vtable *vtable, void *ctx);
 
 /**
+ * Deletes the given endpoint.
+ */
+FF_API void ff_endpoint_delete(struct ff_endpoint *endpoint);
+
+/**
  * Returns context passed to the ff_endpoint_create().
  */
 FF_API void *ff_endpoint_get_ctx(struct ff_endpoint *endpoint);
 
 /**
- * Deletes the given endpoint.
+ * Initializes the endpoint.
+ * Returns FF_SUCCESS on success, FF_FAILURE on error.
+ * This function should be called before calling into the ff_endpoint_accept()
+ * and after the ff_endpoint_shutdown() was called.
  */
-FF_API void ff_endpoint_delete(struct ff_endpoint *endpoint);
+FF_API enum ff_result ff_endpoint_initialize(struct ff_endpoint *endpoint);
+
+/**
+ * Shutdowns the endpoint. Currently blocked ff_endpoint_accept() calls
+ * immediately unblock and return NULL. Subsequent calls to the ff_endpoint_accept()
+ * immediately return NULL without blocking.
+ * The endpoint can be restored by subsequent call into the ff_endpoint_initialize(),
+ * so the ff_endpoint_accept() will work again.
+ */
+FF_API void ff_endpoint_shutdown(struct ff_endpoint *endpoint);
 
 /**
  * Accepts the next stream from the endpoint.
@@ -53,13 +82,6 @@ FF_API void ff_endpoint_delete(struct ff_endpoint *endpoint);
  * or after the ff_endpoint_disconnect() was called.
  */
 FF_API struct ff_stream *ff_endpoint_accept(struct ff_endpoint *endpoint);
-
-/**
- * Shutdowns the endpoint. Currently blocked ff_endpoint_accept() calls
- * immediately unblock and return NULL. Subsequent calls to the ff_endpoint_accept()
- * immediately return NULL without blocking.
- */
-FF_API void ff_endpoint_disconnect(struct ff_endpoint *endpoint);
 
 #ifdef __cplusplus
 }

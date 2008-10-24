@@ -1420,7 +1420,6 @@ static void test_stream_tcp_all()
 static void test_endpoint_tcp_create_delete()
 {
 	struct ff_endpoint *endpoint;
-	struct ff_tcp *tcp_endpoint;
 	struct ff_arch_net_addr *addr;
 	enum ff_result result;
 
@@ -1428,13 +1427,60 @@ static void test_endpoint_tcp_create_delete()
 	addr = ff_arch_net_addr_create();
 	result = ff_arch_net_addr_resolve(addr, L"localhost", 8326);
 	ASSERT(result == FF_SUCCESS, "cannot resolve local address");
-	tcp_endpoint = ff_tcp_create();
-	result = ff_tcp_bind(tcp_endpoint, addr, FF_TCP_SERVER);
-	ASSERT(result == FF_SUCCESS, "cannot bind to the local address");
-	endpoint = ff_endpoint_tcp_create(tcp_endpoint);
+	endpoint = ff_endpoint_tcp_create(addr);
 	ASSERT(endpoint != NULL, "endpoint cannot be NULL");
 	ff_endpoint_delete(endpoint);
-	ff_arch_net_addr_delete(addr);
+	/* there is no need to call ff_arch_net_addr_delete(addr), because
+	 * the ff_endpoint_delete() automatically deletes it
+	 */
+	ff_core_shutdown();
+}
+
+static void test_endpoint_tcp_initialize_shutdown()
+{
+	struct ff_endpoint *endpoint;
+	struct ff_arch_net_addr *addr;
+	enum ff_result result;
+
+	ff_core_initialize(LOG_FILENAME);
+	addr = ff_arch_net_addr_create();
+	result = ff_arch_net_addr_resolve(addr, L"localhost", 8336);
+	ASSERT(result == FF_SUCCESS, "cannot resolve local address");
+	endpoint = ff_endpoint_tcp_create(addr);
+	ASSERT(endpoint != NULL, "endpoint cannot be NULL");
+	result = ff_endpoint_initialize(endpoint);
+	ASSERT(result == FF_SUCCESS, "cannot initialize endpoint");
+	ff_endpoint_shutdown(endpoint);
+	ff_endpoint_delete(endpoint);
+	/* there is no need to call ff_arch_net_addr_delete(addr), because
+	 * the ff_endpoint_delete() automatically deletes it
+	 */
+	ff_core_shutdown();
+}
+
+static void test_endpoint_tcp_initialize_shutdown_multiple()
+{
+	struct ff_endpoint *endpoint;
+	struct ff_arch_net_addr *addr;
+	int i;
+	enum ff_result result;
+
+	ff_core_initialize(LOG_FILENAME);
+	addr = ff_arch_net_addr_create();
+	result = ff_arch_net_addr_resolve(addr, L"localhost", 8332);
+	ASSERT(result == FF_SUCCESS, "cannot resolve local address");
+	endpoint = ff_endpoint_tcp_create(addr);
+	ASSERT(endpoint != NULL, "endpoint cannot be NULL");
+	for (i = 0; i < 10; i++)
+	{
+		result = ff_endpoint_initialize(endpoint);
+		ASSERT(result == FF_SUCCESS, "cannot initialize endpoint");
+		ff_endpoint_shutdown(endpoint);
+	}
+	ff_endpoint_delete(endpoint);
+	/* there is no need to call ff_arch_net_addr_delete(addr), because
+	 * the ff_endpoint_delete() automatically deletes it
+	 */
 	ff_core_shutdown();
 }
 
@@ -1457,14 +1503,13 @@ static void endpoint_tcp_basic_func(void *ctx)
 	ASSERT(result == FF_SUCCESS, "cannot read from the stream");
 	is_equal = (memcmp(buf, "qwe", 3) == 0);
 	ASSERT(is_equal, "wrong data received from the stream");
-	ff_endpoint_disconnect(endpoint);
+	ff_endpoint_shutdown(endpoint);
 	ff_stream_delete(client_stream);
 }
 
 static void test_endpoint_tcp_basic()
 {
 	struct ff_endpoint *endpoint;
-	struct ff_tcp *tcp_endpoint;
 	struct ff_tcp *client_tcp;
 	struct ff_arch_net_addr *addr;
 	struct ff_stream *client_stream;
@@ -1476,11 +1521,10 @@ static void test_endpoint_tcp_basic()
 	addr = ff_arch_net_addr_create();
 	result = ff_arch_net_addr_resolve(addr, L"localhost", 8327);
 	ASSERT(result == FF_SUCCESS, "cannot resolve local address");
-	tcp_endpoint = ff_tcp_create();
-	result = ff_tcp_bind(tcp_endpoint, addr, FF_TCP_SERVER);
-	ASSERT(result == FF_SUCCESS, "cannot bind to the local address");
-	endpoint = ff_endpoint_tcp_create(tcp_endpoint);
+	endpoint = ff_endpoint_tcp_create(addr);
 	ASSERT(endpoint != NULL, "endpoint cannot be NULL");
+	result = ff_endpoint_initialize(endpoint);
+	ASSERT(result == FF_SUCCESS, "cannot initialize the endpoint");
 
 	ff_core_fiberpool_execute_async(endpoint_tcp_basic_func, endpoint);
 	client_tcp = ff_tcp_create();
@@ -1500,13 +1544,17 @@ static void test_endpoint_tcp_basic()
 	ASSERT(client_stream == NULL, "endpoint should be disconnected at the moment");
 
 	ff_endpoint_delete(endpoint);
-	ff_arch_net_addr_delete(addr);
+	/* there is no need to call the ff_arch_net_addr_delete(addr) here,
+	 * because ff_endpoint_delete() automatically deletes it
+	 */
 	ff_core_shutdown();
 }
 
 static void test_endpoint_tcp_all()
 {
 	test_endpoint_tcp_create_delete();
+	test_endpoint_tcp_initialize_shutdown();
+	test_endpoint_tcp_initialize_shutdown_multiple();
 	test_endpoint_tcp_basic();
 }
 
