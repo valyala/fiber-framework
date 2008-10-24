@@ -41,6 +41,7 @@ MAIN_OBJS= \
 	$(SRC_DIR)/ff_stack.o \
 	$(SRC_DIR)/ff_stream.o \
 	$(SRC_DIR)/ff_stream_connector.o \
+	$(SRC_DIR)/ff_stream_connector_tcp.o \
 	$(SRC_DIR)/ff_stream_tcp.o \
 	$(SRC_DIR)/ff_tcp.o \
 	$(SRC_DIR)/ff_threadpool.o \
