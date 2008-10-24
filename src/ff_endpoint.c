@@ -31,15 +31,23 @@ void *ff_endpoint_get_ctx(struct ff_endpoint *endpoint)
 	return endpoint->ctx;
 }
 
+enum ff_result ff_endpoint_initialize(struct ff_endpoint *endpoint)
+{
+	enum ff_result result;
+
+	result = endpoint->vtable->initialize(endpoint);
+	return result;
+}
+
+void ff_endpoint_shutdown(struct ff_endpoint *endpoint)
+{
+	endpoint->vtable->shutdown(endpoint);
+}
+
 struct ff_stream *ff_endpoint_accept(struct ff_endpoint *endpoint)
 {
 	struct ff_stream *stream;
 
 	stream = endpoint->vtable->accept(endpoint);
 	return stream;
-}
-
-void ff_endpoint_disconnect(struct ff_endpoint *endpoint)
-{
-	endpoint->vtable->disconnect(endpoint);
 }
