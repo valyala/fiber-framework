@@ -1,15 +1,15 @@
 #include "private/ff_common.h"
 
-#include "private/stream_connector.h"
+#include "private/ff_stream_connector.h"
 #include "private/ff_stream.h"
 
 struct ff_stream_connector
 {
-	const ff_stream_connector_vtable *vtable;
+	const struct ff_stream_connector_vtable *vtable;
 	void *ctx;
 };
 
-struct ff_stream_connector *ff_stream_connector_create(const ff_stream_connector_vtable *vtable, void *ctx)
+struct ff_stream_connector *ff_stream_connector_create(const struct ff_stream_connector_vtable *vtable, void *ctx)
 {
 	struct ff_stream_connector *stream_connector;
 

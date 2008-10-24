@@ -16,7 +16,7 @@ struct ff_stream_connector_vtable
 	struct ff_stream *(*connect)(struct ff_stream_connector *stream_connector);
 };
 
-FF_API struct ff_stream_connector *ff_stream_connector_create(const ff_stream_connector_vtable *vtable, void *ctx);
+FF_API struct ff_stream_connector *ff_stream_connector_create(const struct ff_stream_connector_vtable *vtable, void *ctx);
 
 FF_API void ff_stream_connector_delete(struct ff_stream_connector *stream_connector);
 
