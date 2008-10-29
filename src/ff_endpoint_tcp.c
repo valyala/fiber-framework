@@ -6,6 +6,7 @@
 #include "private/ff_stream_tcp.h"
 #include "private/ff_stream.h"
 #include "private/arch/ff_arch_net_addr.h"
+#include "private/ff_log.h"
 
 struct tcp_endpoint
 {
@@ -23,7 +24,7 @@ static void delete_tcp_endpoint(struct ff_endpoint *endpoint)
 	ff_free(tcp_endpoint);
 }
 
-static enum ff_result initialize_tcp_endpoint(struct ff_endpoint *endpoint)
+static void initialize_tcp_endpoint(struct ff_endpoint *endpoint)
 {
 	struct tcp_endpoint *tcp_endpoint;
 	enum ff_result result;
@@ -32,7 +33,16 @@ static enum ff_result initialize_tcp_endpoint(struct ff_endpoint *endpoint)
 	ff_tcp_delete(tcp_endpoint->tcp);
 	tcp_endpoint->tcp = ff_tcp_create();
 	result = ff_tcp_bind(tcp_endpoint->tcp, tcp_endpoint->addr, FF_TCP_SERVER);
-	return result;
+	if (result != FF_SUCCESS)
+	{
+		const wchar_t *str_addr;
+		
+		str_addr = ff_arch_net_addr_to_string(tcp_endpoint->addr);
+		ff_log_fatal_error(L"cannot bind the given tcp endpoint address %ls", str_addr);
+		/* there is no need to call ff_arch_net_addr_delete_string(str_addr) here,
+		 * because ff_log_fatal_error() will terminate the current program
+		 */
+	}
 }
 
 static void shutdown_tcp_endpoint(struct ff_endpoint *endpoint)
