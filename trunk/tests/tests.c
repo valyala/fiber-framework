@@ -1449,8 +1449,7 @@ static void test_endpoint_tcp_initialize_shutdown()
 	ASSERT(result == FF_SUCCESS, "cannot resolve local address");
 	endpoint = ff_endpoint_tcp_create(addr);
 	ASSERT(endpoint != NULL, "endpoint cannot be NULL");
-	result = ff_endpoint_initialize(endpoint);
-	ASSERT(result == FF_SUCCESS, "cannot initialize endpoint");
+	ff_endpoint_initialize(endpoint);
 	ff_endpoint_shutdown(endpoint);
 	ff_endpoint_delete(endpoint);
 	/* there is no need to call ff_arch_net_addr_delete(addr), because
@@ -1474,8 +1473,7 @@ static void test_endpoint_tcp_initialize_shutdown_multiple()
 	ASSERT(endpoint != NULL, "endpoint cannot be NULL");
 	for (i = 0; i < 10; i++)
 	{
-		result = ff_endpoint_initialize(endpoint);
-		ASSERT(result == FF_SUCCESS, "cannot initialize endpoint");
+		ff_endpoint_initialize(endpoint);
 		ff_endpoint_shutdown(endpoint);
 	}
 	ff_endpoint_delete(endpoint);
@@ -1524,8 +1522,7 @@ static void test_endpoint_tcp_basic()
 	ASSERT(result == FF_SUCCESS, "cannot resolve local address");
 	endpoint = ff_endpoint_tcp_create(addr);
 	ASSERT(endpoint != NULL, "endpoint cannot be NULL");
-	result = ff_endpoint_initialize(endpoint);
-	ASSERT(result == FF_SUCCESS, "cannot initialize the endpoint");
+	ff_endpoint_initialize(endpoint);
 
 	ff_core_fiberpool_execute_async(endpoint_tcp_basic_func, endpoint);
 	client_tcp = ff_tcp_create();

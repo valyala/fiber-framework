@@ -22,9 +22,9 @@ struct ff_endpoint_vtable
 	 * of the ff_endpoint_accept() method.
 	 * This method is called before the first call into the accept() callback
 	 * and after the shutdown() call.
-	 * The function should return FF_SUCCESS on success, FF_FAILURE on error.
+	 * The function should call ff_log_fatal_error() if it cannot finish initialization.
 	 */
-	enum ff_result (*initialize)(struct ff_endpoint *endpoint);
+	void (*initialize)(struct ff_endpoint *endpoint);
 
 	/**
 	 * the shutdown() callback should unblock the currently blocked ff_endpoint_accept()
@@ -61,11 +61,10 @@ FF_API void *ff_endpoint_get_ctx(struct ff_endpoint *endpoint);
 
 /**
  * Initializes the endpoint.
- * Returns FF_SUCCESS on success, FF_FAILURE on error.
  * This function should be called before calling into the ff_endpoint_accept()
  * and after the ff_endpoint_shutdown() was called.
  */
-FF_API enum ff_result ff_endpoint_initialize(struct ff_endpoint *endpoint);
+FF_API void ff_endpoint_initialize(struct ff_endpoint *endpoint);
 
 /**
  * Shutdowns the endpoint. Currently blocked ff_endpoint_accept() calls

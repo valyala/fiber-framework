@@ -31,12 +31,9 @@ void *ff_endpoint_get_ctx(struct ff_endpoint *endpoint)
 	return endpoint->ctx;
 }
 
-enum ff_result ff_endpoint_initialize(struct ff_endpoint *endpoint)
+void ff_endpoint_initialize(struct ff_endpoint *endpoint)
 {
-	enum ff_result result;
-
-	result = endpoint->vtable->initialize(endpoint);
-	return result;
+	endpoint->vtable->initialize(endpoint);
 }
 
 void ff_endpoint_shutdown(struct ff_endpoint *endpoint)
