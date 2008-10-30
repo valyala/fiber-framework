@@ -1052,7 +1052,7 @@ static void test_file_create_delete()
 static const wchar_t *create_tmp_unique_file_path()
 {
 	const wchar_t *tmp_dir_path;
-	wchar_t *tmp_file_path;
+	const wchar_t *tmp_file_path;
 	int tmp_dir_path_len;
 	int tmp_file_path_len;
 
