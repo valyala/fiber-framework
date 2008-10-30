@@ -23,6 +23,7 @@ static void initialize_tmp_dir_path()
 {
 	wchar_t *buf;
 	const char *tmp_dir;
+	int tmp_dir_len;
 	int len;
 
 	tmp_dir = getenv("TMPDIR");
@@ -185,6 +186,7 @@ void ff_arch_misc_create_guid_cstr(const wchar_t **guid_cstr, int *guid_cstr_len
 	size_t elements_read;
 	uint8_t buf[16];
 	wchar_t *guid;
+	int len;
 
 	fp = fopen("/dev/urandom", "rb");
 	ff_linux_fatal_error_check(fp != NULL, L"cannot open the /dev/urandom, errno=%d.", errno);
