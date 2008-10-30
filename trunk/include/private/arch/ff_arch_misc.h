@@ -1,7 +1,7 @@
 #ifndef FF_ARCH_MISC_PRIVATE
 #define FF_ARCH_MISC_PRIVATE
 
-#include "private/ff_common.h"
+#include "ff/arch/ff_arch_misc.h"
 #include "private/arch/ff_arch_completion_port.h"
 
 #ifdef __cplusplus
