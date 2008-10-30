@@ -1,6 +1,7 @@
 #include "ff/ff_common.h"
 #include "ff/ff_core.h"
 #include "ff/ff_log.h"
+#include "ff/arch/ff_arch_misc.h"
 #include "ff/ff_fiber.h"
 #include "ff/ff_event.h"
 #include "ff/ff_mutex.h"
@@ -249,6 +250,69 @@ static void test_log_all()
 }
 
 /* end of ff_log tests */
+#pragma endregion
+
+#pragma region ff_arch_misc tests
+
+static void test_arch_misc_get_tmp_dir_path()
+{
+	const wchar_t *tmp_dir_path;
+	int tmp_dir_path_len;
+
+	ff_core_initialize(LOG_FILENAME);
+	ff_arch_misc_get_tmp_dir_path(&tmp_dir_path, &tmp_dir_path_len);
+	ASSERT(tmp_dir_path != NULL, "tmp_dir_path shouldn't be NULL");
+	ASSERT(tmp_dir_path_len > 0, "tmp_dir_path_len should be greater than 0");
+	ASSERT(tmp_dir_path[tmp_dir_path_len - 1] == L'/' || tmp_dir_path[tmp_dir_path_len - 1] == L'\\',
+		"tmp_dir_path should have '/' or '\\' character at the end");
+	ASSERT(tmp_dir_path[tmp_dir_path_len] == L'\0', "tmp_dir_path should be zero-terminated");
+	ff_core_shutdown();
+}
+
+static void test_arch_misc_guid()
+{
+	const wchar_t *guid;
+	int guid_len;
+
+	ff_core_initialize(LOG_FILENAME);
+	ff_arch_misc_create_guid_cstr(&guid, &guid_len);
+	ASSERT(guid != NULL, "guid shouldn't be NULL");
+	ASSERT(guid_len > 0, "guid_len should be greater than 0");
+	ASSERT(guid[guid_len] == L'\0', "guid should be zero-terminated");
+	ff_arch_misc_delete_guid_cstr(guid);
+	ff_core_shutdown();
+}
+
+static void test_arch_misc_unique_file_path()
+{
+	const wchar_t *dir_path;
+	const wchar_t *file_path;
+	int dir_path_len;
+	int file_path_len;
+	int is_equal;
+
+	ff_core_initialize(LOG_FILENAME);
+	ff_arch_misc_get_tmp_dir_path(&dir_path, &dir_path_len);
+	ff_arch_misc_create_unique_file_path(dir_path, dir_path_len, L"prefix.", 6, &file_path, &file_path_len);
+	ASSERT(file_path != NULL, "file_path shouldn't be NULL");
+	ASSERT(file_path_len > dir_path_len + 6, "file_path_len should be greater than dir_path_len + 6");
+	ASSERT(file_path[file_path_len] == L'\0', "file_path should be zero-terminated");
+	is_equal = (memcmp(file_path, dir_path, dir_path_len * sizeof(dir_path[0])) == 0);
+	ASSERT(is_equal, "file_path should start with dir_path");
+	is_equal = (memcmp(file_path + dir_path_len, L"prefix", 6 * sizeof(wchar_t)) == 0);
+	ASSERT(is_equal, "file_path should contain prefix after dir_path");
+	ff_arch_misc_delete_unique_file_path(file_path);
+	ff_core_shutdown();
+}
+
+static void test_arch_misc_all()
+{
+	test_arch_misc_get_tmp_dir_path();
+	test_arch_misc_guid();
+	test_arch_misc_unique_file_path();
+}
+
+/* end of ff_arch_misc tests */
 #pragma endregion
 
 #pragma region ff_fiber tests
@@ -985,6 +1049,58 @@ static void test_file_create_delete()
 	ff_core_shutdown();
 }
 
+static const wchar_t *create_tmp_unique_file_path()
+{
+	const wchar_t *tmp_dir_path;
+	wchar_t *tmp_file_path;
+	int tmp_dir_path_len;
+	int tmp_file_path_len;
+
+	ff_arch_misc_get_tmp_dir_path(&tmp_dir_path, &tmp_dir_path_len);
+	ff_arch_misc_create_unique_file_path(tmp_dir_path, tmp_dir_path_len, L"prefix.", 6,
+		&tmp_file_path, &tmp_file_path_len);
+
+	return tmp_file_path;
+}
+
+static void delete_tmp_unique_file_path(const wchar_t *tmp_file_path)
+{
+	ff_arch_misc_delete_unique_file_path(tmp_file_path);
+}
+
+static void test_file_tmp_unique()
+{
+	struct ff_file *file;
+	const wchar_t *tmp_file_path;
+	char buf[4];
+	int is_equal;
+	enum ff_result result;
+
+	ff_core_initialize(LOG_FILENAME);
+	tmp_file_path = create_tmp_unique_file_path();
+
+	file = ff_file_open(tmp_file_path, FF_FILE_WRITE);
+	ASSERT(file != NULL, "cannot create unique file in the temporary directory");
+	result = ff_file_write(file, "test", 4);
+	ASSERT(result == FF_SUCCESS, "cannot write into temporary file");
+	result = ff_file_flush(file);
+	ASSERT(result == FF_SUCCESS, "cannot flush the file");
+	ff_file_close(file);
+
+	file = ff_file_open(tmp_file_path, FF_FILE_READ);
+	ASSERT(file != NULL, "cannot open unique file in the temporary directory");
+	result = ff_file_read(file, buf, 4);
+	ASSERT(result == FF_SUCCESS, "cannot read from the temporary file");
+	is_equal = (memcmp(buf, "test", 4) == 0);
+	ASSERT(is_equal, "unexpected data read from the file");
+	ff_file_close(file);
+
+	result = ff_file_erase(tmp_file_path);
+	ASSERT(result == FF_SUCCESS, "cannot erase temporary file");
+	delete_tmp_unique_file_path(tmp_file_path);
+	ff_core_shutdown();
+}
+
 static void test_file_basic()
 {
 	struct ff_file *file;
@@ -1051,6 +1167,7 @@ static void test_file_all()
 {
 	test_file_open_read_fail();
 	test_file_create_delete();
+	test_file_tmp_unique();
 	test_file_basic();
 }
 
@@ -1784,6 +1901,7 @@ static void test_all()
 	test_malloc_all();
 	test_core_all();
 	test_log_all();
+	test_arch_misc_all();
 	test_fiber_all();
 	test_event_all();
 	test_mutex_all();
