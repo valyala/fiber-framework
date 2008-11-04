@@ -49,12 +49,24 @@ static void threadpool_open_file_func(void *ctx)
 {
 	struct threadpool_open_file_data *data;
 	DWORD access_rights;
+	DWORD share_mode;
 	DWORD creation_disposition;
 
 	data = (struct threadpool_open_file_data *) ctx;
-	access_rights = (data->access_mode == FF_ARCH_FILE_READ) ? GENERIC_READ : GENERIC_WRITE;
-	creation_disposition = (data->access_mode == FF_ARCH_FILE_READ) ? OPEN_EXISTING : CREATE_ALWAYS;
-	data->handle = CreateFileW(data->path, access_rights, 0, NULL, creation_disposition,
+	if (data->access_mode == FF_ARCH_FILE_READ)
+	{
+		access_rights = GENERIC_READ;
+		share_mode = FILE_SHARE_READ;
+		creation_disposition = OPEN_EXISTING;
+	}
+	else
+	{
+		ff_assert(data->access_mode == FF_ARCH_FILE_WRITE);
+		access_rights = GENERIC_WRITE;
+		share_mode = 0;
+		creation_disposition = CREATE_ALWAYS;
+	}
+	data->handle = CreateFileW(data->path, access_rights, share_mode, NULL, creation_disposition,
 		FILE_FLAG_OVERLAPPED | FILE_FLAG_SEQUENTIAL_SCAN, NULL);
 }
 
