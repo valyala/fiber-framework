@@ -7,10 +7,4 @@
 
 #include "ff/ff_common.h"
 
-#ifdef HAS_THREAD_KEYWORD
-	#define FF_PER_THREAD __thread
-#else
-	#define FF_PER_THREAD __declspec(thread)
-#endif
-
 #endif
