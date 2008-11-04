@@ -1,4 +1,4 @@
-CFLAGS=-Wall -fpic -g -I./include -DHAS_STDINT_H -D_GNU_SOURCE
+CFLAGS=-Wall -fpic -fvisibility=hidden -g -I./include -DHAS_STDINT_H -D_GNU_SOURCE
 LDFLAGS=-lpthread -shared
 CC=gcc
 

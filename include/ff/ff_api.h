@@ -6,7 +6,7 @@
 #elif defined(FF_USE_DLL)
 	#define FF_API __declspec(dllimport)
 #else
-	#define FF_API extern
+	#define FF_API __attribute__((visibility("default")))
 #endif
 
 #endif
