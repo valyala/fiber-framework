@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8,00"
-	Name="fiber_framework"
+	Name="fiber-framework"
 	ProjectGUID="{45AB88BE-CB27-49B0-849A-156FAD7D6D6E}"
-	RootNamespace="fiber_framework"
+	RootNamespace="fiber-framework"
 	Keyword="Win32Proj"
 	>
 	<Platforms>
