@@ -25,6 +25,29 @@
   c ^= b; c -= rot(b,24); \
 }
 
+static uint32_t get_big_endian_uint16_hash(uint32_t start_value, const uint16_t *buf, int buf_size)
+{
+	int uint32_chunks_cnt;
+	uint32_t hash;
+	int tail_size;
+
+	ff_assert(buf_size >= 0);
+
+	uint32_chunks_cnt = buf_size >> 1;
+	hash = ff_hash_uint32(start_value, (const uint32_t *) buf, uint32_chunks_cnt);
+	tail_size = buf_size & 0x01;
+	if (tail_size == 1)
+	{
+		uint32_t tail_uint32;
+		const uint16_t *tail;
+
+		tail = buf + (uint32_chunks_cnt << 1);
+		tail_uint32 = (uint32_t) tail[0];
+		hash = ff_hash_uint32(hash, &tail_uint32, 1);
+	}
+	return hash;
+}
+
 /**
  * Calculates Bob Jenkins' hash for the given buf with the given buf_size size and the given start_value.
  * The function is based on the research http://www.burtleburtle.net/bob/hash/doobs.html
@@ -67,25 +90,38 @@ uint32_t ff_hash_uint32(uint32_t start_value, const uint32_t *buf, int buf_size)
 
 uint32_t ff_hash_uint16(uint32_t start_value, const uint16_t *buf, int buf_size)
 {
-	int uint32_chunks_cnt;
-	uint32_t hash;
-	int tail_size;
-
-	ff_assert(buf_size >= 0);
-
-	uint32_chunks_cnt = buf_size >> 1;
-	hash = ff_hash_uint32(start_value, (const uint32_t *) buf, uint32_chunks_cnt);
-	tail_size = buf_size & 0x01;
-	if (tail_size == 1)
+	static const uint32_t test = 1;
+	static const char *p_test = (const char *) &test;
+	uint32_t hash_value;
+	
+	/* this test for endiannes must be removed by optimizing compiler */
+	if (p_test[0] == 1)
 	{
-		uint32_t tail_uint32;
-		const uint16_t *tail;
-
-		tail = buf + (uint32_chunks_cnt << 1);
-		tail_uint32 = (uint32_t) tail[0];
-		hash = ff_hash_uint32(hash, &tail_uint32, 1);
+		hash_value = get_big_endian_uint16_hash(start_value, buf, buf_size);
 	}
-	return hash;
+	else if (p_test[3] == 1)
+	{
+		uint16_t *tmp_buf;
+		int i;
+
+		tmp_buf = (uint16_t *) ff_calloc(buf_size, sizeof(tmp_buf[0]));
+		for (i = 0; i < buf_size; i++)
+		{
+			uint16_t tmp;
+
+			tmp = buf[i];
+			tmp = (tmp << 8) | (tmp >> 8);
+			tmp_buf[i] = tmp;
+		}
+		hash_value = get_big_endian_uint16_hash(start_value, buf, buf_size);
+		ff_free(tmp_buf);
+	}
+	else
+	{
+		/* unexpected endiannes has been detected ;) */
+		ff_assert(0);
+	}
+	return hash_value;
 }
 
 uint32_t ff_hash_uint8(uint32_t start_value, const uint8_t *buf, int buf_size)
