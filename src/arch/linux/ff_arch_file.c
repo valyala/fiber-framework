@@ -107,7 +107,7 @@ static void threadpool_copy_file_func(void *ctx)
 	buf = (char *) ff_calloc(FILE_COPY_BUF_SIZE, sizeof(buf[0]));
 	for (;;)
 	{
-		ssize_t bytes_read, bytes_written;
+		ssize_t bytes_read;
 
 		for (;;)
 		{
@@ -124,11 +124,13 @@ static void threadpool_copy_file_func(void *ctx)
 		}
 		if (bytes_read == -1)
 		{
-			break;
+			goto error;
 		}
 		ff_assert(bytes_read > 0);
 		while (bytes_read > 0)
 		{
+			ssize_t bytes_written;
+
 			for (;;)
 			{
 				bytes_written = write(dst_fd, buf, bytes_read);
@@ -139,17 +141,14 @@ static void threadpool_copy_file_func(void *ctx)
 			}
 			if (bytes_written == -1)
 			{
-				break;
+				goto error;
 			}
 			ff_assert(bytes_written > 0);
 			bytes_read -= bytes_written;
 		}
-		if (bytes_written == -1)
-		{
-			break;
-		}
 		ff_assert(bytes_read == 0);
 	}
+error:
 	ff_free(buf);
 
 	rv = close(dst_fd);
