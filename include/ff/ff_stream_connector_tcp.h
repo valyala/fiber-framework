@@ -9,6 +9,11 @@
 extern "C" {
 #endif
 
+/**
+ * Creates tcp stream connector, which will establish tcp connections to the given addr.
+ * This function acquires the addr, so the caller mustn't delete the addr!
+ * Always returns correct result.
+ */
 FF_API struct ff_stream_connector *ff_stream_connector_tcp_create(struct ff_arch_net_addr *addr);
 
 #ifdef __cplusplus

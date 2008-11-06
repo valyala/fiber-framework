@@ -202,14 +202,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\src\ff_endpoint.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\ff_endpoint_tcp.c"
-				>
-			</File>
-			<File
 				RelativePath=".\src\ff_event.c"
 				>
 			</File>
@@ -263,6 +255,14 @@
 			</File>
 			<File
 				RelativePath=".\src\ff_stream.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\ff_stream_acceptor.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\ff_stream_acceptor_tcp.c"
 				>
 			</File>
 			<File
@@ -625,14 +625,6 @@
 					>
 				</File>
 				<File
-					RelativePath=".\include\private\ff_endpoint.h"
-					>
-				</File>
-				<File
-					RelativePath=".\include\private\ff_endpoint_tcp.h"
-					>
-				</File>
-				<File
 					RelativePath=".\include\private\ff_event.h"
 					>
 				</File>
@@ -686,6 +678,14 @@
 				</File>
 				<File
 					RelativePath=".\include\private\ff_stream.h"
+					>
+				</File>
+				<File
+					RelativePath=".\include\private\ff_stream_acceptor.h"
+					>
+				</File>
+				<File
+					RelativePath=".\include\private\ff_stream_acceptor_tcp.h"
 					>
 				</File>
 				<File
@@ -785,14 +785,6 @@
 					>
 				</File>
 				<File
-					RelativePath=".\include\ff\ff_endpoint.h"
-					>
-				</File>
-				<File
-					RelativePath=".\include\ff\ff_endpoint_tcp.h"
-					>
-				</File>
-				<File
 					RelativePath=".\include\ff\ff_event.h"
 					>
 				</File>
@@ -830,6 +822,14 @@
 				</File>
 				<File
 					RelativePath=".\include\ff\ff_stream.h"
+					>
+				</File>
+				<File
+					RelativePath=".\include\ff\ff_stream_acceptor.h"
+					>
+				</File>
+				<File
+					RelativePath=".\include\ff\ff_stream_acceptor_tcp.h"
 					>
 				</File>
 				<File
