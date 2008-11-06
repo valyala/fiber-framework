@@ -120,6 +120,7 @@ uint32_t ff_hash_uint16(uint32_t start_value, const uint16_t *buf, int buf_size)
 	{
 		/* unexpected endiannes has been detected ;) */
 		ff_assert(0);
+		hash_value = 0;
 	}
 	return hash_value;
 }
