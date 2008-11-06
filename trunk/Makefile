@@ -24,8 +24,6 @@ MAIN_OBJS= \
 	$(SRC_DIR)/ff_container.o \
 	$(SRC_DIR)/ff_core.o \
 	$(SRC_DIR)/ff_dictionary.o \
-	$(SRC_DIR)/ff_endpoint.o \
-	$(SRC_DIR)/ff_endpoint_tcp.o \
 	$(SRC_DIR)/ff_event.o \
 	$(SRC_DIR)/ff_fiber.o \
 	$(SRC_DIR)/ff_fiberpool.o \
@@ -40,6 +38,8 @@ MAIN_OBJS= \
 	$(SRC_DIR)/ff_semaphore.o \
 	$(SRC_DIR)/ff_stack.o \
 	$(SRC_DIR)/ff_stream.o \
+	$(SRC_DIR)/ff_stream_acceptor.o \
+	$(SRC_DIR)/ff_stream_acceptor_tcp.o \
 	$(SRC_DIR)/ff_stream_connector.o \
 	$(SRC_DIR)/ff_stream_connector_tcp.o \
 	$(SRC_DIR)/ff_stream_tcp.o \

@@ -31,6 +31,16 @@ void *ff_stream_connector_get_ctx(struct ff_stream_connector *stream_connector)
 	return stream_connector->ctx;
 }
 
+void ff_stream_connector_initialize(struct ff_stream_connector *stream_connector)
+{
+	stream_connector->vtable->initialize(stream_connector);
+}
+
+void ff_stream_connector_shutdown(struct ff_stream_connector *stream_connector)
+{
+	stream_connector->vtable->shutdown(stream_connector);
+}
+
 struct ff_stream *ff_stream_connector_connect(struct ff_stream_connector *stream_connector)
 {
 	struct ff_stream *stream;

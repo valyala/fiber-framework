@@ -13,7 +13,7 @@
 #include "ff/arch/ff_arch_net_addr.h"
 #include "ff/ff_tcp.h"
 #include "ff/ff_stream_tcp.h"
-#include "ff/ff_endpoint_tcp.h"
+#include "ff/ff_stream_acceptor_tcp.h"
 #include "ff/ff_stream_connector_tcp.h"
 #include "ff/ff_udp.h"
 
@@ -1533,11 +1533,11 @@ static void test_stream_tcp_all()
 #pragma endregion
 
 
-#pragma region ff_endpoint_tcp tests
+#pragma region ff_stream_acceptor_tcp tests
 
-static void test_endpoint_tcp_create_delete()
+static void test_stream_acceptor_tcp_create_delete()
 {
-	struct ff_endpoint *endpoint;
+	struct ff_stream_acceptor *stream_acceptor;
 	struct ff_arch_net_addr *addr;
 	enum ff_result result;
 
@@ -1545,18 +1545,18 @@ static void test_endpoint_tcp_create_delete()
 	addr = ff_arch_net_addr_create();
 	result = ff_arch_net_addr_resolve(addr, L"localhost", 8326);
 	ASSERT(result == FF_SUCCESS, "cannot resolve local address");
-	endpoint = ff_endpoint_tcp_create(addr);
-	ASSERT(endpoint != NULL, "endpoint cannot be NULL");
-	ff_endpoint_delete(endpoint);
+	stream_acceptor = ff_stream_acceptor_tcp_create(addr);
+	ASSERT(stream_acceptor != NULL, "stream_acceptor cannot be NULL");
+	ff_stream_acceptor_delete(stream_acceptor);
 	/* there is no need to call ff_arch_net_addr_delete(addr), because
-	 * the ff_endpoint_delete() automatically deletes it
+	 * the ff_stream_acceptor_delete() automatically deletes it
 	 */
 	ff_core_shutdown();
 }
 
-static void test_endpoint_tcp_initialize_shutdown()
+static void test_stream_acceptor_tcp_initialize_shutdown()
 {
-	struct ff_endpoint *endpoint;
+	struct ff_stream_acceptor *stream_acceptor;
 	struct ff_arch_net_addr *addr;
 	enum ff_result result;
 
@@ -1564,20 +1564,20 @@ static void test_endpoint_tcp_initialize_shutdown()
 	addr = ff_arch_net_addr_create();
 	result = ff_arch_net_addr_resolve(addr, L"localhost", 8336);
 	ASSERT(result == FF_SUCCESS, "cannot resolve local address");
-	endpoint = ff_endpoint_tcp_create(addr);
-	ASSERT(endpoint != NULL, "endpoint cannot be NULL");
-	ff_endpoint_initialize(endpoint);
-	ff_endpoint_shutdown(endpoint);
-	ff_endpoint_delete(endpoint);
+	stream_acceptor = ff_stream_acceptor_tcp_create(addr);
+	ASSERT(stream_acceptor != NULL, "stream_acceptor cannot be NULL");
+	ff_stream_acceptor_initialize(stream_acceptor);
+	ff_stream_acceptor_shutdown(stream_acceptor);
+	ff_stream_acceptor_delete(stream_acceptor);
 	/* there is no need to call ff_arch_net_addr_delete(addr), because
-	 * the ff_endpoint_delete() automatically deletes it
+	 * the ff_stream_acceptor_delete() automatically deletes it
 	 */
 	ff_core_shutdown();
 }
 
-static void test_endpoint_tcp_initialize_shutdown_multiple()
+static void test_stream_acceptor_tcp_initialize_shutdown_multiple()
 {
-	struct ff_endpoint *endpoint;
+	struct ff_stream_acceptor *stream_acceptor;
 	struct ff_arch_net_addr *addr;
 	int i;
 	enum ff_result result;
@@ -1586,30 +1586,30 @@ static void test_endpoint_tcp_initialize_shutdown_multiple()
 	addr = ff_arch_net_addr_create();
 	result = ff_arch_net_addr_resolve(addr, L"localhost", 8332);
 	ASSERT(result == FF_SUCCESS, "cannot resolve local address");
-	endpoint = ff_endpoint_tcp_create(addr);
-	ASSERT(endpoint != NULL, "endpoint cannot be NULL");
+	stream_acceptor = ff_stream_acceptor_tcp_create(addr);
+	ASSERT(stream_acceptor != NULL, "stream_acceptor cannot be NULL");
 	for (i = 0; i < 10; i++)
 	{
-		ff_endpoint_initialize(endpoint);
-		ff_endpoint_shutdown(endpoint);
+		ff_stream_acceptor_initialize(stream_acceptor);
+		ff_stream_acceptor_shutdown(stream_acceptor);
 	}
-	ff_endpoint_delete(endpoint);
+	ff_stream_acceptor_delete(stream_acceptor);
 	/* there is no need to call ff_arch_net_addr_delete(addr), because
-	 * the ff_endpoint_delete() automatically deletes it
+	 * the ff_stream_acceptor_delete() automatically deletes it
 	 */
 	ff_core_shutdown();
 }
 
-static void endpoint_tcp_basic_func(void *ctx)
+static void stream_acceptor_tcp_basic_func(void *ctx)
 {
-	struct ff_endpoint *endpoint;
+	struct ff_stream_acceptor *stream_acceptor;
 	struct ff_stream *client_stream;
 	char buf[3];
 	int is_equal;
 	enum ff_result result;
 
-	endpoint = (struct ff_endpoint *) ctx;
-	client_stream = ff_endpoint_accept(endpoint);
+	stream_acceptor = (struct ff_stream_acceptor *) ctx;
+	client_stream = ff_stream_acceptor_accept(stream_acceptor);
 	ASSERT(client_stream != NULL, "client should be connected");
 	result = ff_stream_write(client_stream, "qwe", 3);
 	ASSERT(result == FF_SUCCESS, "cannot write data to the stream");
@@ -1619,13 +1619,13 @@ static void endpoint_tcp_basic_func(void *ctx)
 	ASSERT(result == FF_SUCCESS, "cannot read from the stream");
 	is_equal = (memcmp(buf, "qwe", 3) == 0);
 	ASSERT(is_equal, "wrong data received from the stream");
-	ff_endpoint_shutdown(endpoint);
+	ff_stream_acceptor_shutdown(stream_acceptor);
 	ff_stream_delete(client_stream);
 }
 
-static void test_endpoint_tcp_basic()
+static void test_stream_acceptor_tcp_basic()
 {
-	struct ff_endpoint *endpoint;
+	struct ff_stream_acceptor *stream_acceptor;
 	struct ff_tcp *client_tcp;
 	struct ff_arch_net_addr *addr;
 	struct ff_stream *client_stream;
@@ -1637,11 +1637,11 @@ static void test_endpoint_tcp_basic()
 	addr = ff_arch_net_addr_create();
 	result = ff_arch_net_addr_resolve(addr, L"localhost", 8327);
 	ASSERT(result == FF_SUCCESS, "cannot resolve local address");
-	endpoint = ff_endpoint_tcp_create(addr);
-	ASSERT(endpoint != NULL, "endpoint cannot be NULL");
-	ff_endpoint_initialize(endpoint);
+	stream_acceptor = ff_stream_acceptor_tcp_create(addr);
+	ASSERT(stream_acceptor != NULL, "stream_acceptor cannot be NULL");
+	ff_stream_acceptor_initialize(stream_acceptor);
 
-	ff_core_fiberpool_execute_async(endpoint_tcp_basic_func, endpoint);
+	ff_core_fiberpool_execute_async(stream_acceptor_tcp_basic_func, stream_acceptor);
 	client_tcp = ff_tcp_create();
 	result = ff_tcp_connect(client_tcp, addr);
 	ASSERT(result == FF_SUCCESS, "cannot connect to local address");
@@ -1655,25 +1655,25 @@ static void test_endpoint_tcp_basic()
 	ASSERT(result == FF_SUCCESS, "cannot flush the client stream");
 	ff_tcp_delete(client_tcp);
 
-	client_stream = ff_endpoint_accept(endpoint);
-	ASSERT(client_stream == NULL, "endpoint should be disconnected at the moment");
+	client_stream = ff_stream_acceptor_accept(stream_acceptor);
+	ASSERT(client_stream == NULL, "stream_acceptor should be disconnected at the moment");
 
-	ff_endpoint_delete(endpoint);
+	ff_stream_acceptor_delete(stream_acceptor);
 	/* there is no need to call the ff_arch_net_addr_delete(addr) here,
-	 * because ff_endpoint_delete() automatically deletes it
+	 * because ff_stream_acceptor_delete() automatically deletes it
 	 */
 	ff_core_shutdown();
 }
 
-static void test_endpoint_tcp_all()
+static void test_stream_acceptor_tcp_all()
 {
-	test_endpoint_tcp_create_delete();
-	test_endpoint_tcp_initialize_shutdown();
-	test_endpoint_tcp_initialize_shutdown_multiple();
-	test_endpoint_tcp_basic();
+	test_stream_acceptor_tcp_create_delete();
+	test_stream_acceptor_tcp_initialize_shutdown();
+	test_stream_acceptor_tcp_initialize_shutdown_multiple();
+	test_stream_acceptor_tcp_basic();
 }
 
-/* end of ff_endpoint_tcp tests */
+/* end of ff_stream_acceptor_tcp tests */
 #pragma endregion
 
 #pragma region ff_stream_connector_tcp tests
@@ -1697,6 +1697,60 @@ static void test_stream_connector_tcp_create_delete()
 	ff_core_shutdown();
 }
 
+static void test_stream_connector_tcp_initialize_shutdown()
+{
+	struct ff_stream_connector *stream_connector;
+	struct ff_arch_net_addr *addr;
+	enum ff_result result;
+
+	ff_core_initialize(LOG_FILENAME);
+	addr = ff_arch_net_addr_create();
+	result = ff_arch_net_addr_resolve(addr, L"localhost", 33487);
+	ASSERT(result == FF_SUCCESS, "cannot resolve local address");
+	stream_connector = ff_stream_connector_tcp_create(addr);
+	ASSERT(stream_connector != NULL, "cannot create stream connector");
+	ff_stream_connector_initialize(stream_connector);
+	ff_stream_connector_shutdown(stream_connector);
+	ff_stream_connector_delete(stream_connector);
+	/* there is no need to call the ff_arch_net_addr_delete(addr) herer,
+	 * because ff_stream_connector_delete() already deleted it
+	 */
+	ff_core_shutdown();
+}
+
+static void test_stream_connector_tcp_initialize_shutdown_multiple()
+{
+	struct ff_stream_connector *stream_connector;
+	struct ff_arch_net_addr *addr;
+	int i;
+	enum ff_result result;
+
+	ff_core_initialize(LOG_FILENAME);
+	addr = ff_arch_net_addr_create();
+	result = ff_arch_net_addr_resolve(addr, L"localhost", 33487);
+	ASSERT(result == FF_SUCCESS, "cannot resolve local address");
+	stream_connector = ff_stream_connector_tcp_create(addr);
+	ASSERT(stream_connector != NULL, "cannot create stream connector");
+	for (i = 0; i < 10; i++)
+	{
+		ff_stream_connector_initialize(stream_connector);
+		ff_stream_connector_shutdown(stream_connector);
+	}
+	ff_stream_connector_delete(stream_connector);
+	/* there is no need to call the ff_arch_net_addr_delete(addr) herer,
+	 * because ff_stream_connector_delete() already deleted it
+	 */
+	ff_core_shutdown();
+}
+
+static void stream_connector_tcp_failure_deferred_func(void *ctx)
+{
+	struct ff_stream_connector *stream_connector;
+
+	stream_connector = (struct ff_stream_connector *) ctx;
+	ff_stream_connector_shutdown(stream_connector);
+}
+
 static void test_stream_connector_tcp_failure()
 {
 	struct ff_stream_connector *stream_connector;
@@ -1710,8 +1764,16 @@ static void test_stream_connector_tcp_failure()
 	ASSERT(result == FF_SUCCESS, "cannot resolve local address");
 	stream_connector = ff_stream_connector_tcp_create(addr);
 	ASSERT(stream_connector != NULL, "cannot create stream connector");
+	ff_stream_connector_initialize(stream_connector);
+	ff_core_fiberpool_execute_deferred(stream_connector_tcp_failure_deferred_func, stream_connector, 1000);
 	stream = ff_stream_connector_connect(stream_connector);
 	ASSERT(stream == NULL, "unexpected connection established to closed TCP address");
+
+	/* the ff_stream_connector_shutdown() call is unnesessary here, because it was already made
+	 * at the stream_connector_tcp_failure_deferred_func().
+	 * But is is harmless, so just call it for consistency.
+	 */
+	ff_stream_connector_shutdown(stream_connector);
 	ff_stream_connector_delete(stream_connector);
 	/* there is no need to call the ff_arch_net_addr_delete(addr) herer,
 	 * because ff_stream_connector_delete() already deleted it
@@ -1746,6 +1808,7 @@ static void test_stream_connector_tcp_connect()
 	struct ff_arch_net_addr *addr;
 	struct ff_tcp *server_tcp;
 	struct ff_stream_connector *stream_connector;
+	struct ff_stream *stream;
 	int i;
 	enum ff_result result;
 
@@ -1759,22 +1822,22 @@ static void test_stream_connector_tcp_connect()
 
 	ff_core_fiberpool_execute_async(stream_connector_tcp_connect_func, server_tcp);
 	stream_connector = ff_stream_connector_tcp_create(addr);
-
+	ff_stream_connector_initialize(stream_connector);
 	for (i = 0; i < 10; i++)
 	{
-		struct ff_stream *stream;
-
 		stream = ff_stream_connector_connect(stream_connector);
 		ASSERT(stream != NULL, "cannot connect to local server using stream connector");
 		ff_stream_delete(stream);
 	}
-
+	ff_stream_connector_shutdown(stream_connector);
+	stream = ff_stream_connector_connect(stream_connector);
+	ASSERT(stream == NULL, "uninitialized stream connector must return NULL on ff_stream_connector_connect()");
 	ff_stream_connector_delete(stream_connector);
-	ff_tcp_disconnect(server_tcp);
-
-	/* there is no need to call the ff_arch_net_addr_delete(addr) herer,
+	/* there is no need to call the ff_arch_net_addr_delete(addr) here,
 	 * because ff_stream_connector_delete() already deleted it
 	 */
+
+	ff_tcp_disconnect(server_tcp);
 
 	/* server_tcp will be deleted in the stream_connector_tcp_connect_func */
 	ff_core_shutdown();
@@ -1783,6 +1846,8 @@ static void test_stream_connector_tcp_connect()
 static void test_stream_connector_tcp_all()
 {
 	test_stream_connector_tcp_create_delete();
+	test_stream_connector_tcp_initialize_shutdown();
+	test_stream_connector_tcp_initialize_shutdown_multiple();
 	test_stream_connector_tcp_failure();
 	test_stream_connector_tcp_connect();
 }
@@ -1913,7 +1978,7 @@ static void test_all()
 	test_arch_net_addr_all();
 	test_tcp_all();
 	test_stream_tcp_all();
-	test_endpoint_tcp_all();
+	test_stream_acceptor_tcp_all();
 	test_stream_connector_tcp_all();
 	test_udp_all();
 }
