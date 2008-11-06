@@ -4,7 +4,7 @@
 #if defined(WIN32)
 	#define FF_API __declspec(dllimport)
 #else
-	#define FF_API
+	#define FF_API __attribute__((visibility("default")))
 #endif
 
 #endif
