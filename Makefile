@@ -1,4 +1,4 @@
-CFLAGS=-Wall -fpic -fvisibility=hidden -g -I./include -DHAS_STDINT_H -D_GNU_SOURCE
+CFLAGS=-Wall -combine -fwhole-program -I./include -g -DHAS_STDINT_H -D_GNU_SOURCE -U_FORTIFY_SOURCE
 LDFLAGS=-lpthread -shared
 CC=gcc
 
@@ -6,64 +6,62 @@ SRC_DIR=src
 ARCH_DIR=$(SRC_DIR)/arch/linux
 TESTS_DIR=tests
 
-ARCH_OBJS= \
-	$(ARCH_DIR)/ff_arch_completion_port.o \
-	$(ARCH_DIR)/ff_arch_fiber.o \
-	$(ARCH_DIR)/ff_arch_file.o \
-	$(ARCH_DIR)/ff_arch_misc.o \
-	$(ARCH_DIR)/ff_arch_mutex.o \
-	$(ARCH_DIR)/ff_arch_net_addr.o \
-	$(ARCH_DIR)/ff_arch_tcp.o \
-	$(ARCH_DIR)/ff_arch_thread.o \
-	$(ARCH_DIR)/ff_arch_udp.o \
-	$(ARCH_DIR)/ff_linux_net.o
+ARCH_SRCS= \
+	$(ARCH_DIR)/ff_arch_completion_port.c \
+	$(ARCH_DIR)/ff_arch_fiber.c \
+	$(ARCH_DIR)/ff_arch_file.c \
+	$(ARCH_DIR)/ff_arch_misc.c \
+	$(ARCH_DIR)/ff_arch_mutex.c \
+	$(ARCH_DIR)/ff_arch_net_addr.c \
+	$(ARCH_DIR)/ff_arch_tcp.c \
+	$(ARCH_DIR)/ff_arch_thread.c \
+	$(ARCH_DIR)/ff_arch_udp.c \
+	$(ARCH_DIR)/ff_linux_net.c
 
-MAIN_OBJS= \
-	$(SRC_DIR)/ff_blocking_queue.o \
-	$(SRC_DIR)/ff_blocking_stack.o \
-	$(SRC_DIR)/ff_container.o \
-	$(SRC_DIR)/ff_core.o \
-	$(SRC_DIR)/ff_dictionary.o \
-	$(SRC_DIR)/ff_event.o \
-	$(SRC_DIR)/ff_fiber.o \
-	$(SRC_DIR)/ff_fiberpool.o \
-	$(SRC_DIR)/ff_file.o \
-	$(SRC_DIR)/ff_hash.o \
-	$(SRC_DIR)/ff_log.o \
-	$(SRC_DIR)/ff_malloc.o \
-	$(SRC_DIR)/ff_mutex.o \
-	$(SRC_DIR)/ff_pool.o \
-	$(SRC_DIR)/ff_queue.o \
-	$(SRC_DIR)/ff_read_stream_buffer.o \
-	$(SRC_DIR)/ff_semaphore.o \
-	$(SRC_DIR)/ff_stack.o \
-	$(SRC_DIR)/ff_stream.o \
-	$(SRC_DIR)/ff_stream_acceptor.o \
-	$(SRC_DIR)/ff_stream_acceptor_tcp.o \
-	$(SRC_DIR)/ff_stream_connector.o \
-	$(SRC_DIR)/ff_stream_connector_tcp.o \
-	$(SRC_DIR)/ff_stream_tcp.o \
-	$(SRC_DIR)/ff_tcp.o \
-	$(SRC_DIR)/ff_threadpool.o \
-	$(SRC_DIR)/ff_udp.o \
-	$(SRC_DIR)/ff_write_stream_buffer.o
+MAIN_SRCS= \
+	$(SRC_DIR)/ff_blocking_queue.c \
+	$(SRC_DIR)/ff_blocking_stack.c \
+	$(SRC_DIR)/ff_container.c \
+	$(SRC_DIR)/ff_core.c \
+	$(SRC_DIR)/ff_dictionary.c \
+	$(SRC_DIR)/ff_event.c \
+	$(SRC_DIR)/ff_fiber.c \
+	$(SRC_DIR)/ff_fiberpool.c \
+	$(SRC_DIR)/ff_file.c \
+	$(SRC_DIR)/ff_hash.c \
+	$(SRC_DIR)/ff_log.c \
+	$(SRC_DIR)/ff_malloc.c \
+	$(SRC_DIR)/ff_mutex.c \
+	$(SRC_DIR)/ff_pool.c \
+	$(SRC_DIR)/ff_queue.c \
+	$(SRC_DIR)/ff_read_stream_buffer.c \
+	$(SRC_DIR)/ff_semaphore.c \
+	$(SRC_DIR)/ff_stack.c \
+	$(SRC_DIR)/ff_stream.c \
+	$(SRC_DIR)/ff_stream_acceptor.c \
+	$(SRC_DIR)/ff_stream_acceptor_tcp.c \
+	$(SRC_DIR)/ff_stream_connector.c \
+	$(SRC_DIR)/ff_stream_connector_tcp.c \
+	$(SRC_DIR)/ff_stream_tcp.c \
+	$(SRC_DIR)/ff_tcp.c \
+	$(SRC_DIR)/ff_threadpool.c \
+	$(SRC_DIR)/ff_udp.c \
+	$(SRC_DIR)/ff_write_stream_buffer.c
 
-FF_LIB_OBJS= \
-	$(ARCH_OBJS) \
-	$(MAIN_OBJS)
-
-ALL_OBJS= \
-	$(FF_LIB_OBJS)
+FF_LIB_SRCS= \
+	$(ARCH_SRCS) \
+	$(MAIN_SRCS)
 
 default: all
 
 all: libfiber-framework.so tests
 
-libfiber-framework.so: $(FF_LIB_OBJS)
-	$(CC) $(FF_LIB_OBJS) $(LDFLAGS) -o $@
+libfiber-framework.so: $(FF_LIB_SRCS)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o libfiber-framework.so $(FF_LIB_SRCS)
 
 tests: libfiber-framework.so
 	$(CC) -g -I./include -DHAS_STDINT_H -lfiber-framework -L. -Wl,--rpath -Wl,. -o run-tests $(TESTS_DIR)/tests.c
 
 clean:
-	rm -f $(ALL_OBJS) libfiber-framework.so run-tests
+	rm -f libfiber-framework.so run-tests
+
