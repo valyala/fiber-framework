@@ -1,4 +1,4 @@
-CFLAGS=-Wall -combine -fwhole-program -I./include -g -DHAS_STDINT_H -D_GNU_SOURCE -U_FORTIFY_SOURCE
+CFLAGS=-Wall -fpic -combine -fwhole-program -I./include -g -DHAS_STDINT_H -D_GNU_SOURCE -U_FORTIFY_SOURCE
 LDFLAGS=-lpthread -shared
 CC=gcc
 
