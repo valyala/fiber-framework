@@ -305,11 +305,27 @@ static void test_arch_misc_unique_file_path()
 	ff_core_shutdown();
 }
 
+static void test_arch_misc_fill_random_buffer()
+{
+	int i;
+	char *buf;
+
+	ff_core_initialize(LOG_FILENAME);
+	for (i = 0; i < 100; i++)
+	{
+		buf = (char *) ff_calloc(i, sizeof(buf[0]));
+		ff_arch_misc_fill_buffer_with_random_data(buf, i);
+		ff_free(buf);
+	}
+	ff_core_shutdown();
+}
+
 static void test_arch_misc_all()
 {
 	test_arch_misc_get_tmp_dir_path();
 	test_arch_misc_guid();
 	test_arch_misc_unique_file_path();
+	test_arch_misc_fill_random_buffer();
 }
 
 /* end of ff_arch_misc tests */

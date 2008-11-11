@@ -2,6 +2,7 @@
 
 #include "private/arch/ff_arch_misc.h"
 #include "private/arch/ff_arch_completion_port.h"
+#include "private/ff_hash.h"
 #include "ff_win_net.h"
 #include "ff_win_file.h"
 #include "ff_win_error_check.h"
@@ -107,6 +108,7 @@ void ff_arch_misc_create_guid_cstr(const wchar_t **guid_cstr, int *guid_cstr_len
 	status = UuidToStringW(&guid, &guid_str);
 	ff_winapi_fatal_error_check(status == RPC_S_OK, L"UuidToStringW() failed");
 	guid_str_len = wcslen((wchar_t *) guid_str);
+	ff_assert(guid_str_len > 0);
 
 	*guid_cstr = (const wchar_t *) guid_str;
 	*guid_cstr_len = (int) guid_str_len;
@@ -146,4 +148,24 @@ void ff_arch_misc_create_unique_file_path(const wchar_t *dir_path, int dir_path_
 void ff_arch_misc_delete_unique_file_path(const wchar_t *unique_file_path)
 {
 	ff_free((void *) unique_file_path);
+}
+
+void ff_arch_misc_fill_buffer_with_random_data(void *buf, int buf_len)
+{
+	UUID guid;
+	RPC_STATUS status;
+	uint32_t hash_value;
+	uint8_t *p;
+	int i;
+
+	ff_assert(buf_len >= 0);
+
+	p = buf;
+	for (i = 0; i < buf_len; i++)
+	{
+		status = UuidCreate(&guid);
+		ff_winapi_fatal_error_check(status == RPC_S_OK || status == RPC_S_UUID_LOCAL_ONLY, L"UuidCreate() failed");
+		hash_value = ff_hash_uint8(0, (uint8_t *) &guid, sizeof(guid));
+		p[i] = (uint8_t) hash_value;
+	}
 }
