@@ -14,7 +14,7 @@ extern "C" {
 	do { \
 		if (!(expression)) \
 		{ \
-			ff_log_fatal_error(L"fatal error at %s:%d, errno=%d. " format, __FILE__, __LINE__, errno, ## __VA_ARGS__); \
+			ff_log_fatal_error(L"fatal error at %hs:%d, errno=%d. " format, __FILE__, __LINE__, errno, ## __VA_ARGS__); \
 		} \
 	} while (0)
 
