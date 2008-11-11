@@ -55,6 +55,7 @@ void ff_event_set(struct ff_event *event)
 			is_empty = ff_stack_is_empty(event->pending_fibers);
 			if (is_empty)
 			{
+				event->is_set = 1;
 				break;
 			}
 
@@ -63,10 +64,12 @@ void ff_event_set(struct ff_event *event)
 			ff_core_schedule_fiber(fiber);
 			if (event->event_type == FF_EVENT_AUTO)
 			{
+				/* there is no need to set the event in this case,
+				 * because autoreset event must be reset if somebody has been woked up.
+				 */
 				break;
 			}
 		}
-		event->is_set = 1;
 	}
 }
 
@@ -84,10 +87,19 @@ void ff_event_wait(struct ff_event *event)
 		current_fiber = ff_fiber_get_current();
 		ff_stack_push(event->pending_fibers, current_fiber);
 		ff_core_yield_fiber();
+		/* the event can be already reset (event->is_set == 0) at this moment:
+		 * f1: ff_event_reset(); // event->is_set = 0;
+		 * f2: enter ff_event_wait(); // f2 has been blocked
+		 * f1: ff_event_set(); // f2 scheduled for execution (but not executed), event->is_set = 1
+		 * f1: ff_event_reset(); // event->is_set = 0, but f2() will be executed at the next step.
+		 * f2: exit ff_event_wait(); // is is at this point and (event->is_set == 0).
+		 */
 	}
-	if (event->event_type == FF_EVENT_AUTO)
+	else if (event->event_type == FF_EVENT_AUTO)
 	{
-		ff_assert(event->is_set);
+		/* autoreset event should be reset if it is set in order to
+		 * block subsequent ff_event_wait() calls.
+		 */
 		event->is_set = 0;
 	}
 }
@@ -108,10 +120,19 @@ enum ff_result ff_event_wait_with_timeout(struct ff_event *event, int timeout)
 		timeout_operation_data = ff_core_register_timeout_operation(timeout, cancel_event_wait, event);
 		ff_core_yield_fiber();
 		result = ff_core_deregister_timeout_operation(timeout_operation_data);
+		/* the event can be already reset (event->is_set == 0) at this moment:
+		 * f1: ff_event_reset(); // event->is_set = 0;
+		 * f2: enter ff_event_wait(); // f2 has been blocked
+		 * f1: ff_event_set(); // f2 scheduled for execution (but not executed), event->is_set = 1
+		 * f1: ff_event_reset(); // event->is_set = 0, but f2() will be executed at the next step.
+		 * f2: exit ff_event_wait(); // is is at this point and (event->is_set == 0).
+		 */
 	}
-	if (event->event_type == FF_EVENT_AUTO && result == FF_SUCCESS)
+	else if (event->event_type == FF_EVENT_AUTO)
 	{
-		ff_assert(event->is_set);
+		/* autoreset event should be reset if it is set in order to
+		 * block subsequent ff_event_wait() calls.
+		 */
 		event->is_set = 0;
 	}
 	return result;
