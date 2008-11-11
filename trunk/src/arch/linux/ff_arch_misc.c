@@ -234,3 +234,17 @@ void ff_arch_misc_delete_unique_file_path(const wchar_t *unique_file_path)
 {
 	ff_free((void *) unique_file_path);
 }
+
+void ff_arch_misc_fill_buffer_with_random_data(void *buf, int buf_len)
+{
+	FILE *fp;
+	size_t bytes_read;
+
+	ff_assert(buf_len >= 0);
+
+	fp = fopen("/dev/urandom", "rb");
+	ff_linux_fatal_error_check(fp != NULL, L"cannot open the /dev/urandom, errno=%d", errno);
+	bytes_read = fread(buf, 1, buf_len, fp);
+	ff_linux_fatal_error_check(bytes_read == (size_t) buf_len, L"cannot read %d bytes from the /dev/urandom, errno=%d", buf_len, errno);
+	fclose(fp);
+}
