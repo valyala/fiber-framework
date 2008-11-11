@@ -47,6 +47,27 @@ void ff_log_shutdown()
 	is_log_initialized = 0;
 }
 
+#if !defined(NDEBUG)
+
+void ff_log_debug(const wchar_t *format, ...)
+{
+	va_list args_ptr;
+
+	ff_assert(is_log_initialized);
+	va_start(args_ptr, format);
+	write_log("debug", format, args_ptr);
+	va_end(args_ptr);
+}
+
+#else
+
+void ff_log_debug(const wchar_t *format, ...)
+{
+	/* nothing to do if NDEBUG is defined */
+}
+
+#endif
+
 void ff_log_info(const wchar_t *format, ...)
 {
 	va_list args_ptr;

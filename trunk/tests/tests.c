@@ -239,6 +239,7 @@ static void test_core_all()
 static void test_log_basic()
 {
 	ff_core_initialize(LOG_FILENAME);
+	ff_log_debug(L"this is a debug log");
 	ff_log_info(L"this is an info log");
 	ff_log_warning(L"this is a warning log");
 	ff_core_shutdown();
