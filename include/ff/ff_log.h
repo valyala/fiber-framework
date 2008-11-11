@@ -12,6 +12,8 @@ extern "C" {
  * They cannot be called from threadpool thread or outside of the ff_core_initialize() ... ff_core_shutdown()
  */
 
+FF_API void ff_log_debug(const wchar_t *format, ...);
+
 FF_API void ff_log_info(const wchar_t *format, ...);
 
 FF_API void ff_log_warning(const wchar_t *format, ...);
