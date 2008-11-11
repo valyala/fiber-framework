@@ -102,17 +102,15 @@ int ff_arch_net_addr_is_equal(const struct ff_arch_net_addr *addr1, const struct
 
 const wchar_t *ff_arch_net_addr_to_string(const struct ff_arch_net_addr *addr)
 {
-	char *str;
-	u_short port;
-	int len;
 	wchar_t *buf;
+	DWORD buf_size;
+	INT rv;
 
-	str = inet_ntoa(addr->addr.sin_addr);
-	ff_assert(str != NULL);
-	port = ntohs(addr->addr.sin_port);
 	buf = (wchar_t *) ff_calloc(ADDR_TO_STRING_BUF_SIZE, sizeof(buf[0]));
-	len = swprintf_s(buf, ADDR_TO_STRING_BUF_SIZE, L"%hs:%hu", str, port);
-	ff_assert(len > 0);
+	buf_size = ADDR_TO_STRING_BUF_SIZE;
+	rv = WSAAddressToStringW((LPSOCKADDR) &addr->addr, sizeof(addr->addr), NULL, buf, &buf_size);
+	ff_assert(rv == 0);
+	ff_assert(buf_size < ADDR_TO_STRING_BUF_SIZE);
 
 	return buf;
 }
