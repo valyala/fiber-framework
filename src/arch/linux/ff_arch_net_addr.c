@@ -11,7 +11,21 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-#define ADDR_TO_STRING_BUF_SIZE 22
+/**
+ * maximum size of the string representation of ip in the form:
+ * aaa.bbb.ccc.ddd
+ */
+#define MAX_STRING_IP_LEN 15
+
+/**
+ * maximum size of the string representation of TCP and UDP port
+ */
+#define MAX_STRING_PORT_LEN 5
+
+/**
+ * the size of the buffer of ip:port string representation
+ */
+#define MAX_STRING_ADDR_LEN (MAX_STRING_IP_LEN + 1 + MAX_STRING_PORT_LEN)
 
 struct threadpool_addr_resolve_data
 {
@@ -98,16 +112,17 @@ int ff_arch_net_addr_is_equal(const struct ff_arch_net_addr *addr1, const struct
 
 const wchar_t *ff_arch_net_addr_to_string(const struct ff_arch_net_addr *addr)
 {
-	char *str;
+	char str_buf[MAX_STRING_IP_LEN + 1];
+	const char *str;
 	wchar_t *buf;
 	int len;
 	uint16_t port;
 
-	str = inet_ntoa(addr->addr.sin_addr);
-	ff_assert(str != NULL);
+	str = inet_ntop(AF_INET, &addr->addr.sin_addr, str_buf, MAX_STRING_IP_LEN + 1);
+	ff_assert(str == str_buf);
 	port = ntohs(addr->addr.sin_port);
-	buf = (wchar_t *) ff_calloc(ADDR_TO_STRING_BUF_SIZE, sizeof(buf[0]));
-	len = swprintf(buf, ADDR_TO_STRING_BUF_SIZE, L"%s:%hu", str, port);
+	buf = (wchar_t *) ff_calloc(MAX_STRING_ADDR_LEN + 1, sizeof(buf[0]));
+	len = swprintf(buf, MAX_STRING_ADDR_LEN + 1, L"%hs:%hu", str, port);
 	ff_assert(len > 0);
 
 	return buf;
