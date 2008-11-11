@@ -38,9 +38,9 @@ void ff_arch_completion_port_get(struct ff_arch_completion_port *completion_port
 	DWORD bytes_transferred;
 	ULONG_PTR key;
 	LPOVERLAPPED overlapped;
-	BOOL result;
+	BOOL rv;
 	
-	result = GetQueuedCompletionStatus(
+	rv = GetQueuedCompletionStatus(
 		completion_port->handle,
 		&bytes_transferred,
 		&key,
