@@ -27,6 +27,10 @@ static int file_read_func(void *ctx, void *buf, int len)
 
 	file = (struct ff_file *) ctx;
 	bytes_read = ff_arch_file_read(file->file, buf, len);
+	if (bytes_read == -1)
+	{
+		ff_log_debug(L"error while reading from the file=%p to the buf=%p, len=%d. See previous messages for more info", file, buf, len);
+	}
 	return bytes_read;
 }
 
@@ -39,6 +43,10 @@ static int file_write_func(void *ctx, const void *buf, int len)
 
 	file = (struct ff_file *) ctx;
 	bytes_written = ff_arch_file_write(file->file, buf, len);
+	if (bytes_written == -1)
+	{
+		ff_log_debug(L"error while writing to the file=%p from the buf=%p, len=%d. See previous messages for more info", file, buf, len);
+	}
 	return bytes_written;
 }
 
@@ -53,6 +61,10 @@ struct ff_file *ff_file_open(const wchar_t *path, enum ff_file_access_mode acces
 	arch_file = ff_arch_file_open(path, arch_access_mode);
 	if (arch_file == NULL)
 	{
+		const char *mode;
+
+		mode = (access_mode == FF_FILE_READ) ? "reading" : "writing";
+		ff_log_debug(L"cannot open the file=[%ls] for %hs. See previous messages for more info", path, mode);
 		goto end;
 	}
 
@@ -94,6 +106,10 @@ enum ff_result ff_file_read(struct ff_file *file, void *buf, int len)
 	ff_assert(len >= 0);
 
 	result = ff_read_stream_buffer_read(file->buffers.read_buffer, buf, len);
+	if (result != FF_SUCCESS)
+	{
+		ff_log_debug(L"error while reading from the file=%p to the buf=%p, len=%d. See previous messages for more info", file, buf, len);
+	}
 	return result;
 }
 
@@ -105,6 +121,10 @@ enum ff_result ff_file_write(struct ff_file *file, const void *buf, int len)
 	ff_assert(len >= 0);
 
 	result = ff_write_stream_buffer_write(file->buffers.write_buffer, buf, len);
+	if (result != FF_SUCCESS)
+	{
+		ff_log_debug(L"error while writing to the file=%p from the buf=%p, len=%d. See previous messages for more info", file, buf, len);
+	}
 	return result;
 }
 
@@ -114,6 +134,10 @@ enum ff_result ff_file_flush(struct ff_file *file)
 
 	ff_assert(file->access_mode == FF_FILE_WRITE);
 	result = ff_write_stream_buffer_flush(file->buffers.write_buffer);
+	if (result != FF_SUCCESS)
+	{
+		ff_log_debug(L"error while flushing the file=%p. See previous messages for more info", file);
+	}
 	return result;
 }
 
@@ -122,6 +146,10 @@ enum ff_result ff_file_erase(const wchar_t *path)
 	enum ff_result result;
 
 	result = ff_arch_file_erase(path);
+	if (result != FF_SUCCESS)
+	{
+		ff_log_debug(L"error while deleting the file=[%ls]. See previous messages for more info", path);
+	}
 	return result;
 }
 
@@ -130,6 +158,10 @@ enum ff_result ff_file_copy(const wchar_t *src_path, const wchar_t *dst_path)
 	enum ff_result result;
 
 	result = ff_arch_file_copy(src_path, dst_path);
+	if (result != FF_SUCCESS)
+	{
+		ff_log_debug(L"error while copying the file=[%ls] to the [%ls]. See previous messages for more info", src_path, dst_path);
+	}
 	return result;
 }
 
@@ -138,6 +170,10 @@ enum ff_result ff_file_move(const wchar_t *src_path, const wchar_t *dst_path)
 	enum ff_result result;
 
 	result = ff_arch_file_move(src_path, dst_path);
+	if (result != FF_SUCCESS)
+	{
+		ff_log_debug(L"error while moving the file=[%ls] to the [%ls]. See previous messages for more info", src_path, dst_path);
+	}
 	return result;
 }
 
