@@ -51,6 +51,10 @@ static void shutdown_tcp_stream_connector(struct ff_stream_connector *stream_con
 		tcp_stream_connector->is_initialized = 0;
 		ff_event_set(tcp_stream_connector->must_shutdown_event);
 	}
+	else
+	{
+		ff_log_debug(L"stream_connector=%p already has been shutdowned, so it won't be shutdowned again", stream_connector);
+	}
 }
 
 static struct ff_stream *connect_tcp_stream_connector(struct ff_stream_connector *stream_connector)
@@ -75,7 +79,7 @@ static struct ff_stream *connect_tcp_stream_connector(struct ff_stream_connector
 		ff_tcp_delete(tcp);
 
 		str_addr = ff_arch_net_addr_to_string(tcp_stream_connector->addr);
-		ff_log_warning(L"cannot establish connection to the %ls", str_addr);
+		ff_log_debug(L"cannot establish connection to the address [%ls]", str_addr);
 		ff_arch_net_addr_delete_string(str_addr);
 
 		result = ff_event_wait_with_timeout(tcp_stream_connector->must_shutdown_event, RECONNECT_TIMEOUT);
@@ -83,6 +87,7 @@ static struct ff_stream *connect_tcp_stream_connector(struct ff_stream_connector
 		{
 			/* must_shutdown_event can be set only in the shutdown_tcp_stream_connector() */
 			ff_assert(!tcp_stream_connector->is_initialized);
+			ff_log_debug(L"shutdown_tcp_stream_connector() has been called for the stream_connector=%p", stream_connector);
 			break;
 		}
 	}
