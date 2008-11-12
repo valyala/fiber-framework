@@ -46,5 +46,9 @@ struct ff_stream *ff_stream_acceptor_accept(struct ff_stream_acceptor *stream_ac
 	struct ff_stream *stream;
 
 	stream = stream_acceptor->vtable->accept(stream_acceptor);
+	if (stream == NULL)
+	{
+		ff_log_debug(L"cannot accept connection using the stream_acceptor=%p. See previous messages for more info", stream_acceptor);
+	}
 	return stream;
 }
