@@ -46,5 +46,9 @@ struct ff_stream *ff_stream_connector_connect(struct ff_stream_connector *stream
 	struct ff_stream *stream;
 
 	stream = stream_connector->vtable->connect(stream_connector);
+	if (stream == NULL)
+	{
+		ff_log_debug(L"cannot establish connection using stream_connector=%p. See previous messages for more info", stream_connector);
+	}
 	return stream;
 }
