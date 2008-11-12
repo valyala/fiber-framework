@@ -126,6 +126,10 @@ static void timeout_operations_visitor_func(const void *data, void *ctx)
 			timeout_operation_data->is_expired = 1;
 		}
 	}
+	else
+	{
+		ff_log_debug(L"timeout operation already expired. timeout_operation_data=%p, timeout_checker_data=%p", timeout_operation_data, timeout_checker_data);
+	}
 }
 
 static void timeout_checker_func(void *ctx)
