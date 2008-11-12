@@ -58,6 +58,10 @@ static void threadpool_addr_resolve_func(void *ctx)
 		data->result = FF_SUCCESS;
 		data->addr->addr.sin_port = htons((uint16_t) data->port);
 	}
+	else
+	{
+		ff_log_debug(L"cannot resolve the host=[%hs]. getaddrinfo error=%d", data->host, rv);
+	}
 }
 
 struct ff_arch_net_addr *ff_arch_net_addr_create()
@@ -65,7 +69,6 @@ struct ff_arch_net_addr *ff_arch_net_addr_create()
 	struct ff_arch_net_addr *addr;
 
 	addr = (struct ff_arch_net_addr *) ff_malloc(sizeof(*addr));
-
 	return addr;
 }
 
@@ -88,6 +91,10 @@ enum ff_result ff_arch_net_addr_resolve(struct ff_arch_net_addr *addr, const wch
 	data.port = port;
 	data.result = FF_FAILURE;
 	ff_core_threadpool_execute(threadpool_addr_resolve_func, &data);
+	if (data.result != FF_SUCCESS)
+	{
+		ff_log_debug(L"cannot resolve the address [%ls:%d]. See previous error messages for more info", host, port);
+	}
 	ff_free(mb_host);
 
 	return data.result;
