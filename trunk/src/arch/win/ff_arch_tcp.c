@@ -178,7 +178,7 @@ int ff_arch_tcp_write(struct ff_arch_tcp *tcp, const void *buf, int len)
 		last_error = WSAGetLastError();
 		if (last_error != WSA_IO_PENDING)
 		{
-			ff_log_debug(L"error while writing data to the tcp=%p from the buf=%p, len=%d. WSAGetLastError()=%d", tcp, buf, len);
+			ff_log_debug(L"error while writing data to the tcp=%p from the buf=%p, len=%d. WSAGetLastError()=%d", tcp, buf, len, last_error);
 			goto end;
 		}
 	}
