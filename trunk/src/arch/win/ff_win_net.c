@@ -89,6 +89,13 @@ int ff_win_net_complete_overlapped_io(SOCKET socket, WSAOVERLAPPED *overlapped)
 	{
 		int_bytes_transferred = (int) bytes_transferred;
 	}
+	else
+	{
+		int last_error;
+
+		last_error = WSAGetLastError();
+		ff_log_debug(L"the overlapped operation on the socket=%llu, overlapped=%p failed. WSAGetLastError()=%d", (uint64_t) socket, overlapped, last_error);
+	}
 
 	return int_bytes_transferred;
 }
@@ -118,6 +125,7 @@ enum ff_result ff_win_net_connect(SOCKET socket, const struct sockaddr_in *addr)
 		last_error = WSAGetLastError();
 		if (last_error != WSA_IO_PENDING)
 		{
+			ff_log_debug(L"cannot connect the socket=%llu to the addr=%p. WSAGetLastError()=%d", (uint64_t) socket, addr, last_error);
 			goto end;
 		}
 	}
@@ -125,6 +133,7 @@ enum ff_result ff_win_net_connect(SOCKET socket, const struct sockaddr_in *addr)
 	bytes_transferred = ff_win_net_complete_overlapped_io(socket, &overlapped);
 	if (bytes_transferred == -1)
 	{
+		ff_log_debug(L"cannot connect the socket=%llu to the addr=%p using the overlapped=%p. See previous error messages for more info", (uint64_t) socket, addr, &overlapped);
 		goto end;
 	}
 	result = FF_SUCCESS;
@@ -163,6 +172,8 @@ enum ff_result ff_win_net_accept(SOCKET listen_socket, SOCKET remote_socket, str
 		last_error = WSAGetLastError();
 		if (last_error != ERROR_IO_PENDING)
 		{
+			ff_log_debug(L"cannot accept connection from the listen_socket=%llu to the remote_socket=%llu, remote_addr=%p. WSAGetLastError()=%d",
+				(uint64_t) listen_socket, (uint64_t) remote_socket, remote_addr, last_error);
 			goto end;
 		}
 	}
@@ -170,6 +181,8 @@ enum ff_result ff_win_net_accept(SOCKET listen_socket, SOCKET remote_socket, str
 	bytes_transferred = ff_win_net_complete_overlapped_io(listen_socket, &overlapped);
 	if (bytes_transferred == -1)
 	{
+		ff_log_debug(L"cannot accept connection from the listen_socket=%llu to the remote_socket=%llu, remote_addr=%p using overlapped=%p. See previous error messages for more info",
+			(uint64_t) listen_socket, (uint64_t) remote_socket, remote_addr, &overlapped);
 		goto end;
 	}
 
