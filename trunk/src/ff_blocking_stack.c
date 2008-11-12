@@ -54,6 +54,10 @@ enum ff_result ff_blocking_stack_pop_with_timeout(struct ff_blocking_stack *stac
 		ff_stack_pop(stack->simple_stack);
 		ff_semaphore_up(stack->consumer_semaphore);
 	}
+	else
+	{
+		ff_log_debug(L"cannot get data from the blocking stack=%p during timeout=%d", stack, timeout);
+	}
 	return result;
 }
 
@@ -75,6 +79,10 @@ enum ff_result ff_blocking_stack_push_with_timeout(struct ff_blocking_stack *sta
 	{
 		ff_stack_push(stack->simple_stack, data);
 		ff_semaphore_up(stack->producer_semaphore);
+	}
+	else
+	{
+		ff_log_debug(L"cannot put data=%p to the blocking stack=%p during timeout=%d", data, stack, timeout);
 	}
 	return result;
 }
