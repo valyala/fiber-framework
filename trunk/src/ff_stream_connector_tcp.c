@@ -63,6 +63,10 @@ static struct ff_stream *connect_tcp_stream_connector(struct ff_stream_connector
 	struct ff_stream *stream = NULL;
 	
 	tcp_stream_connector = (struct tcp_stream_connector *) ff_stream_connector_get_ctx(stream_connector);
+	if (!tcp_stream_connector->is_initialized)
+	{
+		ff_log_debug(L"the stream_connector=%p has been shutdowned, so it cannot be used for connections", stream_connector);
+	}
 	while (tcp_stream_connector->is_initialized)
 	{
 		struct ff_tcp *tcp;
@@ -87,7 +91,7 @@ static struct ff_stream *connect_tcp_stream_connector(struct ff_stream_connector
 		{
 			/* must_shutdown_event can be set only in the shutdown_tcp_stream_connector() */
 			ff_assert(!tcp_stream_connector->is_initialized);
-			ff_log_debug(L"shutdown_tcp_stream_connector() has been called for the stream_connector=%p", stream_connector);
+			ff_log_debug(L"shutdown_tcp_stream_connector() has been called for the stream_connector=%p, so it cannot be used for connections", stream_connector);
 			break;
 		}
 	}
