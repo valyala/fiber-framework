@@ -40,6 +40,7 @@ enum ff_result ff_arch_tcp_bind(struct ff_arch_tcp *tcp, const struct ff_arch_ne
 
 	if (!tcp->is_working)
 	{
+		ff_log_debug(L"tcp=%p was disconnected, so it cannot be bound again to the addr=%p", tcp, addr);
 		goto end;
 	}
 
@@ -53,6 +54,13 @@ enum ff_result ff_arch_tcp_bind(struct ff_arch_tcp *tcp, const struct ff_arch_ne
 		}
 		result = FF_SUCCESS;
 	}
+	else
+	{
+		int last_error;
+
+		last_error = WSAGetLastError();
+		ff_log_debug(L"cannot bind the addr=%p on the tcp=%p. WSAGetLastError()=%d", addr, tcp, last_error);
+	}
 
 end:
 	return result;
@@ -65,6 +73,14 @@ enum ff_result ff_arch_tcp_connect(struct ff_arch_tcp *tcp, const struct ff_arch
 	if (tcp->is_working)
 	{
 		result = ff_win_net_connect(tcp->handle, &addr->addr);
+		if (result != FF_SUCCESS)
+		{
+			ff_log_debug(L"cannot establish connection for the tcp=%p on the address=%p. See previous messages for more info", tcp, addr);
+		}
+	}
+	else
+	{
+		ff_log_debug(L"tcp=%p was disconnected, so it cannot be connected again to the addr=%p", tcp, addr);
 	}
 	return result;
 }
@@ -76,6 +92,7 @@ struct ff_arch_tcp *ff_arch_tcp_accept(struct ff_arch_tcp *tcp, struct ff_arch_n
 
 	if (!tcp->is_working)
 	{
+		ff_log_debug(L"tcp=%p was disconnected, so it cannot be used for accepting. remote_addr=%p", tcp, remote_addr);
 		goto end;
 	}
 
@@ -83,6 +100,7 @@ struct ff_arch_tcp *ff_arch_tcp_accept(struct ff_arch_tcp *tcp, struct ff_arch_n
 	result = ff_win_net_accept(tcp->handle, remote_tcp->handle, &remote_addr->addr);
 	if (result != FF_SUCCESS)
 	{
+		ff_log_debug(L"error while accepting connections on the tcp=%p, remote_addr=%p. See previous messages for more info", tcp, remote_addr);
 		ff_arch_tcp_delete(remote_tcp);
 		remote_tcp = NULL;
 	}
@@ -103,6 +121,7 @@ int ff_arch_tcp_read(struct ff_arch_tcp *tcp, void *buf, int len)
 
 	if (!tcp->is_working)
 	{
+		ff_log_debug(L"tcp=%p was disconnected, so it cannot be used for reading to the buf=%p, len=%d", tcp, buf, len);
 		goto end;
 	}
 
@@ -117,11 +136,16 @@ int ff_arch_tcp_read(struct ff_arch_tcp *tcp, void *buf, int len)
 		last_error = WSAGetLastError();
 		if (last_error != WSA_IO_PENDING)
 		{
+			ff_log_debug(L"error while reading data from the tcp=%p to the buf=%p, len=%d. WSAGetLastError()=%d", tcp, buf, len, last_error);
 			goto end;
 		}
 	}
 
 	int_bytes_read = ff_win_net_complete_overlapped_io(tcp->handle, &overlapped);
+	if (int_bytes_read == -1)
+	{
+		ff_log_debug(L"error while reading data from the tcp=%p to the buf=%p, len=%d using overlapped=%p. See previous messages for more info", tcp, buf, len, &overlapped);
+	}
 
 end:
 	return int_bytes_read;
@@ -139,6 +163,7 @@ int ff_arch_tcp_write(struct ff_arch_tcp *tcp, const void *buf, int len)
 
 	if (!tcp->is_working)
 	{
+		ff_log_debug(L"tcp=%p was disconnected, so it cannot be used for writing from the buf=%p, len=%d", tcp, buf, len);
 		goto end;
 	}
 
@@ -153,11 +178,16 @@ int ff_arch_tcp_write(struct ff_arch_tcp *tcp, const void *buf, int len)
 		last_error = WSAGetLastError();
 		if (last_error != WSA_IO_PENDING)
 		{
+			ff_log_debug(L"error while writing data to the tcp=%p from the buf=%p, len=%d. WSAGetLastError()=%d", tcp, buf, len);
 			goto end;
 		}
 	}
 
 	int_bytes_written = ff_win_net_complete_overlapped_io(tcp->handle, &overlapped);
+	if (int_bytes_written == -1)
+	{
+		ff_log_debug(L"error while reading data to the tcp=%p from the buf=%p, len=%d using overlapped=%p. See previous messages for more info", tcp, buf, len, &overlapped);
+	}
 
 end:
 	return int_bytes_written;
@@ -172,5 +202,9 @@ void ff_arch_tcp_disconnect(struct ff_arch_tcp *tcp)
 		tcp->is_working = 0;
 		result = CancelIo((HANDLE) tcp->handle);
 		ff_assert(result != FALSE);
+	}
+	else
+	{
+		ff_log_debug(L"the tcp=%p was already disconnected, so it won't be disconnected again", tcp);
 	}
 }
