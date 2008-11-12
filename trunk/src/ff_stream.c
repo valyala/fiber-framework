@@ -39,6 +39,10 @@ enum ff_result ff_stream_read(struct ff_stream *stream, void *buf, int len)
 	ff_assert(len >= 0);
 
 	result = stream->vtable->read(stream, buf, len);
+	if (result != FF_SUCCESS)
+	{
+		ff_log_debug(L"cannot read data from the stream=%p to the buf=%p, len=%d. See previous messages for more info", stream, buf, len);
+	}
 	return result;
 }
 
@@ -49,6 +53,10 @@ enum ff_result ff_stream_write(struct ff_stream *stream, const void *buf, int le
 	ff_assert(len >= 0);
 
 	result = stream->vtable->write(stream, buf, len);
+	if (result != FF_SUCCESS)
+	{
+		ff_log_debug(L"cannot write data to the stream=%p from the buf=%p, len=%d. See previous messages for more info", stream, buf, len);
+	}
 	return result;
 }
 
@@ -57,6 +65,10 @@ enum ff_result ff_stream_flush(struct ff_stream *stream)
 	enum ff_result result;
 
 	result = stream->vtable->flush(stream);
+	if (result != FF_SUCCESS)
+	{
+		ff_log_debug(L"cannot flush the stream=%p. See previous messages for more info", stream);
+	}
 	return result;
 }
 
@@ -81,13 +93,13 @@ enum ff_result ff_stream_copy(struct ff_stream *src_stream, struct ff_stream *ds
 		result = ff_stream_read(src_stream, buf, chunk_size);
 		if (result != FF_SUCCESS)
 		{
-			ff_log_warning(L"error when copying streams: cannot read from src_stream");
+			ff_log_debug(L"cannot read from src_stream=%p to buf=%p, chunk_size=%d", src_stream, buf, chunk_size);
 			goto end;
 		}
 		result = ff_stream_write(dst_stream, buf, chunk_size);
 		if (result != FF_SUCCESS)
 		{
-			ff_log_warning(L"error when copying streams: cannot write to the dst_stream");
+			ff_log_debug(L"cannot write to the dst_stream=%p from buf=%p, chunk_size=%d", dst_stream, buf, chunk_size);
 			goto end;
 		}
 		len -= chunk_size;
@@ -117,7 +129,7 @@ enum ff_result ff_stream_get_hash(struct ff_stream *stream, int len, uint32_t st
 		result = ff_stream_read(stream, buf, chunk_size);
 		if (result != FF_SUCCESS)
 		{
-			ff_log_warning(L"error when calculating hash: cannot read from the stream");
+			ff_log_debug(L"cannot read from the stream=%p to buf=%p, chunk_size=%d", stream, buf, chunk_size);
 			goto end;
 		}
 		hash = ff_hash_uint8(hash, buf, chunk_size);
