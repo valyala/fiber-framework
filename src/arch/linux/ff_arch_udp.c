@@ -86,6 +86,10 @@ void ff_arch_udp_delete(struct ff_arch_udp *udp)
 	{
 		shutdown_udp(udp);
 	}
+	else
+	{
+		ff_log_debug(L"udp=%p was already shutdowned", udp);
+	}
 	ff_free(udp);
 }
 
@@ -96,6 +100,7 @@ enum ff_result ff_arch_udp_bind(struct ff_arch_udp *udp, const struct ff_arch_ne
 
 	if (!udp->is_working)
 	{
+		ff_log_debug(L"udp=%p was already shutdowned, so it cannot be bound again to the addr=%p", udp, addr);
 		goto end;
 	}
 
@@ -103,6 +108,10 @@ enum ff_result ff_arch_udp_bind(struct ff_arch_udp *udp, const struct ff_arch_ne
 	if (rv != -1)
 	{
 		result = FF_SUCCESS;
+	}
+	else
+	{
+		ff_log_debug(L"cannot bind sr_rd=%d to the addr=%p. errno=%d", udp->sd_rd, addr, errno);
 	}
 
 end:
@@ -122,6 +131,7 @@ again:
 	ff_assert(udp->reader_fiber == NULL);
 	if (!udp->is_working)
 	{
+		ff_log_debug(L"udp=%p was already shutdowned, so it cannot be used for reading to the buf=%p, len=%d, peer_addr=%p", udp, buf, len, peer_addr);
 		goto end;
 	}
 	bytes_read = recvfrom(udp->sd_rd, buf, len, 0, (struct sockaddr *) &peer_addr->addr, &addrlen);
@@ -138,6 +148,7 @@ again:
 			udp->reader_fiber = NULL;
 			goto again;
 		}
+		ff_log_debug(L"error while reading from the sd_rd=%d to the buf=%p, len=%d, peer_addr=%p. errno=%d", udp->sd_rd, buf, len, peer_addr, errno);
 	}
 	else
 	{
@@ -161,6 +172,7 @@ again:
 	ff_assert(udp->writer_fiber == NULL);
 	if (!udp->is_working)
 	{
+		ff_log_debug(L"udp=%p was already shutdowned, so it cannot be used for writing from the buf=%p, len=%d to the addr=%p", udp, buf, len, addr);
 		goto end;
 	}
 	bytes_written = sendto(udp->sd_wr, buf, len, 0, (struct sockaddr *) &addr->addr, sizeof(addr->addr));
@@ -177,6 +189,7 @@ again:
 			udp->writer_fiber = NULL;
 			goto again;
 		}
+		ff_log_debug(L"error while writing to the sd_wr=%d from the buf=%p, len=%d to the addr=%p. errno=%d", udp->sd_wr, buf, len, addr, errno);
 	}
 
 end:
@@ -198,5 +211,9 @@ void ff_arch_udp_disconnect(struct ff_arch_udp *udp)
 		{
 			ff_linux_net_wakeup_fiber(udp->writer_fiber);
 		}
+	}
+	else
+	{
+		ff_log_debug(L"udp=%p was already disconnected, so it won't be disconnected again", udp);
 	}
 }
