@@ -29,6 +29,7 @@ static void initialize_tmp_dir_path()
 	tmp_dir = getenv("TMPDIR");
 	if (tmp_dir == NULL || tmp_dir[0] == '\0')
 	{
+		ff_log_debug(L"cannot find TMPDIR environment variable. Set temporary directory to the /tmp");
 		tmp_dir = "/tmp";
 	}
 	tmp_dir_len = strlen(tmp_dir);
@@ -106,12 +107,12 @@ int ff_arch_misc_get_cpus_cnt()
 		fp = fopen("/proc/cpuinfo", "r");
 		if (fp == NULL)
 		{
+			ff_log_debug(L"cannot open the /proc/cpuinfo. errno=%d. Assume the cpus_cnt=1", errno);
 			cpus_cnt = 1;
 			goto end;
 		}
 
 		line = (char *) ff_calloc(MAX_CPUINFO_LINE_SIZE, sizeof(line[0]));
-
 		for (;;)
 		{
 			char *s;
