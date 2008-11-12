@@ -50,6 +50,7 @@ enum ff_result ff_arch_udp_bind(struct ff_arch_udp *udp, const struct ff_arch_ne
 
 	if (!udp->is_working)
 	{
+		ff_log_debug(L"udp=%p was already disconnected, so it cannot be bound to the addr=%p", udp, addr);
 		goto end;
 	}
 
@@ -57,6 +58,13 @@ enum ff_result ff_arch_udp_bind(struct ff_arch_udp *udp, const struct ff_arch_ne
 	if (rv != SOCKET_ERROR)
 	{
 		result = FF_SUCCESS;
+	}
+	else
+	{
+		int last_error;
+
+		last_error = WSAGetLastError();
+		ff_log_debug(L"cannot bind the udp=%p to the addr=%p. WSAGetLastError()=%d", udp, addr, last_error);
 	}
 
 end:
@@ -76,6 +84,7 @@ int ff_arch_udp_read(struct ff_arch_udp *udp, struct ff_arch_net_addr *peer_addr
 
 	if (!udp->is_working)
 	{
+		ff_log_debug(L"udp=%p was already disconnected, so it cannot be used for reading to the buf=%p, len=%d, peer_addr=%p", udp, buf, len, peer_addr);
 		goto end;
 	}
 
@@ -91,12 +100,18 @@ int ff_arch_udp_read(struct ff_arch_udp *udp, struct ff_arch_net_addr *peer_addr
 		last_error = WSAGetLastError();
 		if (last_error != WSA_IO_PENDING)
 		{
+			ff_log_debug(L"error while reading from the udp=%p into the buf=%p, len=%d, peer_addr=%p. WSAGetLastError()=%d", udp, buf, len, peer_addr, last_error);
 			goto end;
 		}
 	}
 	ff_assert(peer_addr_len == sizeof(peer_addr->addr));
 
 	int_bytes_read = ff_win_net_complete_overlapped_io(udp->handle, &overlapped);
+	if (int_bytes_read == -1)
+	{
+		ff_log_debug(L"error while reading from the udp=%p into the buf=%p, len=%p, peer_addr=%p using overlapped=%p. See previous messages for more info",
+			udp, buf, len, peer_addr, &overlapped);
+	}
 
 end:
 	return int_bytes_read;
@@ -115,6 +130,7 @@ int ff_arch_udp_write(struct ff_arch_udp *udp, const struct ff_arch_net_addr *ad
 
 	if (!udp->is_working)
 	{
+		ff_log_debug(L"udp=%p was already disconnected, so it cannot be used for writing from the buf=%p, len=%d to the addr=%p", udp, buf, len, addr);
 		goto end;
 	}
 
@@ -130,11 +146,17 @@ int ff_arch_udp_write(struct ff_arch_udp *udp, const struct ff_arch_net_addr *ad
 		last_error = WSAGetLastError();
 		if (last_error != WSA_IO_PENDING)
 		{
+			ff_log_debug(L"error while writing to the udp=%p from the buf=%p, len=%d to the addr=%p. WSAGetLastError()=%d", udp, buf, len, addr, last_error);
 			goto end;
 		}
 	}
 
 	int_bytes_written = ff_win_net_complete_overlapped_io(udp->handle, &overlapped);
+	if (int_bytes_written == -1)
+	{
+		ff_log_debug(L"error while writing to the udp=%p from the buf=%p, len=%d to the addr=%p using overlapped=%p. See previous messages for more info",
+			udp, buf, len, addr, &overlapped);
+	}
 
 end:
 	return int_bytes_written;
@@ -149,5 +171,9 @@ void ff_arch_udp_disconnect(struct ff_arch_udp *udp)
 		udp->is_working = 0;
 		result = CancelIo((HANDLE) udp->handle);
 		ff_assert(result != FALSE);
+	}
+	else
+	{
+		ff_log_debug(L"udp=%p was already disconnected, so it won't be disconnected again", udp);
 	}
 }
