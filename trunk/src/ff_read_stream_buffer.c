@@ -68,6 +68,7 @@ enum ff_result ff_read_stream_buffer_read(struct ff_read_stream_buffer *buffer, 
 				bytes_read = buffer->read_func(buffer->func_ctx, char_buf, len);
 				if (bytes_read == -1)
 				{
+					ff_log_debug(L"error while reading %d bytes to the char_buf=%p. See previous messages for more info", len, char_buf);
 					goto end;
 				}
 				if (bytes_read == 0)
@@ -75,6 +76,7 @@ enum ff_result ff_read_stream_buffer_read(struct ff_read_stream_buffer *buffer, 
 					/* end of stream reached, but we didn't read requested len bytes of data,
 					 * so treat this as an error.
 					 */
+					ff_log_debug(L"end of stream reached, but %d bytes must be read into the buf=%p", len, buf);
 					goto end;
 				}
 				ff_assert(bytes_read > 0);
@@ -91,6 +93,7 @@ enum ff_result ff_read_stream_buffer_read(struct ff_read_stream_buffer *buffer, 
 			bytes_read = buffer->read_func(buffer->func_ctx, buffer->buf, buffer->capacity);
 			if (bytes_read == -1)
 			{
+				ff_log_debug(L"error while filling the buffer=%p by data. buf=%p, capacity=%d", buffer, buffer->buf, buffer->capacity);
 				goto end;
 			}
 			if (bytes_read == 0)
@@ -98,6 +101,7 @@ enum ff_result ff_read_stream_buffer_read(struct ff_read_stream_buffer *buffer, 
 				/* end of stream reached, but we didn't read requested len bytes of data,
 				 * so tread this as an error.
 				 */
+				ff_log_debug(L"end of stream reached, but %d bytes must be read into the buf=%p", len, buf);
 				goto end;
 			}
 			buffer->size = bytes_read;
