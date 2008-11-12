@@ -35,6 +35,10 @@ static enum ff_result resolve_addr(struct ff_arch_net_addr *addr, const wchar_t 
 	rv = GetAddrInfoW(host, str_port, &hint, &addr_info_ptr);
 	if (rv != 0)
 	{
+		int last_error;
+
+		last_error = WSAGetLastError();
+		ff_log_debug(L"cannot resolve the [%ls:%d] address. WSAGetLastError()=%d", host, port, last_error);
 		goto end;
 	}
 	ff_assert(addr_info_ptr != NULL);
@@ -54,6 +58,10 @@ static void threadpool_addr_resolve_func(void *ctx)
 
 	data = (struct threadpool_addr_resolve_data *) ctx;
 	data->result = resolve_addr(data->addr, data->host, data->port);
+	if (data->result != FF_SUCCESS)
+	{
+		ff_log_debug(L"cannot resolve the [%ls:%d] address. See previous messages for more info", data->host, data->port);
+	}
 }
 
 struct ff_arch_net_addr *ff_arch_net_addr_create()
@@ -79,6 +87,10 @@ enum ff_result ff_arch_net_addr_resolve(struct ff_arch_net_addr *addr, const wch
 	data.port = port;
 	data.result = FF_FAILURE;
 	ff_core_threadpool_execute(threadpool_addr_resolve_func, &data);
+	if (data.result != FF_SUCCESS)
+	{
+		ff_log_debug(L"cannot resolve the [%ls:%d] address. See previous messages for more info", host, port);
+	}
 
 	return data.result;
 }
