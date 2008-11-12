@@ -68,6 +68,15 @@ static void threadpool_open_file_func(void *ctx)
 	}
 	data->handle = CreateFileW(data->path, access_rights, share_mode, NULL, creation_disposition,
 		FILE_FLAG_OVERLAPPED | FILE_FLAG_SEQUENTIAL_SCAN, NULL);
+	if (data->handle == INVALID_HANDLE_VALUE)
+	{
+		DWORD last_error;
+		const char *mode;
+
+		mode = (data->access_mode == FF_ARCH_FILE_WRITE) ? "writing" : "reading";
+		last_error = GetLastError();
+		ff_log_debug(L"cannot open the file [%ls] for %hs. GetLastError()=%lu", data->path, mode, last_error);
+	}
 }
 
 static void threadpool_erase_file_func(void *ctx)
@@ -77,6 +86,13 @@ static void threadpool_erase_file_func(void *ctx)
 
 	data = (struct threadpool_erase_file_data *) ctx;
 	result = DeleteFileW(data->path);
+	if (result == FALSE)
+	{
+		DWORD last_error;
+
+		last_error = GetLastError();
+		ff_log_debug(L"cannot delete the file [%ls]. GetLastError()=%lu", data->path, last_error);
+	}
 	data->result = (result == FALSE) ? FF_FAILURE : FF_SUCCESS;
 }
 
@@ -87,6 +103,13 @@ static void threadpool_copy_file_func(void *ctx)
 
 	data = (struct threadpool_copy_file_data *) ctx;
 	result = CopyFileW(data->src_path, data->dst_path, TRUE);
+	if (result == FALSE)
+	{
+		DWORD last_error;
+
+		last_error = GetLastError();
+		ff_log_debug(L"cannot copy the file [%ls] to the [%ls]. GetLastError()=%lu", data->src_path, data->dst_path, last_error);
+	}
 	data->result = (result == FALSE) ? FF_FAILURE : FF_SUCCESS;
 }
 
@@ -97,6 +120,13 @@ static void threadpool_move_file_func(void *ctx)
 
 	data = (struct threadpool_move_file_data *) ctx;
 	result = MoveFileEx(data->src_path, data->dst_path, MOVEFILE_COPY_ALLOWED | MOVEFILE_WRITE_THROUGH);
+	if (result == FALSE)
+	{
+		DWORD last_error;
+
+		last_error = GetLastError();
+		ff_log_debug(L"cannot move the file [%ls] to the [%ls]. GetLastError()=%lu", data->src_path, data->dst_path, last_error);
+	}
 	data->result = (result == FALSE) ? FF_FAILURE : FF_SUCCESS;
 }
 
@@ -113,11 +143,10 @@ static int complete_overlapped_io(struct ff_arch_file *file, OVERLAPPED *overlap
 	ff_win_completion_port_deregister_overlapped_data(file_ctx.completion_port, overlapped);
 
 	result = GetOverlappedResult(file->handle, overlapped, &bytes_transferred, FALSE);
-	if (result != FALSE)
-	{
-		int_bytes_transferred = (int) bytes_transferred;
-		file->curr_pos += int_bytes_transferred;
-	}
+	ff_assert(result != FALSE);
+
+	int_bytes_transferred = (int) bytes_transferred;
+	file->curr_pos += int_bytes_transferred;
 
 	return int_bytes_transferred;
 }
@@ -143,6 +172,10 @@ struct ff_arch_file *ff_arch_file_open(const wchar_t *path, enum ff_arch_file_ac
 	ff_core_threadpool_execute(threadpool_open_file_func, &data);
 	if (data.handle == INVALID_HANDLE_VALUE)
 	{
+		const char *mode;
+
+		mode = (access_mode == FF_ARCH_FILE_WRITE) ? "writing" : "reading";
+		ff_log_debug(L"cannot open the file [%ls] for %hs. See previous messages for more info", path, mode);
 		goto end;
 	}
 
@@ -187,13 +220,22 @@ int ff_arch_file_read(struct ff_arch_file *file, void *buf, int len)
 		{
 			if (last_error == ERROR_HANDLE_EOF)
 			{
+				ff_log_debug(L"end of file reached while reading the file=%p, buf=%p, len=%d", file, buf, len);
 				int_bytes_read = 0;
+			}
+			else
+			{
+				ff_log_debug(L"unexpected error occured while reading the file=%p, buf=%p, len=%d. GetLastError()=%lu", file, buf, len, last_error);
 			}
 			goto end;
 		}
 	}
 
 	int_bytes_read = complete_overlapped_io(file, &overlapped);
+	if (int_bytes_read == -1)
+	{
+		ff_log_debug(L"cannot read %d bytes from the file=%p to the buf=%p using overlapped=%p. See previous messages for more info", len, file, buf, &overlapped);
+	}
 
 end:
 	return int_bytes_read;
@@ -219,11 +261,16 @@ int ff_arch_file_write(struct ff_arch_file *file, const void *buf, int len)
 		last_error = GetLastError();
 		if (last_error != ERROR_IO_PENDING)
 		{
+			ff_log_debug(L"unexpected error occured while writing to the file=%p, buf=%p, len=%d. GetLastError()=%lu", file, buf, len, last_error);
 			goto end;
 		}
 	}
 
 	int_bytes_written = complete_overlapped_io(file, &overlapped);
+	if (int_bytes_written == -1)
+	{
+		ff_log_debug(L"cannot write %d bytes to the file=%p from the buf=%p using overlapped=%p. See previous messages for more info", len, file, buf, &overlapped);
+	}
 
 end:
 	return int_bytes_written;
@@ -236,6 +283,10 @@ enum ff_result ff_arch_file_erase(const wchar_t *path)
 	data.path = path;
 	data.result = FF_FAILURE;
 	ff_core_threadpool_execute(threadpool_erase_file_func, &data);
+	if (data.result != FF_SUCCESS)
+	{
+		ff_log_debug(L"cannot erase the file [%ls]. See previous messages for more info", path);
+	}
 
 	return data.result;
 }
@@ -248,6 +299,10 @@ enum ff_result ff_arch_file_copy(const wchar_t *src_path, const wchar_t *dst_pat
 	data.dst_path = dst_path;
 	data.result = FF_FAILURE;
 	ff_core_threadpool_execute(threadpool_copy_file_func, &data);
+	if (data.result != FF_SUCCESS)
+	{
+		ff_log_debug(L"cannot copy the file [%ls] to the [%ls]. See previous messages for more info", src_path, dst_path);
+	}
 
 	return data.result;
 }
@@ -260,6 +315,10 @@ enum ff_result ff_arch_file_move(const wchar_t *src_path, const wchar_t *dst_pat
 	data.dst_path = dst_path;
 	data.result = FF_FAILURE;
 	ff_core_threadpool_execute(threadpool_move_file_func, &data);
+	if (data.result != FF_SUCCESS)
+	{
+		ff_log_debug(L"cannot move the file [%ls] to the [%ls]. See previous messages for more info", src_path, dst_path);
+	}
 
 	return data.result;
 }
