@@ -54,6 +54,10 @@ enum ff_result ff_blocking_queue_get_with_timeout(struct ff_blocking_queue *queu
 		ff_queue_pop(queue->simple_queue);
 		ff_semaphore_up(queue->consumer_semaphore);
 	}
+	else
+	{
+		ff_log_debug(L"cannot get data from the blocking queue=%p during the timeout=%d", queue, timeout);
+	}
 	return result;
 }
 
@@ -75,6 +79,10 @@ enum ff_result ff_blocking_queue_put_with_timeout(struct ff_blocking_queue *queu
 	{
 		ff_queue_push(queue->simple_queue, data);
 		ff_semaphore_up(queue->producer_semaphore);
+	}
+	else
+	{
+		ff_log_debug(L"cannot put data=%p to the blocking queue=%p during the timeout=%d", data, queue, timeout);
 	}
 	return result;
 }
