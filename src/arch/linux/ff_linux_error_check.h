@@ -2,7 +2,6 @@
 #define FF_LINUX_ERROR_CHECK
 
 #include "private/ff_common.h"
-#include "private/ff_log.h"
 
 #include <errno.h>
 
