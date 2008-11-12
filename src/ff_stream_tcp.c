@@ -19,6 +19,10 @@ static enum ff_result read_from_tcp(struct ff_stream *stream, void *buf, int len
 
 	tcp = (struct ff_tcp *) ff_stream_get_ctx(stream);
 	result = ff_tcp_read(tcp, buf, len);
+	if (result != FF_SUCCESS)
+	{
+		ff_log_debug(L"error while reading from the tcp=%p to the buf=%p, len=%d. See previous messages for more info", tcp, buf, len);
+	}
 	return result;
 }
 
@@ -31,6 +35,10 @@ static enum ff_result write_to_tcp(struct ff_stream *stream, const void *buf, in
 
 	tcp = (struct ff_tcp *) ff_stream_get_ctx(stream);
 	result = ff_tcp_write(tcp, buf, len);
+	if (result != FF_SUCCESS)
+	{
+		ff_log_debug(L"error while writing to the tcp=%p from the buf=%p, len=%d. See previous messages for more info", tcp, buf, len);
+	}
 	return result;
 }
 
@@ -41,6 +49,10 @@ static enum ff_result flush_tcp(struct ff_stream *stream)
 
 	tcp = (struct ff_tcp *) ff_stream_get_ctx(stream);
 	result = ff_tcp_flush(tcp);
+	if (result != FF_SUCCESS)
+	{
+		ff_log_debug(L"error while flushing the tcp=%p. See previous messages for more info", tcp);
+	}
 	return result;
 }
 
