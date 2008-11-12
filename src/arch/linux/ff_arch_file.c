@@ -70,6 +70,13 @@ static void threadpool_open_file_func(void *ctx)
 		rv = fcntl(data->fd, F_SETFL, O_NONBLOCK);
 		ff_linux_fatal_error_check(rv != -1, L"cannot set nonblocking mode for the file descriptor");
 	}
+	else
+	{
+		const char *mode;
+
+		mode = (data->access_mode == FF_ARCH_FILE_READ) ? "reading" : "writing";
+		ff_log_debug(L"cannot open the file=[%hs] for %hs. errno=%d", data->path, mode, errno);
+	}
 }
 
 static void threadpool_erase_file_func(void *ctx)
@@ -79,6 +86,10 @@ static void threadpool_erase_file_func(void *ctx)
 
 	data = (struct threadpool_erase_file_data *) ctx;
 	rv = unlink(data->path);
+	if (rv == -1)
+	{
+		ff_log_debug(L"cannot delete the file=[%hs]. errno=%d", data->path, errno);
+	}
 	data->result = (rv == -1) ? FF_FAILURE : FF_SUCCESS;
 }
 
@@ -94,11 +105,13 @@ static void threadpool_copy_file_func(void *ctx)
 	src_fd = open(data->src_path, O_RDONLY | O_LARGEFILE);
 	if (src_fd == -1)
 	{
+		ff_log_debug(L"cannot open the file=[%hs] for reading. errno=%d", data->src_path, errno);
 		return;
 	}
 	dst_fd = open(data->dst_path, O_WRONLY | O_CREAT | O_EXCL, S_IRUSR | S_IWUSR);
 	if (dst_fd == -1)
 	{
+		ff_log_debug(L"cannot create the file=[%hs]. errno=%d", data->dst_path, errno);
 		rv = close(src_fd);
 		ff_assert(rv != -1);
 		return;
@@ -124,6 +137,7 @@ static void threadpool_copy_file_func(void *ctx)
 		}
 		if (bytes_read == -1)
 		{
+			ff_log_debug(L"error while reading data from the src_fd=%d to the buf=%p, len=%d. errno=%d", src_fd, buf, FILE_COPY_BUF_SIZE, errno);
 			goto error;
 		}
 		ff_assert(bytes_read > 0);
@@ -141,6 +155,7 @@ static void threadpool_copy_file_func(void *ctx)
 			}
 			if (bytes_written == -1)
 			{
+				ff_log_debug(L"error while writing data to the dst_fd=%d from the buf=%p, len=%llu. errno=%d", dst_fd, buf, (uint64_t) bytes_read, errno);
 				goto error;
 			}
 			ff_assert(bytes_written > 0);
@@ -164,6 +179,10 @@ static void threadpool_move_file_func(void *ctx)
 
 	data = (struct threadpool_move_file_data *) ctx;
 	rv = rename(data->src_path, data->dst_path);
+	if (rv == -1)
+	{
+		ff_log_debug(L"cannot move the file=[%hs] to the [%hs]. errno=%d", data->src_path, data->dst_path, errno);
+	}
 	data->result = (rv == -1) ? FF_FAILURE : FF_SUCCESS;
 }
 
@@ -206,6 +225,13 @@ struct ff_arch_file *ff_arch_file_open(const wchar_t *path, enum ff_arch_file_ac
 		file->fd = data.fd;
 		file->access_mode = access_mode;
 	}
+	else
+	{
+		const char *mode;
+
+		mode = (access_mode == FF_ARCH_FILE_READ) ? "reading" : "writing";
+		ff_log_debug(L"cannot open the file=[%ls] for %hs. See previous messages for more info", path, mode);
+	}
 
 	return file;
 }
@@ -240,6 +266,7 @@ again:
 			wait_for_file_io(file);
 			goto again;
 		}
+		ff_log_debug(L"error while reading from the fd=%d to the buf=%p, len=%d. errno=%d", file->fd, buf, len, errno);
 	}
 
 	bytes_read_int = (int) bytes_read;
@@ -267,6 +294,7 @@ again:
 			wait_for_file_io(file);
 			goto again;
 		}
+		ff_log_debug(L"error while writing to the fd=%d from the buf=%p, len=%d. errno=%d", file=>fd, buf, len, errno);
 	}
 
 	bytes_written_int = (int) bytes_written;
@@ -283,6 +311,10 @@ enum ff_result ff_arch_file_erase(const wchar_t *path)
 	data.result = FF_FAILURE;
 	ff_core_threadpool_execute(threadpool_erase_file_func, &data);
 	ff_free(mb_path);
+	if (data.result != FF_SUCCESS)
+	{
+		ff_log_debug(L"cannot erase the file=[%ls]. See previous messages for more info", path);
+	}
 
 	return data.result;
 }
@@ -301,6 +333,10 @@ enum ff_result ff_arch_file_copy(const wchar_t *src_path, const wchar_t *dst_pat
 	ff_core_threadpool_execute(threadpool_copy_file_func, &data);
 	ff_free(mb_src_path);
 	ff_free(mb_dst_path);
+	if (data.result != FF_SUCCESS)
+	{
+		ff_log_debug(L"cannot copy the file=[%ls] to the [%ls]. See previous messages for more info", src_path, dst_path);
+	}
 
 	return data.result;
 }
@@ -319,6 +355,10 @@ enum ff_result ff_arch_file_move(const wchar_t *src_path, const wchar_t *dst_pat
 	ff_core_threadpool_execute(threadpool_move_file_func, &data);
 	ff_free(mb_src_path);
 	ff_free(mb_dst_path);
+	if (data.result != FF_SUCCESS)
+	{
+		ff_log_debug(L"cannot move the file=[%ls] to the [%ls]. See previous messages for more info", src_path, dst_path);
+	}
 
 	return data.result;
 }
@@ -336,4 +376,3 @@ int64_t ff_arch_file_get_size(struct ff_arch_file *file)
 
 	return size;
 }
-
