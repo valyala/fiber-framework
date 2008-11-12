@@ -114,5 +114,9 @@ enum ff_result ff_dictionary_remove_entry(struct ff_dictionary *dictionary, cons
 		entry_ptr = &entry->next;
 		entry = entry->next;
 	}
+	if (result != FF_SUCCESS)
+	{
+		ff_log_debug(L"the entry with key=%p doesn't exist in the dictionary=%p", key, dictionary);
+	}
 	return result;
 }
