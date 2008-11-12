@@ -294,7 +294,7 @@ again:
 			wait_for_file_io(file);
 			goto again;
 		}
-		ff_log_debug(L"error while writing to the fd=%d from the buf=%p, len=%d. errno=%d", file=>fd, buf, len, errno);
+		ff_log_debug(L"error while writing to the fd=%d from the buf=%p, len=%d. errno=%d", file->fd, buf, len, errno);
 	}
 
 	bytes_written_int = (int) bytes_written;
