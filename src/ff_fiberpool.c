@@ -53,6 +53,8 @@ static void add_worker_fiber(struct ff_fiberpool *fiberpool)
 	fiberpool->running_fibers_cnt++;
 	fiberpool->busy_fibers_cnt++;
 	ff_fiber_start(worker_fiber, fiberpool);
+	ff_log_debug(L"new worker_fiber=%p has been added to the fiberpool=%p. running_fibers_cnt=%d, busy_fibers_cnt=%d",
+		worker_fiber, fiberpool, fiberpool->running_fibers_cnt, fiberpool->busy_fibers_cnt);
 }
 
 struct ff_fiberpool *ff_fiberpool_create(int max_fibers_cnt)
