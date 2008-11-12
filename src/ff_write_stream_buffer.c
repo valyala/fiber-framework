@@ -69,6 +69,7 @@ enum ff_result ff_write_stream_buffer_write(struct ff_write_stream_buffer *buffe
 				bytes_written = buffer->write_func(buffer->func_ctx, char_buf, len);
 				if (bytes_written == -1)
 				{
+					ff_log_debug(L"error while writing data from the char_buf=%p with len=%d from buffer=%p. See previous messges for more info", char_buf, len, buffer);
 					goto end;
 				}
 				ff_assert(bytes_written > 0);
@@ -119,6 +120,7 @@ enum ff_result ff_write_stream_buffer_flush(struct ff_write_stream_buffer *buffe
 		bytes_written = buffer->write_func(buffer->func_ctx, buffer->buf + total_bytes_written, bytes_to_write);
 		if (bytes_written == -1)
 		{
+			ff_log_debug(L"error while flushing %d bytes from the buffer=%p. See previous messages for more info", bytes_to_write, buffer);
 			goto end;
 		}
 		ff_assert(bytes_written > 0);
