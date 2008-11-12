@@ -69,6 +69,7 @@ enum ff_result ff_semaphore_down_with_timeout(struct ff_semaphore *semaphore, in
 		result = ff_event_wait_with_timeout(semaphore->event, timeout);
 		if (result != FF_SUCCESS)
 		{
+			ff_log_debug(L"timeout=%d has been exceeded on the semaphore=%p", timeout, semaphore);
 			goto end;
 		}
 	}
