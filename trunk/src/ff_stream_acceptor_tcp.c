@@ -89,7 +89,7 @@ static struct ff_stream *accept_tcp_stream_acceptor(struct ff_stream_acceptor *s
 		{
 			/* ff_tcp_accept() can return NULL only if shutdown_tcp_stream_acceptor() was called */
 			ff_assert(!tcp_stream_acceptor->is_initialized);
-			ff_log_debug(L"shutdown_tcp_stream_acceptor() has been called for the stream_acceptor=%p", stream_acceptor);
+			ff_log_debug(L"shutdown_tcp_stream_acceptor() has been called for the stream_acceptor=%p. See previous messages for more info", stream_acceptor);
 		}
     }
     else
