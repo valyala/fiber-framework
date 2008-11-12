@@ -37,7 +37,9 @@ void ff_mutex_lock(struct ff_mutex *mutex)
 
 		current_fiber = ff_fiber_get_current();
 		ff_stack_push(mutex->pending_fibers, current_fiber);
+		ff_log_debug(L"the fiber=%p has been blocked on the mutex=%p", current_fiber, mutex);
 		ff_core_yield_fiber();
+		ff_log_debug(L"the fiber=%p has been woked up on the mutex=%p", current_fiber, mutex);
 	}
 	mutex->is_locked = 1;
 }
