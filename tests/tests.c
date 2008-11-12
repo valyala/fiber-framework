@@ -1937,6 +1937,8 @@ static void fiberpool_udp_func(void *ctx)
 	len = ff_udp_write(udp_server, client_addr, buf, 9);
 	ASSERT(len == 9, "ff_udp_write() should write 9 bytes");
 	ff_arch_net_addr_delete(client_addr);
+
+	ff_udp_delete(udp_server);
 }
 
 static void test_udp_basic()
@@ -1984,7 +1986,7 @@ static void test_udp_basic()
 	ASSERT(is_equal, "server sent wrong data");
 	ff_udp_delete(udp_client);
 
-	ff_udp_delete(udp_server);
+	/* udp_server is deleted in the fiberpool_udp_func */
 	ff_arch_net_addr_delete(net_mask);
 	ff_arch_net_addr_delete(client_addr);
 	ff_arch_net_addr_delete(server_addr);
