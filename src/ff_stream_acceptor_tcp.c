@@ -38,7 +38,7 @@ static void initialize_tcp_stream_acceptor(struct ff_stream_acceptor *stream_acc
 	if (result != FF_SUCCESS)
 	{
 		const wchar_t *str_addr;
-		
+
 		str_addr = ff_arch_net_addr_to_string(tcp_stream_acceptor->addr);
 		ff_log_fatal_error(L"cannot bind the given tcp stream_acceptor address %ls", str_addr);
 		/* there is no need to call ff_arch_net_addr_delete_string(str_addr) here,
@@ -60,6 +60,10 @@ static void shutdown_tcp_stream_acceptor(struct ff_stream_acceptor *stream_accep
 	{
 		tcp_stream_acceptor->is_initialized = 0;
 		ff_tcp_disconnect(tcp_stream_acceptor->tcp);
+	}
+	else
+	{
+		ff_log_debug(L"stream_acceptor=%p has been already shutdowned, so it won't be shutdowned again", stream_acceptor);
 	}
 }
 
@@ -85,7 +89,12 @@ static struct ff_stream *accept_tcp_stream_acceptor(struct ff_stream_acceptor *s
 		{
 			/* ff_tcp_accept() can return NULL only if shutdown_tcp_stream_acceptor() was called */
 			ff_assert(!tcp_stream_acceptor->is_initialized);
+			ff_log_debug(L"shutdown_tcp_stream_acceptor() has been called for the stream_acceptor=%p", stream_acceptor);
 		}
+    }
+    else
+    {
+    	ff_log_debug(L"stream_acceptor=%p has been already shutdowned, so it can't be used for accepting connections", stream_acceptor);
     }
 
 	return client_stream;
