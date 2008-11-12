@@ -47,6 +47,13 @@ void ff_arch_completion_port_get(struct ff_arch_completion_port *completion_port
 		&overlapped,
 		INFINITE
 	);
+	if (rv == FALSE)
+	{
+		DWORD last_error;
+
+		last_error = GetLastError();
+		ff_log_debug(L"GetQueuedCompletionStatus() failed on key=%p, overlapped=%p. GetLastError()=%lu", key, overlapped, last_error);
+	}
 
 	if (overlapped != NULL)
 	{
