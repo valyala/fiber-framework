@@ -18,12 +18,16 @@ extern "C" {
  * logs debug message. If the NDEBUG is defined, then this call transforms to an empty statement.
  * See ff_log_debug macro definition below.
  */
-FF_API void ff_log_debug(const wchar_t *format, ...);
-
-#if defined(NDEBUG)
-	/* override ff_log_debug() function */
-	#define ff_log_debug(format, ...) /* nothing to do if NDEBUG defined */
+#if !defined(NDEBUG)
+	#define ff_log_debug(format, ...) ff_log_debug_private(L"%hs:%d. " format, __FILE__, __LINE__, ## __VA_ARGS__)
+#else
+	#define ff_log_debug(format, ...) /* nothing to do if NDEBUG is defined */
 #endif
+
+/**
+ * don't call this function directly! Use ff_log_debug() macro isntead.
+ */
+FF_API void ff_log_debug_private(const wchar_t *format, ...);
 
 /**
  * logs info message.
