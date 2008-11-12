@@ -86,6 +86,10 @@ enum ff_result ff_stack_remove_entry(struct ff_stack *stack, const void *data)
 		entry_ptr = &entry->next;
 		entry = entry->next;
 	}
+	if (result != FF_SUCCESS)
+	{
+		ff_log_debug(L"the stack=%p doesn't contain the given data=%p", stack, data);
+	}
 
 	return result;
 }
