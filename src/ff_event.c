@@ -23,6 +23,10 @@ static void cancel_event_wait(struct ff_fiber *fiber, void *ctx)
 	{
 		ff_core_schedule_fiber(fiber);
 	}
+	else
+	{
+		ff_log_debug(L"the fiber=%p was waken up on the event=%p before timeout expiration", fiber, event);
+	}
 }
 
 struct ff_event *ff_event_create(enum ff_event_type event_type)
@@ -127,6 +131,10 @@ enum ff_result ff_event_wait_with_timeout(struct ff_event *event, int timeout)
 		 * f1: ff_event_reset(); // event->is_set = 0, but f2() will be executed at the next step.
 		 * f2: exit ff_event_wait(); // is is at this point and (event->is_set == 0).
 		 */
+		if (result != FF_SUCCESS)
+		{
+			ff_log_debug(L"waiting on the event=%p for the fiber=%p has been expired for timeout=%d", event, current_fiber, timeout);
+		}
 	}
 	else if (event->event_type == FF_EVENT_AUTO)
 	{
