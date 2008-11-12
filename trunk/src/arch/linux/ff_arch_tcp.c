@@ -74,6 +74,10 @@ enum ff_result ff_arch_tcp_bind(struct ff_arch_tcp *tcp, const struct ff_arch_ne
 		}
 		result = FF_SUCCESS;
 	}
+	else
+	{
+		ff_log_debug(L"cannot bind the sd_rd=%d to the addr=%p. errno=%d", tcp->sd_rd, addr, errno);
+	}
 
 	return result;
 }
@@ -106,6 +110,14 @@ again:
 			{
 				result = FF_SUCCESS;
 			}
+			else
+			{
+				ff_log_debug(L"error while connecting sd_wr=%d to the addr=%p. err=%d", tcp->sd_wr, addr, err);
+			}
+		}
+		else
+		{
+			ff_log_debug(L"cannot connect the sd_wr=%d to the addr=%p. errno=%d", tcp->sd_wr, addr, errno);
 		}
 	}
 
@@ -131,6 +143,7 @@ again:
 			ff_linux_net_wait_for_io(tcp->sd_rd, FF_LINUX_NET_IO_READ);
 			goto again;
 		}
+		ff_log_debug(L"cannot accept connection to the sd_rd=%d, remote_addr=%p. errno=%d", tcp->sd_rd, remote_addr, errno);
 	}
 	else
 	{
@@ -159,6 +172,7 @@ again:
 			ff_linux_net_wait_for_io(tcp->sd_rd, FF_LINUX_NET_IO_READ);
 			goto again;
 		}
+		ff_log_debug(L"cannot read from the sd_rd=%d to the buf=%p, len=%d. errno=%d", tcp->sd_rd, buf, len, errno);
 	}
 
 	bytes_read_int = (int) bytes_read;
@@ -183,6 +197,7 @@ again:
 			ff_linux_net_wait_for_io(tcp->sd_wr, FF_LINUX_NET_IO_WRITE);
 			goto again;
 		}
+		ff_log_debug(L"cannot write to the sd_wr=%d from the buf=%p, len=%d. errno=%d", tcp->sd_wr, buf, len, errno);
 	}
 
 	bytes_written_int = (int) bytes_written;
@@ -207,5 +222,6 @@ void ff_arch_tcp_disconnect(struct ff_arch_tcp *tcp)
 	{
 		/* socket already has been shutdowned */
 		ff_assert(errno == ENOTCONN);
+		ff_log_debug(L"the tcp=%p was already shutdowned", tcp);
 	}
 }
