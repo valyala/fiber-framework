@@ -2,7 +2,6 @@
 
 #include "private/ff_stream.h"
 #include "private/ff_hash.h"
-#include "private/ff_log.h"
 
 #define BUF_SIZE 0x10000
 

@@ -1,6 +1,5 @@
 #include "ff/ff_common.h"
 #include "ff/ff_core.h"
-#include "ff/ff_log.h"
 #include "ff/arch/ff_arch_misc.h"
 #include "ff/ff_fiber.h"
 #include "ff/ff_event.h"
@@ -236,18 +235,41 @@ static void test_core_all()
 
 #pragma region ff_log tests
 
-static void test_log_basic()
+static void test_log_fiber_context()
 {
 	ff_core_initialize(LOG_FILENAME);
-	ff_log_debug(L"this is a debug log");
-	ff_log_info(L"this is an info log");
-	ff_log_warning(L"this is a warning log");
+	ff_log_debug(L"this is debug message from fiber context");
+	ff_log_info(L"this is info message from fiber context");
+	ff_log_warning(L"this is warning message from fiber context");
+	ff_core_shutdown();
+}
+
+static void log_threadpool_func(void *ctx)
+{
+	ff_log_debug(L"this is debug message from threadpool");
+	ff_log_info(L"this is info message from threadpool");
+	ff_log_warning(L"this is warning message from threadpool");
+}
+
+static void test_log_threadpool()
+{
+	ff_core_initialize(LOG_FILENAME);
+	ff_core_threadpool_execute(log_threadpool_func, NULL);
+	ff_core_shutdown();
+}
+
+static void test_log_with_vars()
+{
+	ff_core_initialize(LOG_FILENAME);
+	ff_log_info(L"wstring=[%ls], string=[%hs], int=[%d]", L"wstring", "string", 1234);
 	ff_core_shutdown();
 }
 
 static void test_log_all()
 {
-	test_log_basic();
+	test_log_fiber_context();
+	test_log_threadpool();
+	test_log_with_vars();
 }
 
 /* end of ff_log tests */

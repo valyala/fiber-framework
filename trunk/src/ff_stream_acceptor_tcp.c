@@ -6,7 +6,6 @@
 #include "private/ff_stream_tcp.h"
 #include "private/ff_stream.h"
 #include "private/arch/ff_arch_net_addr.h"
-#include "private/ff_log.h"
 
 struct tcp_stream_acceptor
 {

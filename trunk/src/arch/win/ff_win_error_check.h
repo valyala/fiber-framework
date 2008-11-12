@@ -2,7 +2,6 @@
 #define FF_WIN_ERROR_CHECK
 
 #include "ff_win_stdafx.h"
-#include "private/ff_log.h"
 
 #ifdef __cplusplus
 extern "C" {
