@@ -93,13 +93,13 @@ enum ff_result ff_stream_copy(struct ff_stream *src_stream, struct ff_stream *ds
 		result = ff_stream_read(src_stream, buf, chunk_size);
 		if (result != FF_SUCCESS)
 		{
-			ff_log_debug(L"cannot read from src_stream=%p to buf=%p, chunk_size=%d", src_stream, buf, chunk_size);
+			ff_log_debug(L"cannot read from src_stream=%p to buf=%p, chunk_size=%d. See previous messages for more info", src_stream, buf, chunk_size);
 			goto end;
 		}
 		result = ff_stream_write(dst_stream, buf, chunk_size);
 		if (result != FF_SUCCESS)
 		{
-			ff_log_debug(L"cannot write to the dst_stream=%p from buf=%p, chunk_size=%d", dst_stream, buf, chunk_size);
+			ff_log_debug(L"cannot write to the dst_stream=%p from buf=%p, chunk_size=%d. See previous messages for more info", dst_stream, buf, chunk_size);
 			goto end;
 		}
 		len -= chunk_size;
@@ -129,7 +129,7 @@ enum ff_result ff_stream_get_hash(struct ff_stream *stream, int len, uint32_t st
 		result = ff_stream_read(stream, buf, chunk_size);
 		if (result != FF_SUCCESS)
 		{
-			ff_log_debug(L"cannot read from the stream=%p to buf=%p, chunk_size=%d", stream, buf, chunk_size);
+			ff_log_debug(L"cannot read from the stream=%p to buf=%p, chunk_size=%d. See previous messages for more info", stream, buf, chunk_size);
 			goto end;
 		}
 		hash = ff_hash_uint8(hash, buf, chunk_size);
