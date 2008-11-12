@@ -12,10 +12,11 @@ extern "C" {
  * They cannot be called from threadpool thread or outside of the ff_core_initialize() ... ff_core_shutdown()
  */
 
-#if !defined(NDEBUG)
 FF_API void ff_log_debug(const wchar_t *format, ...);
-#else
-#define ff_log_debug(format, ...) /* nothing to do if NDEBUG defined */
+
+#if defined(NDEBUG)
+	/* override ff_log_debug() function */
+	#define ff_log_debug(format, ...) /* nothing to do if NDEBUG defined */
 #endif
 
 FF_API void ff_log_info(const wchar_t *format, ...);

@@ -47,6 +47,11 @@ void ff_log_shutdown()
 	is_log_initialized = 0;
 }
 
+#if defined(NDEBUG)
+	/* delete ff_log_debug() macro, which is defined in the ff_log.h if the NDEBUG is defined */
+	#undef ff_log_debug
+#endif
+
 void ff_log_debug(const wchar_t *format, ...)
 {
 	va_list args_ptr;
