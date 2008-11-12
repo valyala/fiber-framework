@@ -143,10 +143,18 @@ static int complete_overlapped_io(struct ff_arch_file *file, OVERLAPPED *overlap
 	ff_win_completion_port_deregister_overlapped_data(file_ctx.completion_port, overlapped);
 
 	result = GetOverlappedResult(file->handle, overlapped, &bytes_transferred, FALSE);
-	ff_assert(result != FALSE);
+	if (result != FALSE)
+	{
+		int_bytes_transferred = (int) bytes_transferred;
+		file->curr_pos += int_bytes_transferred;
+	}
+	else
+	{
+		DWORD last_error;
 
-	int_bytes_transferred = (int) bytes_transferred;
-	file->curr_pos += int_bytes_transferred;
+		last_error = GetLastError();
+		ff_log_debug(L"the overlapped operation on the file=%llu, overlapped=%p failed. GetLastError()=%lu", (uint64_t) file->handle, overlapped, last_error);
+	}
 
 	return int_bytes_transferred;
 }
