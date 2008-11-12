@@ -2,12 +2,14 @@
 
 #include "private/ff_log.h"
 #include "private/arch/ff_arch_misc.h"
+#include "private/arch/ff_arch_mutex.h"
 
 #include <stdarg.h>
 
 struct ff_log_ctx
 {
 	FILE *log_file;
+	struct ff_arch_mutex *mutex;
 };
 
 static struct ff_log_ctx log_data;
@@ -18,6 +20,7 @@ static void write_log(const char *log_level, const wchar_t *format, va_list args
 	int len;
 	int rv;
 
+	ff_arch_mutex_lock(log_data.mutex);
 	len = fwprintf(log_data.log_file, L"%hs: ", log_level);
 	ff_assert(len > 0);
    	len = vfwprintf(log_data.log_file, format, args_ptr);
@@ -26,6 +29,7 @@ static void write_log(const char *log_level, const wchar_t *format, va_list args
    	ff_assert(len > 0);
    	rv = fflush(log_data.log_file);
    	ff_assert(rv == 0);
+	ff_arch_mutex_unlock(log_data.mutex);
 }
 
 void ff_log_initialize(const wchar_t *log_filename)
@@ -37,12 +41,14 @@ void ff_log_initialize(const wchar_t *log_filename)
 		fwprintf(stderr, L"cannot open the file [%ls]", log_filename);
 		exit(EXIT_FAILURE);
 	}
+	log_data.mutex = ff_arch_mutex_create();
 	is_log_initialized = 1;
 }
 
 void ff_log_shutdown()
 {
 	ff_assert(is_log_initialized);
+	ff_arch_mutex_delete(log_data.mutex);
 	ff_arch_misc_close_log_file_utf8(log_data.log_file);
 	is_log_initialized = 0;
 }

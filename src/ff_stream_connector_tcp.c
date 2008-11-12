@@ -7,7 +7,6 @@
 #include "private/ff_tcp.h"
 #include "private/ff_stream_tcp.h"
 #include "private/ff_event.h"
-#include "private/ff_log.h"
 
 /**
  * timeout in milliseconds, which is used between unsuccessful reconnections
