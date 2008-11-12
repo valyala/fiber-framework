@@ -65,7 +65,7 @@ static void add_worker_thread(struct ff_threadpool *threadpool)
 
 	ff_arch_thread_start(worker_thread, threadpool);
 	ff_log_debug(L"new worker_thread=%p has been started on threadpool=%p. running_threads_cnt=%d, busy_threads_cnt=%d",
-		worker_threads, threadpool, threadpool->running_threads_cnt, threadpool->busy_threads_cnt);
+		worker_thread, threadpool, threadpool->running_threads_cnt, threadpool->busy_threads_cnt);
 }
 
 struct ff_threadpool *ff_threadpool_create(int max_threads_cnt)
