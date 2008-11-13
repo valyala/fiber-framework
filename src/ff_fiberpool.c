@@ -4,8 +4,6 @@
 #include "private/ff_blocking_stack.h"
 #include "private/ff_fiber.h"
 
-static const int PENDING_TASKS_MAX_SIZE = 10;
-
 struct ff_fiberpool
 {
 	struct ff_blocking_stack *pending_tasks;
@@ -29,6 +27,10 @@ static void generic_fiberpool_func(void *ctx)
 	for (;;)
 	{
 		struct fiberpool_task *task;
+
+		ff_assert(fiberpool->busy_fibers_cnt > 0);
+		ff_assert(fiberpool->busy_fibers_cnt <= fiberpool->running_fibers_cnt);
+		ff_assert(fiberpool->running_fibers_cnt <= fiberpool->max_fibers_cnt);
 
 		fiberpool->busy_fibers_cnt--;
 		ff_blocking_stack_pop(fiberpool->pending_tasks, (const void **) &task);
@@ -62,7 +64,7 @@ struct ff_fiberpool *ff_fiberpool_create(int max_fibers_cnt)
 	ff_assert(max_fibers_cnt > 0);
 
 	fiberpool = (struct ff_fiberpool *) ff_malloc(sizeof(*fiberpool));
-	fiberpool->pending_tasks = ff_blocking_stack_create(PENDING_TASKS_MAX_SIZE);
+	fiberpool->pending_tasks = ff_blocking_stack_create(max_fibers_cnt);
 	fiberpool->fibers = (struct ff_fiber **) ff_calloc(max_fibers_cnt, sizeof(fiberpool->fibers[0]));
 	fiberpool->max_fibers_cnt = max_fibers_cnt;
 	fiberpool->running_fibers_cnt = 0;
@@ -101,6 +103,10 @@ void ff_fiberpool_execute_async(struct ff_fiberpool *fiberpool, ff_fiberpool_fun
 {
 	struct fiberpool_task *task;
 
+	ff_assert(fiberpool->busy_fibers_cnt >= 0);
+	ff_assert(fiberpool->busy_fibers_cnt <= fiberpool->running_fibers_cnt);
+	ff_assert(fiberpool->running_fibers_cnt <= fiberpool->max_fibers_cnt);
+
 	task = (struct fiberpool_task *) ff_malloc(sizeof(*task));
 	task->func = func;
 	task->ctx = ctx;
@@ -112,5 +118,9 @@ void ff_fiberpool_execute_async(struct ff_fiberpool *fiberpool, ff_fiberpool_fun
 		{
 			add_worker_fiber(fiberpool);
 		}
+	}
+	else
+	{
+		ff_log_debug(L"fiberpool=%p already has maximum size %d, so it cannot contain new fibers", fiberpool, fiberpool->max_fibers_cnt);
 	}
 }
