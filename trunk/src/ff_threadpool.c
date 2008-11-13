@@ -34,6 +34,9 @@ static void generic_threadpool_func(void *ctx)
 		struct threadpool_task *task;
 
 		ff_arch_mutex_lock(threadpool->mutex);
+		ff_assert(threadpool->busy_threads_cnt > 0);
+		ff_assert(threadpool->busy_threads_cnt <= threadpool->running_threads_cnt);
+		ff_assert(threadpool->running_threads_cnt <= threadpool->max_threads_cnt);
 		threadpool->busy_threads_cnt--;
 		ff_arch_mutex_unlock(threadpool->mutex);
 		ff_arch_completion_port_get(threadpool->completion_port, (const void **) &task);
@@ -119,16 +122,22 @@ void ff_threadpool_execute_async(struct ff_threadpool *threadpool, ff_threadpool
 	task = (struct threadpool_task *) ff_malloc(sizeof(*task));
 	task->func = func;
 	task->ctx = ctx;
-
 	ff_arch_completion_port_put(threadpool->completion_port, task);
 
 	ff_arch_mutex_lock(threadpool->mutex);
+	ff_assert(threadpool->busy_threads_cnt >= 0);
+	ff_assert(threadpool->busy_threads_cnt <= threadpool->running_threads_cnt);
+	ff_assert(threadpool->running_threads_cnt <= threadpool->max_threads_cnt);
 	if (threadpool->running_threads_cnt < threadpool->max_threads_cnt)
 	{
 		if (threadpool->busy_threads_cnt == threadpool->running_threads_cnt)
 		{
 			add_worker_thread(threadpool);
 		}
+	}
+	else
+	{
+		ff_log_debug(L"threadpool=%p already has maximum size %d, so it cannot contain new threads", threadpool, threadpool->max_threads_cnt);
 	}
 	ff_arch_mutex_unlock(threadpool->mutex);
 }
