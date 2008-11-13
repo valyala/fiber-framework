@@ -93,7 +93,7 @@ enum ff_result ff_read_stream_buffer_read(struct ff_read_stream_buffer *buffer, 
 			bytes_read = buffer->read_func(buffer->func_ctx, buffer->buf, buffer->capacity);
 			if (bytes_read == -1)
 			{
-				ff_log_debug(L"error while filling the buffer=%p by data. buf=%p, capacity=%d", buffer, buffer->buf, buffer->capacity);
+				ff_log_debug(L"error while filling the buffer=%p by data. buf=%p, capacity=%d. See previous messages for more info", buffer, buffer->buf, buffer->capacity);
 				goto end;
 			}
 			if (bytes_read == 0)
