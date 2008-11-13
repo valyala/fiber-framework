@@ -12,9 +12,25 @@
 #include "private/arch/ff_arch_completion_port.h"
 #include "private/arch/ff_arch_misc.h"
 
+/**
+ * This number must be equal to 1.
+ */
 static const int COMPLETION_PORT_CONCURRENCY = 1;
-static const int MAX_THREADPOOL_SIZE = 100;
-static const int MAX_FIBERPOOL_SIZE = 100;
+
+/**
+ * the maximum number of threads in the threadpool.
+ */
+static const int MAX_THREADPOOL_SIZE = 500;
+
+/**
+ * the maximum number of fibers in the fiberpool.
+ */
+static const int MAX_FIBERPOOL_SIZE = 5000;
+
+/**
+ * interval in milliseconds for timeout checker fiber,
+ * which executes cancellation callbacks for timed out operations.
+ */
 static const int TIMEOUT_CHECKER_INTERVAL = 100;
 
 struct ff_core_timeout_operation_data
