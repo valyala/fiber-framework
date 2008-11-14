@@ -21,10 +21,6 @@ FF_API void *ff_pool_acquire_entry(struct ff_pool *pool);
 
 FF_API void ff_pool_release_entry(struct ff_pool *pool, void *entry);
 
-typedef void (*ff_pool_visitor_func)(void *entry, void *ctx, int is_acquired);
-
-FF_API void ff_pool_for_each_entry(struct ff_pool *pool, ff_pool_visitor_func visitor_func, void *ctx);
-
 #ifdef __cplusplus
 }
 #endif

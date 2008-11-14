@@ -974,23 +974,11 @@ static void test_pool_create_delete()
 	ff_core_shutdown();
 }
 
-static void pool_visitor_func(void *entry, void *ctx, int is_acquired)
-{
-	int *a;
-
-	a = (int *) ctx;
-	if (is_acquired)
-	{
-		(*a)++;
-	}
-}
-
 static void test_pool_basic()
 {
 	struct ff_pool *pool;
 	void *entry;
 	int i;
-	int a;
 
 	ff_core_initialize(LOG_FILENAME);
 	pool = ff_pool_create(10, pool_entry_constructor, NULL, pool_entry_destructor);
@@ -1001,18 +989,10 @@ static void test_pool_basic()
 		ASSERT(pool_entries_cnt == i + 1, "unexpected entries number");
 	}
 
-	a = 0;
-	ff_pool_for_each_entry(pool, pool_visitor_func, &a);
-	ASSERT(a == 10, "unexpected result");
-
 	for (i = 0; i < 10; i++)
 	{
 		ff_pool_release_entry(pool, (void *)123);
 	}
-
-	a = 0;
-	ff_pool_for_each_entry(pool, pool_visitor_func, &a);
-	ASSERT(a == 0, "unexpected result");
 
 	ff_pool_delete(pool);
 	ASSERT(pool_entries_cnt == 0, "pool should be empty after deletion");
