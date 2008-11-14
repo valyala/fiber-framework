@@ -4,7 +4,7 @@
 #include "ff_win_completion_port.h"
 #include "private/ff_dictionary.h"
 
-#define OVERLAPPED_DICTIONARY_ORDER 4
+#define OVERLAPPED_DICTIONARY_ORDER 8
 
 struct ff_arch_completion_port
 {
