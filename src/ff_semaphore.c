@@ -43,30 +43,34 @@ void ff_semaphore_up(struct ff_semaphore *semaphore)
 
 void ff_semaphore_down(struct ff_semaphore *semaphore)
 {
+	struct ff_event *event;
+
 	ff_assert(semaphore->value >= 0);
 
+	event = semaphore->event;
 	while (semaphore->value == 0)
 	{
-		ff_event_wait(semaphore->event);
+		ff_event_wait(event);
 	}
 	semaphore->value--;
 	if (semaphore->value > 0)
 	{
-		ff_event_set(semaphore->event);
+		ff_event_set(event);
 	}
 }
 
 enum ff_result ff_semaphore_down_with_timeout(struct ff_semaphore *semaphore, int timeout)
 {
-	enum ff_result result;
+	struct ff_event *event;
+	enum ff_result result = FF_SUCCESS;
 
 	ff_assert(semaphore->value >= 0);
 	ff_assert(timeout > 0);
 
-	result = FF_SUCCESS;
+	event = semaphore->event;
 	while (semaphore->value == 0)
 	{
-		result = ff_event_wait_with_timeout(semaphore->event, timeout);
+		result = ff_event_wait_with_timeout(event, timeout);
 		if (result != FF_SUCCESS)
 		{
 			goto end;
@@ -75,7 +79,7 @@ enum ff_result ff_semaphore_down_with_timeout(struct ff_semaphore *semaphore, in
 	semaphore->value--;
 	if (semaphore->value > 0)
 	{
-		ff_event_set(semaphore->event);
+		ff_event_set(event);
 	}
 
 end:
