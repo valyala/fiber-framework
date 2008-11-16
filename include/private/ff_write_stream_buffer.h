@@ -13,11 +13,11 @@ struct ff_write_stream_buffer;
  * Creates the buffer for writing.
  * write_func will be used for writing data into underlying stream in the case
  * when the buffer will be full.
- * func_ctx is the context parameter, which is passed to the write_func. Usually it points to
+ * write_func_ctx is the context parameter, which is passed to the write_func. Usually it points to
  * the underlying stream, to which the write_func will write data.
  * capacity is the size of the buffer in bytes.
  */
-struct ff_write_stream_buffer *ff_write_stream_buffer_create(ff_write_stream_func write_func, void *func_ctx, int capacity);
+struct ff_write_stream_buffer *ff_write_stream_buffer_create(ff_write_stream_func write_func, void *write_func_ctx, int capacity);
 
 /**
  * Deletes the buffer.
