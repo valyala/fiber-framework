@@ -22,8 +22,10 @@ struct fiberpool_task
 static void generic_fiberpool_func(void *ctx)
 {
 	struct ff_fiberpool *fiberpool;
+	struct ff_blocking_stack *pending_tasks;
 
 	fiberpool = (struct ff_fiberpool *) ctx;
+	pending_tasks = fiberpool->pending_tasks;
 	for (;;)
 	{
 		struct fiberpool_task *task;
@@ -33,7 +35,7 @@ static void generic_fiberpool_func(void *ctx)
 		ff_assert(fiberpool->running_fibers_cnt <= fiberpool->max_fibers_cnt);
 
 		fiberpool->busy_fibers_cnt--;
-		ff_blocking_stack_pop(fiberpool->pending_tasks, (const void **) &task);
+		ff_blocking_stack_pop(pending_tasks, (const void **) &task);
 		if (task == NULL)
 		{
 			break;
@@ -75,27 +77,31 @@ struct ff_fiberpool *ff_fiberpool_create(int max_fibers_cnt)
 
 void ff_fiberpool_delete(struct ff_fiberpool *fiberpool)
 {
+	struct ff_blocking_stack *pending_tasks;
+	struct ff_fiber **fibers;
 	int i;
 	int running_fibers_cnt;
 
+	pending_tasks = fiberpool->pending_tasks;
 	running_fibers_cnt = fiberpool->running_fibers_cnt;
 	for (i = 0; i < running_fibers_cnt; i++)
 	{
-		ff_blocking_stack_push(fiberpool->pending_tasks, NULL);
+		ff_blocking_stack_push(pending_tasks, NULL);
 	}
+	fibers = fiberpool->fibers;
 	for (i = 0; i < running_fibers_cnt; i++)
 	{
 		struct ff_fiber *fiber;
 
-		fiber = fiberpool->fibers[i];
+		fiber = fibers[i];
 		ff_fiber_join(fiber);
 		ff_fiber_delete(fiber);
 	}
 	ff_assert(fiberpool->busy_fibers_cnt == 0);
 	ff_assert(fiberpool->running_fibers_cnt == 0);
 
-	ff_free(fiberpool->fibers);
-	ff_blocking_stack_delete(fiberpool->pending_tasks);
+	ff_free(fibers);
+	ff_blocking_stack_delete(pending_tasks);
 	ff_free(fiberpool);
 }
 
