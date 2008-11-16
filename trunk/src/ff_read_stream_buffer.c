@@ -5,14 +5,14 @@
 struct ff_read_stream_buffer
 {
 	ff_read_stream_func read_func;
-	void *func_ctx;
+	void *read_func_ctx;
 	char *buf;
 	int capacity;
 	int size;
 	int start_pos;
 };
 
-struct ff_read_stream_buffer *ff_read_stream_buffer_create(ff_read_stream_func read_func, void *func_ctx, int capacity)
+struct ff_read_stream_buffer *ff_read_stream_buffer_create(ff_read_stream_func read_func, void *read_func_ctx, int capacity)
 {
 	struct ff_read_stream_buffer *buffer;
 
@@ -20,7 +20,7 @@ struct ff_read_stream_buffer *ff_read_stream_buffer_create(ff_read_stream_func r
 
 	buffer = (struct ff_read_stream_buffer *) ff_malloc(sizeof(*buffer));
 	buffer->read_func = read_func;
-	buffer->func_ctx = func_ctx;
+	buffer->read_func_ctx = read_func_ctx;
 	buffer->buf = (char *) ff_calloc(capacity, sizeof(buffer->buf[0]));
 	buffer->capacity = capacity;
 	buffer->size = 0;
@@ -37,20 +37,29 @@ void ff_read_stream_buffer_delete(struct ff_read_stream_buffer *buffer)
 
 enum ff_result ff_read_stream_buffer_read(struct ff_read_stream_buffer *buffer, void *buf, int len)
 {
+	ff_read_stream_func read_func;
+	void *read_func_ctx;
+	char *buffer_buf;
 	char *char_buf;
+	int buffer_capacity;
 	enum ff_result result = FF_FAILURE;
 
+	ff_assert(buffer->capacity > 0);
 	ff_assert(len >= 0);
+
+	read_func = buffer->read_func;
+	read_func_ctx = buffer->read_func_ctx;
+	buffer_buf = buffer->buf;
+	buffer_capacity = buffer->capacity;
 
 	char_buf = (char *) buf;
 	while (len > 0)
 	{
 		int bytes_read;
 
-		ff_assert(buffer->capacity > 0);
 		ff_assert(buffer->size >= 0);
 		ff_assert(buffer->start_pos >= 0);
-		ff_assert(buffer->start_pos + buffer->size <= buffer->capacity);
+		ff_assert(buffer->start_pos + buffer->size <= buffer_capacity);
 
 		if (buffer->size == 0)
 		{
@@ -63,9 +72,9 @@ enum ff_result ff_read_stream_buffer_read(struct ff_read_stream_buffer *buffer, 
 			 * the number of buffer->read_func() calls, because it is likely that subsequent calls
 			 * to the ff_read_stream_buffer_read() will read data from the buffer.
 			 */
-			while (len >= buffer->capacity)
+			while (len >= buffer_capacity)
 			{
-				bytes_read = buffer->read_func(buffer->func_ctx, char_buf, len);
+				bytes_read = read_func(read_func_ctx, char_buf, len);
 				if (bytes_read == -1)
 				{
 					ff_log_debug(L"error while reading %d bytes to the char_buf=%p. See previous messages for more info", len, char_buf);
@@ -90,10 +99,10 @@ enum ff_result ff_read_stream_buffer_read(struct ff_read_stream_buffer *buffer, 
 				break;
 			}
 
-			bytes_read = buffer->read_func(buffer->func_ctx, buffer->buf, buffer->capacity);
+			bytes_read = read_func(read_func_ctx, buffer_buf, buffer_capacity);
 			if (bytes_read == -1)
 			{
-				ff_log_debug(L"error while filling the buffer=%p by data. buf=%p, capacity=%d. See previous messages for more info", buffer, buffer->buf, buffer->capacity);
+				ff_log_debug(L"error while filling the buffer=%p by data. buf=%p, capacity=%d. See previous messages for more info", buffer, buffer_buf, buffer_capacity);
 				goto end;
 			}
 			if (bytes_read == 0)
@@ -112,7 +121,7 @@ enum ff_result ff_read_stream_buffer_read(struct ff_read_stream_buffer *buffer, 
 		/* copy up to requested len bytes from the buffer into the char_buf */
 		bytes_read = len > buffer->size ? buffer->size : len;
 		ff_assert(bytes_read > 0);
-		memcpy(char_buf, buffer->buf + buffer->start_pos, bytes_read);
+		memcpy(char_buf, buffer_buf + buffer->start_pos, bytes_read);
 
 		buffer->start_pos += bytes_read;
 		buffer->size -= bytes_read;
