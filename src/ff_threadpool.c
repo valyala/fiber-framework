@@ -27,33 +27,37 @@ struct threadpool_task
 static void generic_threadpool_func(void *ctx)
 {
 	struct ff_threadpool *threadpool;
+	struct ff_arch_completion_port *completion_port;
+	struct ff_arch_mutex *mutex;
 
 	threadpool = (struct ff_threadpool *) ctx;
+	completion_port = threadpool->completion_port;
+	mutex = threadpool->mutex;
 	for (;;)
 	{
 		struct threadpool_task *task;
 
-		ff_arch_mutex_lock(threadpool->mutex);
+		ff_arch_mutex_lock(mutex);
 		ff_assert(threadpool->busy_threads_cnt > 0);
 		ff_assert(threadpool->busy_threads_cnt <= threadpool->running_threads_cnt);
 		ff_assert(threadpool->running_threads_cnt <= threadpool->max_threads_cnt);
 		threadpool->busy_threads_cnt--;
-		ff_arch_mutex_unlock(threadpool->mutex);
-		ff_arch_completion_port_get(threadpool->completion_port, (const void **) &task);
+		ff_arch_mutex_unlock(mutex);
+		ff_arch_completion_port_get(completion_port, (const void **) &task);
 		if (task == NULL)
 		{
 			break;
 		}
-		ff_arch_mutex_lock(threadpool->mutex);
+		ff_arch_mutex_lock(mutex);
 		threadpool->busy_threads_cnt++;
-		ff_arch_mutex_unlock(threadpool->mutex);
+		ff_arch_mutex_unlock(mutex);
 
 		task->func(task->ctx);
 		ff_free(task);
 	}
-	ff_arch_mutex_lock(threadpool->mutex);
+	ff_arch_mutex_lock(mutex);
 	threadpool->running_threads_cnt--;
-	ff_arch_mutex_unlock(threadpool->mutex);
+	ff_arch_mutex_unlock(mutex);
 }
 
 static void add_worker_thread(struct ff_threadpool *threadpool)
@@ -90,41 +94,47 @@ struct ff_threadpool *ff_threadpool_create(int max_threads_cnt)
 
 void ff_threadpool_delete(struct ff_threadpool *threadpool)
 {
+	struct ff_arch_completion_port *completion_port;
+	struct ff_arch_thread **threads;
 	int i;
 	int running_threads_cnt;
 
+	completion_port = threadpool->completion_port;
 	running_threads_cnt = threadpool->running_threads_cnt;
 	for (i = 0; i < running_threads_cnt; i++)
 	{
-		ff_arch_completion_port_put(threadpool->completion_port, NULL);
+		ff_arch_completion_port_put(completion_port, NULL);
 	}
+	threads = threadpool->threads;
 	for (i = 0; i < running_threads_cnt; i++)
 	{
 		struct ff_arch_thread *thread;
 
-		thread = threadpool->threads[i];
+		thread = threads[i];
 		ff_arch_thread_join(thread);
 		ff_arch_thread_delete(thread);
 	}
 	ff_assert(threadpool->busy_threads_cnt == 0);
 	ff_assert(threadpool->running_threads_cnt == 0);
 
-	ff_free(threadpool->threads);
+	ff_free(threads);
 	ff_arch_mutex_delete(threadpool->mutex);
-	ff_arch_completion_port_delete(threadpool->completion_port);
+	ff_arch_completion_port_delete(completion_port);
 	ff_free(threadpool);
 }
 
 void ff_threadpool_execute_async(struct ff_threadpool *threadpool, ff_threadpool_func func, void *ctx)
 {
 	struct threadpool_task *task;
+	struct ff_arch_mutex *mutex;
 
 	task = (struct threadpool_task *) ff_malloc(sizeof(*task));
 	task->func = func;
 	task->ctx = ctx;
 	ff_arch_completion_port_put(threadpool->completion_port, task);
 
-	ff_arch_mutex_lock(threadpool->mutex);
+	mutex = threadpool->mutex;
+	ff_arch_mutex_lock(mutex);
 	ff_assert(threadpool->busy_threads_cnt >= 0);
 	ff_assert(threadpool->busy_threads_cnt <= threadpool->running_threads_cnt);
 	ff_assert(threadpool->running_threads_cnt <= threadpool->max_threads_cnt);
@@ -139,5 +149,5 @@ void ff_threadpool_execute_async(struct ff_threadpool *threadpool, ff_threadpool
 	{
 		ff_log_debug(L"threadpool=%p already has maximum size %d, so it cannot contain new threads", threadpool, threadpool->max_threads_cnt);
 	}
-	ff_arch_mutex_unlock(threadpool->mutex);
+	ff_arch_mutex_unlock(mutex);
 }
