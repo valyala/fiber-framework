@@ -51,20 +51,23 @@ void ff_event_set(struct ff_event *event)
 {
 	if (!event->is_set)
 	{
+		struct ff_stack *pending_fibers;
+
+		pending_fibers = event->pending_fibers;
 		for (;;)
 		{
 			struct ff_fiber *fiber;
 			int is_empty;
 
-			is_empty = ff_stack_is_empty(event->pending_fibers);
+			is_empty = ff_stack_is_empty(pending_fibers);
 			if (is_empty)
 			{
 				event->is_set = 1;
 				break;
 			}
 
-			ff_stack_top(event->pending_fibers, (const void **) &fiber);
-			ff_stack_pop(event->pending_fibers);
+			ff_stack_top(pending_fibers, (const void **) &fiber);
+			ff_stack_pop(pending_fibers);
 			ff_core_schedule_fiber(fiber);
 			if (event->event_type == FF_EVENT_AUTO)
 			{
