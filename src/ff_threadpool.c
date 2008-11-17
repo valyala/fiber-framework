@@ -6,7 +6,7 @@
 #include "private/arch/ff_arch_misc.h"
 #include "private/arch/ff_arch_mutex.h"
 
-static const int THREADPOOL_THREAD_STACK_SIZE = 0x10000;
+#define THREADPOOL_THREAD_STACK_SIZE 0x10000
 
 struct ff_threadpool
 {

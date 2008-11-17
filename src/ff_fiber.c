@@ -5,7 +5,7 @@
 #include "private/ff_core.h"
 #include "private/arch/ff_arch_fiber.h"
 
-static const int DEFAULT_FIBER_STACK_SIZE = 0x10000;
+#define DEFAULT_FIBER_STACK_SIZE 0x10000
 
 struct ff_fiber
 {

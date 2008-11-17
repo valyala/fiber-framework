@@ -2,7 +2,7 @@
 
 #include "private/arch/ff_arch_mutex.h"
 
-static const int SPIN_COUNT = 100;
+#define SPIN_COUNT 100
 
 struct ff_arch_mutex
 {

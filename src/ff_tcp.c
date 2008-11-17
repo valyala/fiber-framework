@@ -6,8 +6,8 @@
 #include "private/ff_write_stream_buffer.h"
 #include "private/ff_core.h"
 
-static const int READ_BUFFER_SIZE = 0x10000;
-static const int WRITE_BUFFER_SIZE = 0x10000;
+#define READ_BUFFER_SIZE 0x10000
+#define WRITE_BUFFER_SIZE 0x10000
 
 struct ff_tcp
 {

@@ -5,7 +5,7 @@
 #include "private/ff_read_stream_buffer.h"
 #include "private/ff_write_stream_buffer.h"
 
-static const int BUFFER_SIZE = 0x10000;
+#define BUFFER_SIZE 0x10000
 
 struct ff_file
 {
