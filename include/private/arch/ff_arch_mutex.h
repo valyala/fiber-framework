@@ -1,5 +1,5 @@
-#ifndef FF_ARCH_MUTEX_PRIVATE
-#define FF_ARCH_MUTEX_PRIVATE
+#ifndef FF_ARCH_MUTEX_PRIVATE_H
+#define FF_ARCH_MUTEX_PRIVATE_H
 
 #ifdef __cplusplus
 extern "C" {

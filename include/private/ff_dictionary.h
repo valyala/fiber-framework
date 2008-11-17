@@ -1,5 +1,5 @@
-#ifndef FF_DICTIONARY_PRIVATE
-#define FF_DICTIONARY_PRIVATE
+#ifndef FF_DICTIONARY_PRIVATE_H
+#define FF_DICTIONARY_PRIVATE_H
 
 #ifdef __cplusplus
 extern "C" {

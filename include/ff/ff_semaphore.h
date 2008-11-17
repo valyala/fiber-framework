@@ -1,5 +1,5 @@
-#ifndef FF_SEMAPHORE_PUBLIC
-#define FF_SEMAPHORE_PUBLIC
+#ifndef FF_SEMAPHORE_PUBLIC_H
+#define FF_SEMAPHORE_PUBLIC_H
 
 #include "ff/ff_common.h"
 

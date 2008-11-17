@@ -1,5 +1,5 @@
-#ifndef FF_STREAM_PUBLIC
-#define FF_STREAM_PUBLIC
+#ifndef FF_STREAM_PUBLIC_H
+#define FF_STREAM_PUBLIC_H
 
 #include "ff/ff_common.h"
 

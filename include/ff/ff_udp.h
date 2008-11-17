@@ -1,5 +1,5 @@
-#ifndef FF_UDP_PUBLIC
-#define FF_UDP_PUBLIC
+#ifndef FF_UDP_PUBLIC_H
+#define FF_UDP_PUBLIC_H
 
 #include "ff/ff_common.h"
 #include "ff/arch/ff_arch_net_addr.h"

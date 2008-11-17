@@ -1,5 +1,5 @@
-#ifndef FF_ARCH_THREAD_PRIVATE
-#define FF_ARCH_THREAD_PRIVATE
+#ifndef FF_ARCH_THREAD_PRIVATE_H
+#define FF_ARCH_THREAD_PRIVATE_H
 
 #ifdef __cplusplus
 extern "C" {

@@ -1,5 +1,5 @@
-#ifndef FF_HASH_PUBLIC
-#define FF_HASH_PUBLIC
+#ifndef FF_HASH_PUBLIC_H
+#define FF_HASH_PUBLIC_H
 
 #include "ff/ff_common.h"
 

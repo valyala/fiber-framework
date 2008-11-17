@@ -1,5 +1,5 @@
-#ifndef FF_QUEUE_PRIVATE
-#define FF_QUEUE_PRIVATE
+#ifndef FF_QUEUE_PRIVATE_H
+#define FF_QUEUE_PRIVATE_H
 
 #ifdef __cplusplus
 extern "C" {

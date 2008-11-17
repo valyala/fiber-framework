@@ -1,5 +1,5 @@
-#ifndef FF_COMMON_PRIVATE
-#define FF_COMMON_PRIVATE
+#ifndef FF_COMMON_PRIVATE_H
+#define FF_COMMON_PRIVATE_H
 
 #include "private/ff_api.h"
 #include "ff/ff_common.h"

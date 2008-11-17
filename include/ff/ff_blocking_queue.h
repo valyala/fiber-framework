@@ -1,5 +1,5 @@
-#ifndef FF_BLOCKING_QUEUE_PUBLIC
-#define FF_BLOCKING_QUEUE_PUBLIC
+#ifndef FF_BLOCKING_QUEUE_PUBLIC_H
+#define FF_BLOCKING_QUEUE_PUBLIC_H
 
 #include "ff/ff_common.h"
 

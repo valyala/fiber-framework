@@ -1,5 +1,5 @@
-#ifndef FF_LINUX_NET
-#define FF_LINUX_NET
+#ifndef FF_LINUX_NET_H
+#define FF_LINUX_NET_H
 
 #include "private/arch/ff_arch_completion_port.h"
 #include "private/ff_fiber.h"

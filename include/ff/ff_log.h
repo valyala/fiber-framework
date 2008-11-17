@@ -1,5 +1,5 @@
-#ifndef FF_LOG_PUBLIC
-#define FF_LOG_PUBLIC
+#ifndef FF_LOG_PUBLIC_H
+#define FF_LOG_PUBLIC_H
 
 #include <wchar.h>
 

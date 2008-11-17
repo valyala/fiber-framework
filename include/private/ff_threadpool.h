@@ -1,5 +1,5 @@
-#ifndef FF_THREADPOOL_PRIVATE
-#define FF_THREADPOOL_PRIVATE
+#ifndef FF_THREADPOOL_PRIVATE_H
+#define FF_THREADPOOL_PRIVATE_H
 
 #ifdef __cplusplus
 extern "C" {

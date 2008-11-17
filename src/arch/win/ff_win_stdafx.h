@@ -1,5 +1,5 @@
-#ifndef FF_WIN_STDAFX
-#define FF_WIN_STDAFX
+#ifndef FF_WIN_STDAFX_H
+#define FF_WIN_STDAFX_H
 
 #include "private/ff_common.h"
 #include "ff_win_error_check.h"

@@ -1,5 +1,5 @@
-#ifndef FF_MUTEX_PUBLIC
-#define FF_MUTEX_PUBLIC
+#ifndef FF_MUTEX_PUBLIC_H
+#define FF_MUTEX_PUBLIC_H
 
 #include "ff/ff_common.h"
 

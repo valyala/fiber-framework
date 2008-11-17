@@ -1,5 +1,5 @@
-#ifndef FF_FIBERPOOL_PRIVATE
-#define FF_FIBERPOOL_PRIVATE
+#ifndef FF_FIBERPOOL_PRIVATE_H
+#define FF_FIBERPOOL_PRIVATE_H
 
 #ifdef __cplusplus
 extern "C" {

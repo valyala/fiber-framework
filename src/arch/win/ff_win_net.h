@@ -1,5 +1,5 @@
-#ifndef FF_WIN_NET
-#define FF_WIN_NET
+#ifndef FF_WIN_NET_H
+#define FF_WIN_NET_H
 
 #include "ff_win_stdafx.h"
 #include "private/arch/ff_arch_completion_port.h"

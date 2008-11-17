@@ -1,5 +1,5 @@
-#ifndef FF_ASSERT_PUBLIC
-#define FF_ASSERT_PUBLIC
+#ifndef FF_ASSERT_PUBLIC_H
+#define FF_ASSERT_PUBLIC_H
 
 #include <assert.h>
 

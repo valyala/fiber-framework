@@ -1,5 +1,5 @@
-#ifndef FF_STREAM_CONNECTOR_TCP_PUBLIC
-#define FF_STREAM_CONNECTOR_TCP_PUBLIC
+#ifndef FF_STREAM_CONNECTOR_TCP_PUBLIC_H
+#define FF_STREAM_CONNECTOR_TCP_PUBLIC_H
 
 #include "ff/ff_common.h"
 #include "ff/ff_stream_connector.h"

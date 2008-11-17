@@ -1,5 +1,5 @@
-#ifndef FF_ARCH_UDP_PRIVATE
-#define FF_ARCH_UDP_PRIVATE
+#ifndef FF_ARCH_UDP_PRIVATE_H
+#define FF_ARCH_UDP_PRIVATE_H
 
 #include "private/arch/ff_arch_net_addr.h"
 
