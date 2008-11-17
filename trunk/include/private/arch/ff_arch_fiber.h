@@ -1,5 +1,5 @@
-#ifndef FF_ARCH_FIBER_PRIVATE
-#define FF_ARCH_FIBER_PRIVATE
+#ifndef FF_ARCH_FIBER_PRIVATE_H
+#define FF_ARCH_FIBER_PRIVATE_H
 
 #ifdef __cplusplus
 extern "C" {

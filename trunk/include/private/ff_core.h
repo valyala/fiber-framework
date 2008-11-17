@@ -1,5 +1,5 @@
-#ifndef FF_CORE_PRIVATE
-#define FF_CORE_PRIVATE
+#ifndef FF_CORE_PRIVATE_H
+#define FF_CORE_PRIVATE_H
 
 #include "ff/ff_core.h"
 #include "private/ff_fiber.h"

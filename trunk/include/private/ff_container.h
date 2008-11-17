@@ -1,5 +1,5 @@
-#ifndef FF_CONTAINER_PRIVATE
-#define FF_CONTAINER_PRIVATE
+#ifndef FF_CONTAINER_PRIVATE_H
+#define FF_CONTAINER_PRIVATE_H
 
 #ifdef __cplusplus
 extern "C" {

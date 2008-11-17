@@ -1,5 +1,5 @@
-#ifndef FF_LINUX_ERROR_CHECK
-#define FF_LINUX_ERROR_CHECK
+#ifndef FF_LINUX_ERROR_CHECK_H
+#define FF_LINUX_ERROR_CHECK_H
 
 #include "private/ff_common.h"
 

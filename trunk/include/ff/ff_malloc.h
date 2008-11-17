@@ -1,5 +1,5 @@
-#ifndef FF_MALLOC_PUBLIC
-#define FF_MALLOC_PUBLIC
+#ifndef FF_MALLOC_PUBLIC_H
+#define FF_MALLOC_PUBLIC_H
 
 #include <stdlib.h> /* for size_t */
 #include "ff/ff_api.h"

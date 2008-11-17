@@ -1,5 +1,5 @@
-#ifndef FF_ARCH_NET_ADDR_PRIVATE
-#define FF_ARCH_NET_ADDR_PRIVATE
+#ifndef FF_ARCH_NET_ADDR_PRIVATE_H
+#define FF_ARCH_NET_ADDR_PRIVATE_H
 
 #include "ff/arch/ff_arch_net_addr.h"
 

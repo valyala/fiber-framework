@@ -1,5 +1,5 @@
-#ifndef FF_FIBER_PRIVATE
-#define FF_FIBER_PRIVATE
+#ifndef FF_FIBER_PRIVATE_H
+#define FF_FIBER_PRIVATE_H
 
 #include "ff/ff_fiber.h"
 

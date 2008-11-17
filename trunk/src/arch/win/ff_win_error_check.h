@@ -1,5 +1,5 @@
-#ifndef FF_WIN_ERROR_CHECK
-#define FF_WIN_ERROR_CHECK
+#ifndef FF_WIN_ERROR_CHECK_H
+#define FF_WIN_ERROR_CHECK_H
 
 #include "ff_win_stdafx.h"
 

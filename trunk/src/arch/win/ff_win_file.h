@@ -1,5 +1,5 @@
-#ifndef FF_WIN_FILE
-#define FF_WIN_FILE
+#ifndef FF_WIN_FILE_H
+#define FF_WIN_FILE_H
 
 #include "private/arch/ff_arch_completion_port.h"
 

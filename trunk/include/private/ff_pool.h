@@ -1,5 +1,5 @@
-#ifndef FF_POOL_PRIVATE
-#define FF_POOL_PRIVATE
+#ifndef FF_POOL_PRIVATE_H
+#define FF_POOL_PRIVATE_H
 
 #include "ff/ff_pool.h"
 

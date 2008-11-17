@@ -1,5 +1,5 @@
-#ifndef FF_MUTEX_PRIVATE
-#define FF_MUTEX_PRIVATE
+#ifndef FF_MUTEX_PRIVATE_H
+#define FF_MUTEX_PRIVATE_H
 
 #include "ff/ff_mutex.h"
 

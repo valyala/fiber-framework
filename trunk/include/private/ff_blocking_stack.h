@@ -1,5 +1,5 @@
-#ifndef FF_BLOCKING_STACK_PRIVATE
-#define FF_BLOCKING_STACK_PRIVATE
+#ifndef FF_BLOCKING_STACK_PRIVATE_H
+#define FF_BLOCKING_STACK_PRIVATE_H
 
 #include "ff/ff_blocking_stack.h"
 

@@ -1,5 +1,5 @@
-#ifndef FF_TCP_PRIVATE
-#define FF_TCP_PRIVATE
+#ifndef FF_TCP_PRIVATE_H
+#define FF_TCP_PRIVATE_H
 
 #include "ff/ff_tcp.h"
 

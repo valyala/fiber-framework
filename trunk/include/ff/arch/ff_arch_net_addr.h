@@ -1,5 +1,5 @@
-#ifndef FF_ARCH_NET_ADDR_PUBLIC
-#define FF_ARCH_NET_ADDR_PUBLIC
+#ifndef FF_ARCH_NET_ADDR_PUBLIC_H
+#define FF_ARCH_NET_ADDR_PUBLIC_H
 
 #include "ff/ff_common.h"
 

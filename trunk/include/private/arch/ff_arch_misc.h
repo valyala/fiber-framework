@@ -1,5 +1,5 @@
-#ifndef FF_ARCH_MISC_PRIVATE
-#define FF_ARCH_MISC_PRIVATE
+#ifndef FF_ARCH_MISC_PRIVATE_H
+#define FF_ARCH_MISC_PRIVATE_H
 
 #include "ff/arch/ff_arch_misc.h"
 #include "private/arch/ff_arch_completion_port.h"

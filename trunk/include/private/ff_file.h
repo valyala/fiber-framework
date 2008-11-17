@@ -1,5 +1,5 @@
-#ifndef FF_FILE_PRIVATE
-#define FF_FILE_PRIVATE
+#ifndef FF_FILE_PRIVATE_H
+#define FF_FILE_PRIVATE_H
 
 #include "ff/ff_file.h"
 

@@ -1,5 +1,5 @@
-#ifndef FF_EVENT_PRIVATE
-#define FF_EVENT_PRIVATE
+#ifndef FF_EVENT_PRIVATE_H
+#define FF_EVENT_PRIVATE_H
 
 #include "ff/ff_event.h"
 

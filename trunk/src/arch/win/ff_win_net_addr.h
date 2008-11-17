@@ -1,5 +1,5 @@
-#ifndef FF_WIN_NET_ADDR
-#define FF_WIN_NET_ADDR
+#ifndef FF_WIN_NET_ADDR_H
+#define FF_WIN_NET_ADDR_H
 
 #include "ff_win_stdafx.h"
 #include "private/arch/ff_arch_net_addr.h"

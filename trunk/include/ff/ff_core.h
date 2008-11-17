@@ -1,5 +1,5 @@
-#ifndef FF_CORE_PUBLIC
-#define FF_CORE_PUBLIC
+#ifndef FF_CORE_PUBLIC_H
+#define FF_CORE_PUBLIC_H
 
 #include "ff/ff_common.h"
 

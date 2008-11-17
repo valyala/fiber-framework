@@ -1,5 +1,5 @@
-#ifndef FF_STREAM_CONNECTOR_PRIVATE
-#define FF_STREAM_CONNECTOR_PRIVATE
+#ifndef FF_STREAM_CONNECTOR_PRIVATE_H
+#define FF_STREAM_CONNECTOR_PRIVATE_H
 
 #include "ff/ff_stream_connector.h"
 

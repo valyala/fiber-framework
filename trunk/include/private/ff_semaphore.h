@@ -1,5 +1,5 @@
-#ifndef FF_SEMAPHORE_PRIVATE
-#define FF_SEMAPHORE_PRIVATE
+#ifndef FF_SEMAPHORE_PRIVATE_H
+#define FF_SEMAPHORE_PRIVATE_H
 
 #include "ff/ff_semaphore.h"
 

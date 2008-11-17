@@ -1,5 +1,5 @@
-#ifndef FF_HASH_PRIVATE
-#define FF_HASH_RRIVATE
+#ifndef FF_HASH_PRIVATE_H
+#define FF_HASH_PRIVATE_H
 
 #include "ff/ff_hash.h"
 

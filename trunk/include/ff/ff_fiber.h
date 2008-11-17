@@ -1,5 +1,5 @@
-#ifndef FF_FIBER_PUBLIC
-#define FF_FIBER_PUBLIC
+#ifndef FF_FIBER_PUBLIC_H
+#define FF_FIBER_PUBLIC_H
 
 #include "ff/ff_common.h"
 

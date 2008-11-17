@@ -1,5 +1,5 @@
-#ifndef FF_LOG_PRIVATE
-#define FF_LOG_PRIVATE
+#ifndef FF_LOG_PRIVATE_H
+#define FF_LOG_PRIVATE_H
 
 #include "ff/ff_log.h"
 

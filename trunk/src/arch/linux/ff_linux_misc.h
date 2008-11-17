@@ -1,5 +1,5 @@
-#ifndef FF_LINUX_MISC
-#define FF_LINUX_MISC
+#ifndef FF_LINUX_MISC_H
+#define FF_LINUX_MISC_H
 
 #include "private/ff_common.h"
 

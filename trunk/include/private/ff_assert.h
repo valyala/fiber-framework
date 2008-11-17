@@ -1,5 +1,5 @@
-#ifndef FF_ASSERT_PRIVATE
-#define FF_ASSERT_PRIVATE
+#ifndef FF_ASSERT_PRIVATE_H
+#define FF_ASSERT_PRIVATE_H
 
 #include "ff/ff_assert.h"
 

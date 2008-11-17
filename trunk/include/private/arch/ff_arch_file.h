@@ -1,5 +1,5 @@
-#ifndef FF_ARCH_FILE_PRIVATE
-#define FF_ARCH_FILE_PRIVATE
+#ifndef FF_ARCH_FILE_PRIVATE_H
+#define FF_ARCH_FILE_PRIVATE_H
 
 #include "private/ff_common.h"
 

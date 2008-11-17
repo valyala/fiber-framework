@@ -1,5 +1,5 @@
-#ifndef FF_UDP_PRIVATE
-#define FF_UDP_PRIVATE
+#ifndef FF_UDP_PRIVATE_H
+#define FF_UDP_PRIVATE_H
 
 #include "ff/ff_udp.h"
 

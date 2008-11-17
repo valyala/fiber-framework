@@ -1,5 +1,5 @@
-#ifndef FF_POOL_PUBLIC
-#define FF_POOL_PUBLIC
+#ifndef FF_POOL_PUBLIC_H
+#define FF_POOL_PUBLIC_H
 
 #include "ff/ff_common.h"
 

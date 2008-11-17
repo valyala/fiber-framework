@@ -1,5 +1,5 @@
-#ifndef FF_BLOCKING_STACK_PUBLIC
-#define FF_BLOCKING_STACK_PUBLIC
+#ifndef FF_BLOCKING_STACK_PUBLIC_H
+#define FF_BLOCKING_STACK_PUBLIC_H
 
 #include "ff/ff_common.h"
 

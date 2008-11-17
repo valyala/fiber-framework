@@ -1,5 +1,5 @@
-#ifndef FF_STACK_PRIVATE
-#define FF_STACK_PRIVATE
+#ifndef FF_STACK_PRIVATE_H
+#define FF_STACK_PRIVATE_H
 
 #ifdef __cplusplus
 extern "C" {

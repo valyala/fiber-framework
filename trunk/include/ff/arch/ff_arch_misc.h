@@ -1,5 +1,5 @@
-#ifndef FF_ARCH_MISC_PUBLIC
-#define FF_ARCH_MISC_PUBLIC
+#ifndef FF_ARCH_MISC_PUBLIC_H
+#define FF_ARCH_MISC_PUBLIC_H
 
 #include "ff/ff_common.h"
 

@@ -1,5 +1,5 @@
-#ifndef FF_LINUX_FILE
-#define FF_LINUX_FILE
+#ifndef FF_LINUX_FILE_H
+#define FF_LINUX_FILE_H
 
 #include "private/arch/ff_arch_completion_port.h"
 

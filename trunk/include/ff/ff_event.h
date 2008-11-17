@@ -1,5 +1,5 @@
-#ifndef FF_EVENT_PUBLIC
-#define FF_EVENT_PUBLIC
+#ifndef FF_EVENT_PUBLIC_H
+#define FF_EVENT_PUBLIC_H
 
 #include "ff/ff_common.h"
 

@@ -1,5 +1,5 @@
-#ifndef FF_COMMON_PUBLIC
-#define FF_COMMON_PUBLIC
+#ifndef FF_COMMON_PUBLIC_H
+#define FF_COMMON_PUBLIC_H
 
 #include <wchar.h>
 
