@@ -15,23 +15,23 @@
 /**
  * This number must be equal to 1.
  */
-static const int COMPLETION_PORT_CONCURRENCY = 1;
+#define COMPLETION_PORT_CONCURRENCY  1
 
 /**
  * the maximum number of threads in the threadpool.
  */
-static const int MAX_THREADPOOL_SIZE = 500;
+#define MAX_THREADPOOL_SIZE 500
 
 /**
  * the maximum number of fibers in the fiberpool.
  */
-static const int MAX_FIBERPOOL_SIZE = 5000;
+#define MAX_FIBERPOOL_SIZE 5000
 
 /**
  * interval in milliseconds for timeout checker fiber,
  * which executes cancellation callbacks for timed out operations.
  */
-static const int TIMEOUT_CHECKER_INTERVAL = 100;
+#define TIMEOUT_CHECKER_INTERVAL 100
 
 struct ff_core_timeout_operation_data
 {
