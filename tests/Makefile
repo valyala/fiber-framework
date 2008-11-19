@@ -1,4 +1,4 @@
-CFLAGS=-Wall -fpic -combine -fwhole-program -g -I../include -DHAS_STDINT_H
+CFLAGS=-Wall -fpic -combine -fwhole-program -g -I../include -DHAS_STDINT_H -U_FORTIFY_SOURCE
 LDFLAGS=-lfiber-framework
 CC=gcc
 
