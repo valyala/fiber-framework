@@ -31,7 +31,7 @@
 
 #define ASSERT(expr, msg) assert((expr) && (msg))
 
-#pragma region ff_malloc tests
+/* start of ff_malloc tests */
 
 static void test_malloc_basic()
 {
@@ -80,9 +80,8 @@ static void test_malloc_all()
 }
 
 /* end of ff_malloc tests */
-#pragma endregion
 
-#pragma region ff_core_tests
+/* start of ff_core_tests */
 
 static void test_core_init()
 {
@@ -231,9 +230,8 @@ static void test_core_all()
 }
 
 /* end of ff_core tests */
-#pragma endregion
 
-#pragma region ff_log tests
+/* start of ff_log tests */
 
 static void test_log_fiber_context()
 {
@@ -273,9 +271,8 @@ static void test_log_all()
 }
 
 /* end of ff_log tests */
-#pragma endregion
 
-#pragma region ff_arch_misc tests
+/* start of ff_arch_misc tests */
 
 static void test_arch_misc_get_tmp_dir_path()
 {
@@ -352,9 +349,8 @@ static void test_arch_misc_all()
 }
 
 /* end of ff_arch_misc tests */
-#pragma endregion
 
-#pragma region ff_fiber tests
+/* start of ff_fiber tests */
 
 static void fiber_func(void *ctx)
 {
@@ -436,9 +432,8 @@ static void test_fiber_all()
 }
 
 /* end of ff_fiber tests */
-#pragma endregion
 
-#pragma region ff_event tests
+/* start of ff_event tests */
 
 static void test_event_manual_create_delete()
 {
@@ -668,9 +663,8 @@ static void test_event_all()
 }
 
 /* end of ff_event tests */
-#pragma endregion
 
-#pragma region ff_mutex tests
+/* start of ff_mutex tests */
 
 static void test_mutex_create_delete()
 {
@@ -736,9 +730,8 @@ static void test_mutex_all()
 }
 
 /* end of ff_mutex tests */
-#pragma endregion
 
-#pragma region ff_semaphore tests
+/* start of ff_semaphore tests */
 
 static void test_semaphore_create_delete()
 {
@@ -784,9 +777,8 @@ static void test_semaphore_all()
 }
 
 /* end of ff_semaphore tests */
-#pragma endregion
 
-#pragma region ff_blocking_queue tests
+/* start of ff_blocking_queue tests */
 
 static void test_blocking_queue_create_delete()
 {
@@ -867,9 +859,8 @@ static void test_blocking_queue_all()
 }
 
 /* end of ff_blocking_queue tests */
-#pragma endregion
 
-#pragma region ff_blocking_stack tests
+/* start of ff_blocking_stack tests */
 
 static void test_blocking_stack_create_delete()
 {
@@ -943,9 +934,8 @@ static void test_blocking_stack_all()
 }
 
 /* end of ff_blocking_stack tests */
-#pragma endregion
 
-#pragma region ff_pool tests
+/* start of ff_pool tests */
 
 static int pool_entries_cnt = 0;
 
@@ -1036,9 +1026,8 @@ static void test_pool_all()
 }
 
 /* end of ff_pool tests */
-#pragma endregion
 
-#pragma region ff_file tests
+/* start of ff_file tests */
 
 static void test_file_open_read_fail()
 {
@@ -1191,9 +1180,8 @@ static void test_file_all()
 }
 
 /* end of ff_file tests */
-#pragma endregion
 
-#pragma region ff_arch_net_addr tests
+/* start of ff_arch_net_addr tests */
 
 static void test_arch_net_addr_create_delete()
 {
@@ -1299,9 +1287,8 @@ static void test_arch_net_addr_all()
 }
 
 /* end of ff_arch_net_addr tests */
-#pragma endregion
 
-#pragma region ff_tcp tests
+/* start of ff_tcp tests */
 
 static void test_tcp_create_delete()
 {
@@ -1440,9 +1427,8 @@ static void test_tcp_all()
 }
 
 /* end of ff_tcp tests */
-#pragma endregion
 
-#pragma region ff_stream_tcp tests
+/* start of ff_stream_tcp tests */
 
 static void test_stream_tcp_create_delete()
 {
@@ -1549,10 +1535,9 @@ static void test_stream_tcp_all()
 }
 
 /* end of ff_stream_tcp tests */
-#pragma endregion
 
 
-#pragma region ff_stream_acceptor_tcp tests
+/* start of ff_stream_acceptor_tcp tests */
 
 static void test_stream_acceptor_tcp_create_delete()
 {
@@ -1693,9 +1678,8 @@ static void test_stream_acceptor_tcp_all()
 }
 
 /* end of ff_stream_acceptor_tcp tests */
-#pragma endregion
 
-#pragma region ff_stream_connector_tcp tests
+/* start of ff_stream_connector_tcp tests */
 
 static void test_stream_connector_tcp_create_delete()
 {
@@ -1872,10 +1856,9 @@ static void test_stream_connector_tcp_all()
 }
 
 /* end of ff_stream_connector_tcp tests */
-#pragma endregion
 
 
-#pragma region ff_udp tests
+/* start of ff_udp tests */
 
 static void test_udp_create_delete()
 {
@@ -1980,7 +1963,6 @@ static void test_udp_all()
 }
 
 /* end of ff_udp tests */
-#pragma endregion
 
 static void test_all()
 {
