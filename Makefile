@@ -4,7 +4,6 @@ CC=gcc
 
 SRC_DIR=src
 ARCH_DIR=$(SRC_DIR)/arch/linux
-TESTS_DIR=tests
 
 ARCH_SRCS= \
 	$(ARCH_DIR)/ff_arch_completion_port.c \
@@ -54,14 +53,15 @@ FF_LIB_SRCS= \
 
 default: all
 
-all: libfiber-framework.so tests
+all: libfiber-framework.so ff-tests
 
 libfiber-framework.so: $(FF_LIB_SRCS)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o libfiber-framework.so $(FF_LIB_SRCS)
 
-tests: libfiber-framework.so
-	$(CC) -g -I./include -DHAS_STDINT_H -lfiber-framework -L. -Wl,--rpath -Wl,. -o run-tests $(TESTS_DIR)/tests.c
+ff-tests:
+	cd ./tests && make ff-tests && cp ff-tests ../
 
 clean:
-	rm -f libfiber-framework.so run-tests
+	cd ./tests && make clean
+	rm -f libfiber-framework.so ff-tests
 
