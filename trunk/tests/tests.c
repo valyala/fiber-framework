@@ -1084,17 +1084,26 @@ static void dictionary_basic_with_order(int order, int elements_cnt)
 	const void *entry_key;
 	const void *value;
 	int i;
+	int is_empty;
 	enum ff_result result;
 
 	dictionary = ff_dictionary_create(order, dictionary_get_key_hash_func, dictionary_is_equal_keys_func);
+
+	is_empty = ff_dictionary_is_empty(dictionary);
+	ASSERT(is_empty, "dictionary must be empty");
 	for (i = 0; i < elements_cnt; i++)
 	{
 		result = ff_dictionary_add_entry(dictionary, (const void *) i, (const void *) (i + 2));
 		ASSERT(result == FF_SUCCESS, "cannot put entry to the dictionary");
 	}
+	is_empty = ff_dictionary_is_empty(dictionary);
+	ASSERT(!is_empty, "dictionary mustn't be empty");
+
 	data.cnt = elements_cnt;
 	ff_dictionary_remove_all_entries(dictionary, dictionary_basic_remove_entry_func, &data);
 	ASSERT(data.cnt == 0, "unexpected number of remove_entry_func calls");
+	is_empty = ff_dictionary_is_empty(dictionary);
+	ASSERT(is_empty, "dictionary must be empty");
 
 	for (i = 0; i < elements_cnt; i++)
 	{
@@ -1124,6 +1133,9 @@ static void dictionary_basic_with_order(int order, int elements_cnt)
 	}
 	result = ff_dictionary_remove_entry(dictionary,  (const void *) 0, &entry_key, &value);
 	ASSERT(result != FF_SUCCESS, "the entry with the given key mustn't exist");
+	is_empty = ff_dictionary_is_empty(dictionary);
+	ASSERT(is_empty, "dictionary must be empty");
+
 	ff_dictionary_delete(dictionary);
 }
 
