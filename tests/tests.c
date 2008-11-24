@@ -1098,11 +1098,15 @@ static void dictionary_basic_with_order(int order, int elements_cnt)
 		result = ff_dictionary_put_entry(dictionary, (const void *) i, (const void *) (i + 1));
 		ASSERT(result == FF_SUCCESS, "cannot put entry to the dictionary");
 	}
+	result = ff_dictionary_put_entry(dictionary, (const void *) 0, (const void *) 100);
+	ASSERT(result != FF_SUCCESS, "the entry with the given key must already exist");
 
 	data.cnt = elements_cnt;
 	ff_dictionary_for_each_entry(dictionary, dictionary_basic_for_each_entry_func, &data);
 	ASSERT(data.cnt == 0, "unexpected number of for_each_entry_func calls");
 
+	result = ff_dictionary_get_entry(dictionary, (const void *) elements_cnt, &value);
+	ASSERT(result != FF_SUCCESS, "the entry with the given key mustn't exist");
 	for (i = 0; i < elements_cnt; i++)
 	{
 		result = ff_dictionary_get_entry(dictionary, (const void *) i, &value);
@@ -1110,12 +1114,16 @@ static void dictionary_basic_with_order(int order, int elements_cnt)
 		ASSERT(value == (const void *) (i + 1), "unexpected value for the entry from the dictionary");
 	}
 
+	result = ff_dictionary_remove_entry(dictionary, (const void *) elements_cnt, &value);
+	ASSERT(result != FF_SUCCESS, "the entry with the given key mustn't exist");
 	for (i = 0; i < elements_cnt; i++)
 	{
 		result = ff_dictionary_remove_entry(dictionary, (const void *) i, &value);
 		ASSERT(result == FF_SUCCESS, "cannot remore the entry from the dictionary");
 		ASSERT(value == (const void *) (i + 1), "unexpected value for the entry from the dictionary");
 	}
+	result = ff_dictionary_remove_entry(dictionary,  (const void *) 0, &value);
+	ASSERT(result != FF_SUCCESS, "the entry with the given key mustn't exist");
 	ff_dictionary_delete(dictionary);
 }
 
