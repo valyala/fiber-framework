@@ -59,7 +59,7 @@ void ff_dictionary_delete(struct ff_dictionary *dictionary)
 	ff_free(dictionary);
 }
 
-void ff_dictionary_remove_all_entries(struct ff_dictionary *dictionary)
+void ff_dictionary_remove_all_entries(struct ff_dictionary *dictionary, ff_dictionary_remove_entry_func remove_entry_func, void *remove_entry_ctx)
 {
 	struct dictionary_entry **buckets;
 	int buckets_cnt;
@@ -78,6 +78,7 @@ void ff_dictionary_remove_all_entries(struct ff_dictionary *dictionary)
 		{
 			struct dictionary_entry *next_entry;
 
+			remove_entry_func(entry->key, entry->value, remove_entry_ctx);
 			next_entry = entry->next;
 			ff_free(entry);
 			entry = next_entry;
@@ -89,7 +90,7 @@ void ff_dictionary_remove_all_entries(struct ff_dictionary *dictionary)
 	dictionary->entries_cnt = 0;
 }
 
-enum ff_result ff_dictionary_put_entry(struct ff_dictionary *dictionary, const void *key, const void *value)
+enum ff_result ff_dictionary_add_entry(struct ff_dictionary *dictionary, const void *key, const void *value)
 {
 	struct dictionary_entry *entry;
 	ff_dictionary_is_equal_keys_func is_equal_keys_func;
@@ -157,7 +158,7 @@ enum ff_result ff_dictionary_get_entry(struct ff_dictionary *dictionary, const v
 	return result;
 }
 
-enum ff_result ff_dictionary_remove_entry(struct ff_dictionary *dictionary, const void *key, const void **value)
+enum ff_result ff_dictionary_remove_entry(struct ff_dictionary *dictionary, const void *key, const void **entry_key, const void **entry_value)
 {
 	struct dictionary_entry **entry_ptr;
 	struct dictionary_entry *entry;
@@ -177,7 +178,8 @@ enum ff_result ff_dictionary_remove_entry(struct ff_dictionary *dictionary, cons
 		if (is_equal)
 		{
 			*entry_ptr = entry->next;
-			*value = entry->value;
+			*entry_key = entry->key;
+			*entry_value = entry->value;
 			ff_free(entry);
 			dictionary->entries_cnt--;
 			result = FF_SUCCESS;
@@ -191,25 +193,4 @@ enum ff_result ff_dictionary_remove_entry(struct ff_dictionary *dictionary, cons
 		ff_log_debug(L"the entry with key=%p doesn't exist in the dictionary=%p", key, dictionary);
 	}
 	return result;
-}
-
-void ff_dictionary_for_each_entry(struct ff_dictionary *dictionary, ff_dictionary_for_each_entry_func for_each_entry_func, void *ctx)
-{
-	struct dictionary_entry **buckets;
-	int buckets_cnt;
-	int i;
-
-	buckets_cnt = 1l << dictionary->order;
-	buckets = dictionary->buckets;
-	for (i = 0; i < buckets_cnt; i++)
-	{
-		struct dictionary_entry *entry;
-
-		entry = buckets[i];
-		while (entry != NULL)
-		{
-			for_each_entry_func(entry->key, entry->value, ctx);
-			entry = entry->next;
-		}
-	}
 }
