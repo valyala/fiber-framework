@@ -109,17 +109,19 @@ void ff_win_completion_port_register_overlapped_data(struct ff_arch_completion_p
 {
 	enum ff_result result;
 
-	result = ff_dictionary_put_entry(completion_port->overlapped_dictionary, overlapped, data);
+	result = ff_dictionary_add_entry(completion_port->overlapped_dictionary, overlapped, data);
 	ff_assert(result == FF_SUCCESS);
 }
 
 void ff_win_completion_port_deregister_overlapped_data(struct ff_arch_completion_port *completion_port, LPOVERLAPPED overlapped)
 {
+	LPOVERLAPPED overlapped_key;
 	void *data;
 	enum ff_result result;
 
-	result = ff_dictionary_remove_entry(completion_port->overlapped_dictionary, overlapped, &data);
+	result = ff_dictionary_remove_entry(completion_port->overlapped_dictionary, overlapped, (const void **) &overlapped_key, &data);
 	ff_assert(result == FF_SUCCESS);
+	ff_assert(overlapped == overlapped_key);
 }
 
 void ff_win_completion_port_register_handle(struct ff_arch_completion_port *completion_port, HANDLE handle)
