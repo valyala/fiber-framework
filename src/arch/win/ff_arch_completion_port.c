@@ -3,14 +3,41 @@
 #include "private/arch/ff_arch_completion_port.h"
 #include "ff_win_completion_port.h"
 #include "private/ff_dictionary.h"
+#include "private/ff_hash.h"
 
 #define OVERLAPPED_DICTIONARY_ORDER 8
+
+#define OVERLAPPED_HASH_START_VALUE 0
 
 struct ff_arch_completion_port
 {
 	HANDLE handle;
 	struct ff_dictionary *overlapped_dictionary;
 };
+
+static uint32_t dictionary_get_overlapped_hash(const void *key)
+{
+	LPOVERLAPPED overlapped;
+	uint32_t hash_value;
+	int key_size;
+
+	overlapped = (LPOVERLAPPED) key;
+	key_size = sizeof(LPOVERLAPPED) / sizeof(uint32_t);
+	ff_assert(key_size * sizeof(uint32_t) == sizeof(LPOVERLAPPED));
+	/* it is ok that the calculated hash value will be different for low-endian and big-endian 64-bit architectures,
+	 * because it is used only on local machine and doesn't passed outside.
+	 */
+	hash_value = ff_hash_uint32(OVERLAPPED_HASH_START_VALUE, (uint32_t *) &overlapped, key_size);
+	return hash_value;
+}
+
+static int dictionary_is_equal_overlapped(const void *key1, const void *key2)
+{
+	int is_equal;
+
+	is_equal = ((LPOVERLAPPED)key1 == (LPOVERLAPPED)key2);
+	return is_equal;
+}
 
 struct ff_arch_completion_port *ff_arch_completion_port_create(int concurrency)
 {
@@ -19,7 +46,7 @@ struct ff_arch_completion_port *ff_arch_completion_port_create(int concurrency)
 	completion_port = (struct ff_arch_completion_port *) ff_malloc(sizeof(*completion_port));
 	completion_port->handle = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, (ULONG_PTR) NULL, concurrency);
 	ff_winapi_fatal_error_check(completion_port->handle != NULL, L"cannot create completion port");
-	completion_port->overlapped_dictionary = ff_dictionary_create(OVERLAPPED_DICTIONARY_ORDER);
+	completion_port->overlapped_dictionary = ff_dictionary_create(OVERLAPPED_DICTIONARY_ORDER, dictionary_get_overlapped_hash, dictionary_is_equal_overlapped);
 	return completion_port;
 }
 
@@ -59,7 +86,7 @@ void ff_arch_completion_port_get(struct ff_arch_completion_port *completion_port
 	{
 		enum ff_result result;
 
-		result = ff_dictionary_get(completion_port->overlapped_dictionary, overlapped, data);
+		result = ff_dictionary_get_entry(completion_port->overlapped_dictionary, overlapped, data);
 		ff_assert(result == FF_SUCCESS);
 	}
 	else
@@ -80,7 +107,10 @@ void ff_arch_completion_port_put(struct ff_arch_completion_port *completion_port
 
 void ff_win_completion_port_register_overlapped_data(struct ff_arch_completion_port *completion_port, LPOVERLAPPED overlapped, const void *data)
 {
-	ff_dictionary_put(completion_port->overlapped_dictionary, overlapped, data);
+	enum ff_result result;
+
+	result = ff_dictionary_put_entry(completion_port->overlapped_dictionary, overlapped, data);
+	ff_assert(result == FF_SUCCESS);
 }
 
 void ff_win_completion_port_deregister_overlapped_data(struct ff_arch_completion_port *completion_port, LPOVERLAPPED overlapped)

@@ -789,6 +789,10 @@
 					>
 				</File>
 				<File
+					RelativePath=".\include\ff\ff_dictionary.h"
+					>
+				</File>
+				<File
 					RelativePath=".\include\ff\ff_event.h"
 					>
 				</File>
