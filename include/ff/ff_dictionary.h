@@ -79,6 +79,11 @@ FF_API enum ff_result ff_dictionary_get_entry(struct ff_dictionary *dictionary, 
  */
 FF_API enum ff_result ff_dictionary_remove_entry(struct ff_dictionary *dictionary, const void *key, const void **entry_key, const void **entry_value);
 
+/**
+ * Returns 1 if the dictionary is empty, otherwise returns 0.
+ */
+FF_API int ff_dictionary_is_empty(struct ff_dictionary *dictionary);
+
 #ifdef __cplusplus
 }
 #endif

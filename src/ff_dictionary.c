@@ -53,6 +53,7 @@ struct ff_dictionary *ff_dictionary_create(int order, ff_dictionary_get_key_hash
 
 void ff_dictionary_delete(struct ff_dictionary *dictionary)
 {
+	ff_assert(dictionary != NULL);
 	ff_assert(dictionary->entries_cnt == 0);
 
 	ff_free(dictionary->buckets);
@@ -65,6 +66,8 @@ void ff_dictionary_remove_all_entries(struct ff_dictionary *dictionary, ff_dicti
 	int buckets_cnt;
 	int entries_cnt;
 	int i;
+
+	ff_assert(dictionary != NULL);
 
 	buckets_cnt = 1l << dictionary->order;
 	entries_cnt = dictionary->entries_cnt;
@@ -96,6 +99,8 @@ enum ff_result ff_dictionary_add_entry(struct ff_dictionary *dictionary, const v
 	ff_dictionary_is_equal_keys_func is_equal_keys_func;
 	uint32_t bucket_num;
 	enum ff_result result = FF_FAILURE;
+
+	ff_assert(dictionary != NULL);
 
 	is_equal_keys_func = dictionary->is_equal_keys_func;
 	bucket_num = get_bucket_num(dictionary, key);
@@ -135,6 +140,8 @@ enum ff_result ff_dictionary_get_entry(struct ff_dictionary *dictionary, const v
 	uint32_t bucket_num;
 	enum ff_result result = FF_FAILURE;
 
+	ff_assert(dictionary != NULL);
+
 	is_equal_keys_func = dictionary->is_equal_keys_func;
 	bucket_num = get_bucket_num(dictionary, key);
 	entry = dictionary->buckets[bucket_num];
@@ -166,6 +173,8 @@ enum ff_result ff_dictionary_remove_entry(struct ff_dictionary *dictionary, cons
 	uint32_t bucket_num;
 	enum ff_result result = FF_FAILURE;
 
+	ff_assert(dictionary != NULL);
+
 	is_equal_keys_func = dictionary->is_equal_keys_func;
 	bucket_num = get_bucket_num(dictionary, key);
 	entry_ptr = &dictionary->buckets[bucket_num];
@@ -193,4 +202,14 @@ enum ff_result ff_dictionary_remove_entry(struct ff_dictionary *dictionary, cons
 		ff_log_debug(L"the entry with key=%p doesn't exist in the dictionary=%p", key, dictionary);
 	}
 	return result;
+}
+
+int ff_dictionary_is_empty(struct ff_dictionary *dictionary)
+{
+	int is_empty;
+
+	ff_assert(dictionary != NULL);
+
+	is_empty = (dictionary->entries_cnt == 0);
+	return is_empty;
 }
