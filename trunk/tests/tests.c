@@ -8,6 +8,8 @@
 #include "ff/ff_blocking_queue.h"
 #include "ff/ff_blocking_stack.h"
 #include "ff/ff_pool.h"
+#include "ff/ff_dictionary.h"
+#include "ff/ff_hash.h"
 #include "ff/ff_file.h"
 #include "ff/arch/ff_arch_net_addr.h"
 #include "ff/ff_tcp.h"
@@ -1027,6 +1029,116 @@ static void test_pool_all()
 
 /* end of ff_pool tests */
 
+/* start of ff_dictionary tests */
+
+static uint32_t dictionary_get_key_hash_func(const void *key)
+{
+	uint32_t hash_value;
+
+	hash_value = ff_hash_uint32(0, (uint32_t *) &key, 1);
+	return hash_value;
+}
+
+static int dictionary_is_equal_keys_func(const void *key1, const void *key2)
+{
+	int is_equal;
+
+	is_equal = (memcmp(&key1, &key2, sizeof(uint32_t)) == 0);
+	return is_equal;
+}
+
+static void test_dictionary_create_delete()
+{
+	int i;
+
+	ff_core_initialize(LOG_FILENAME);
+	for (i = 0; i < 20; i++)
+	{
+		struct ff_dictionary *dictionary;
+
+		dictionary = ff_dictionary_create(i, dictionary_get_key_hash_func, dictionary_is_equal_keys_func);
+		ff_dictionary_delete(dictionary);
+	}
+	ff_core_shutdown();
+}
+
+struct dictionary_basic_data
+{
+	int cnt;
+};
+
+static void dictionary_basic_for_each_entry_func(const void *key, const void *value, void *ctx)
+{
+	struct dictionary_basic_data *data;
+
+	data = (struct dictionary_basic_data *) ctx;
+	ASSERT(((char *)key) + 1 == (char *)value, "unexpected key or value");
+	data->cnt--;
+	ASSERT(data->cnt >= 0, "unexpected number of for_each_entry_func calls");
+}
+
+static void dictionary_basic_with_order(int order, int elements_cnt)
+{
+	struct dictionary_basic_data data;
+	struct ff_dictionary *dictionary;
+	const void *value;
+	int i;
+	enum ff_result result;
+
+	dictionary = ff_dictionary_create(order, dictionary_get_key_hash_func, dictionary_is_equal_keys_func);
+	for (i = 0; i < elements_cnt; i++)
+	{
+		result = ff_dictionary_put_entry(dictionary, (const void *) i, (const void *) (i + 2));
+		ASSERT(result == FF_SUCCESS, "cannot put entry to the dictionary");
+	}
+	ff_dictionary_remove_all_entries(dictionary);
+
+	for (i = 0; i < elements_cnt; i++)
+	{
+		result = ff_dictionary_put_entry(dictionary, (const void *) i, (const void *) (i + 1));
+		ASSERT(result == FF_SUCCESS, "cannot put entry to the dictionary");
+	}
+
+	data.cnt = elements_cnt;
+	ff_dictionary_for_each_entry(dictionary, dictionary_basic_for_each_entry_func, &data);
+	ASSERT(data.cnt == 0, "unexpected number of for_each_entry_func calls");
+
+	for (i = 0; i < elements_cnt; i++)
+	{
+		result = ff_dictionary_get_entry(dictionary, (const void *) i, &value);
+		ASSERT(result == FF_SUCCESS, "cannot find the entry in the dictionary");
+		ASSERT(value == (const void *) (i + 1), "unexpected value for the entry from the dictionary");
+	}
+
+	for (i = 0; i < elements_cnt; i++)
+	{
+		result = ff_dictionary_remove_entry(dictionary, (const void *) i, &value);
+		ASSERT(result == FF_SUCCESS, "cannot remore the entry from the dictionary");
+		ASSERT(value == (const void *) (i + 1), "unexpected value for the entry from the dictionary");
+	}
+	ff_dictionary_delete(dictionary);
+}
+
+static void test_dictionary_basic()
+{
+	int i;
+
+	ff_core_initialize(LOG_FILENAME);
+	for (i = 0; i < 20; i++)
+	{
+		dictionary_basic_with_order(i, (1 + i) * 100);
+	}
+	ff_core_shutdown();
+}
+
+static void test_dictionary_all()
+{
+	test_dictionary_create_delete();
+	test_dictionary_basic();
+}
+
+/* end of ff_dictionary tests */
+
 /* start of ff_file tests */
 
 static void test_file_open_read_fail()
@@ -1977,6 +2089,7 @@ static void test_all()
 	test_blocking_queue_all();
 	test_blocking_stack_all();
 	test_pool_all();
+	test_dictionary_all();
 	test_file_all();
 	test_arch_net_addr_all();
 	test_tcp_all();

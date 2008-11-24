@@ -1,0 +1,86 @@
+#ifndef FF_DICTIONARY_PUBLIC_H
+#define FF_DICTIONARY_PUBLIC_H
+
+#include "ff/ff_common.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+struct ff_dictionary;
+
+/**
+ * This callback must calculate hash value for the given key.
+ * This hash value is used only inside ff_dictionary, so it is safe to calculate
+ * different hash values for low-endian and big-endian machines.
+ */
+typedef uint32_t (*ff_dictionary_get_key_hash_func)(const void *key);
+
+/**
+ * This callback must return non-zero if the key1 is equal to the key2.
+ * Otherwise it must return zero.
+ */
+typedef int (*ff_dictionary_is_equal_keys_func)(const void *key1, const void *key2);
+
+/**
+ * this callback is called for each entry in the dictionary when calling the ff_dictionary_for_each_entry()
+ */
+typedef void (*ff_dictionary_for_each_entry_func)(const void *key, const void *value, void *ctx);
+
+/**
+ * Creates a dictionary with the fixed hash table size equal to the (1 << order).
+ * In order to achieve better speed use the order, which is calculated from the given formula:
+ * (1 << order) >= expected_dictionary_size.
+ * The order value cannot exceed 20.
+ * This function always returns correct result.
+ */
+FF_API struct ff_dictionary *ff_dictionary_create(int order, ff_dictionary_get_key_hash_func get_key_hash_func, ff_dictionary_is_equal_keys_func is_equal_keys_func);
+
+/**
+ * Deletes the given dictionary.
+ * The dictionary must be empty before calling this function.
+ * The dictionary can be empties by either calling ff_dictionary_remove_entry() for all the added entries
+ * either by calling the ff_dictionary_remove_all_entries().
+ */
+FF_API void ff_dictionary_delete(struct ff_dictionary *dictionary);
+
+/**
+ * Deletes all added entries from the dictionary.
+ * Note that the function doesn't delete values referenced by entries.
+ */
+FF_API void ff_dictionary_remove_all_entries(struct ff_dictionary *dictionary);
+
+/**
+ * Puts the entry with the given key and the given value to the dictionary.
+ * Returns FF_SUCCESS if the entry has been put to the dictionary.
+ * Returns FF_FAILURE if the dictionary already contains an entry with the given key.
+ * In this case the entry won't be put to the dictionary.
+ */
+FF_API enum ff_result ff_dictionary_put_entry(struct ff_dictionary *dictionary, const void *key, const void *value);
+
+/**
+ * Obtains the entry value with the given key from the given dictionary.
+ * Returns FF_SUCCESS if the entry has been obtained.
+ * Returns FF_FAILURE is there is no entry with the given key in the dictionary.
+ */
+FF_API enum ff_result ff_dictionary_get_entry(struct ff_dictionary *dictionary, const void *key, const void **value);
+
+/**
+ * Removes the entry with the given key from the dictionary.
+ * The deleted entry value is returned in the value.
+ * Returns FF_SUCCESS if the entry has been deleted.
+ * Returns FF_FAILURE if there is no entry with the given key in the dictionary.
+ */
+FF_API enum ff_result ff_dictionary_remove_entry(struct ff_dictionary *dictionary, const void *key, const void **value);
+
+/**
+ * calls the for_each_func for each entry in the dictionary.
+ * Note that if the for_each_func can block, than the access to the dictionary must be protected by ff_mutex!
+ */
+FF_API void ff_dictionary_for_each_entry(struct ff_dictionary *dictionary, ff_dictionary_for_each_entry_func for_each_entry_func, void *ctx);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif
