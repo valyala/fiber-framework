@@ -169,7 +169,7 @@ enum ff_result ff_dictionary_remove_entry(struct ff_dictionary *dictionary, cons
 	is_equal_keys_func = dictionary->is_equal_keys_func;
 	bucket_num = get_bucket_num(dictionary, key);
 	entry_ptr = &dictionary->buckets[bucket_num];
-	entry = dictionary->buckets[bucket_num];
+	entry = *entry_ptr;
 	while (entry != NULL)
 	{
 		int is_equal;
@@ -186,7 +186,7 @@ enum ff_result ff_dictionary_remove_entry(struct ff_dictionary *dictionary, cons
 			break;
 		}
 		entry_ptr = &entry->next;
-		entry = entry->next;
+		entry = *entry_ptr;
 	}
 	if (result != FF_SUCCESS)
 	{
