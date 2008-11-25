@@ -22,30 +22,25 @@ struct ff_stream_acceptor *ff_stream_acceptor_create(const struct ff_stream_acce
 
 void ff_stream_acceptor_delete(struct ff_stream_acceptor *stream_acceptor)
 {
-	stream_acceptor->vtable->delete(stream_acceptor);
+	stream_acceptor->vtable->delete(stream_acceptor->ctx);
 	ff_free(stream_acceptor);
-}
-
-void *ff_stream_acceptor_get_ctx(struct ff_stream_acceptor *stream_acceptor)
-{
-	return stream_acceptor->ctx;
 }
 
 void ff_stream_acceptor_initialize(struct ff_stream_acceptor *stream_acceptor)
 {
-	stream_acceptor->vtable->initialize(stream_acceptor);
+	stream_acceptor->vtable->initialize(stream_acceptor->ctx);
 }
 
 void ff_stream_acceptor_shutdown(struct ff_stream_acceptor *stream_acceptor)
 {
-	stream_acceptor->vtable->shutdown(stream_acceptor);
+	stream_acceptor->vtable->shutdown(stream_acceptor->ctx);
 }
 
 struct ff_stream *ff_stream_acceptor_accept(struct ff_stream_acceptor *stream_acceptor)
 {
 	struct ff_stream *stream;
 
-	stream = stream_acceptor->vtable->accept(stream_acceptor);
+	stream = stream_acceptor->vtable->accept(stream_acceptor->ctx);
 	if (stream == NULL)
 	{
 		ff_log_debug(L"cannot accept connection using the stream_acceptor=%p. See previous messages for more info", stream_acceptor);

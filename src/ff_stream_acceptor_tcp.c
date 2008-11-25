@@ -14,23 +14,23 @@ struct tcp_stream_acceptor
 	int is_initialized;
 };
 
-static void delete_tcp_stream_acceptor(struct ff_stream_acceptor *stream_acceptor)
+static void delete_tcp_stream_acceptor(void *ctx)
 {
 	struct tcp_stream_acceptor *tcp_stream_acceptor;
 
-	tcp_stream_acceptor = (struct tcp_stream_acceptor *) ff_stream_acceptor_get_ctx(stream_acceptor);
+	tcp_stream_acceptor = (struct tcp_stream_acceptor *) ctx;
 	ff_assert(!tcp_stream_acceptor->is_initialized);
 	ff_tcp_delete(tcp_stream_acceptor->tcp);
 	ff_arch_net_addr_delete(tcp_stream_acceptor->addr);
 	ff_free(tcp_stream_acceptor);
 }
 
-static void initialize_tcp_stream_acceptor(struct ff_stream_acceptor *stream_acceptor)
+static void initialize_tcp_stream_acceptor(void *ctx)
 {
 	struct tcp_stream_acceptor *tcp_stream_acceptor;
 	enum ff_result result;
 
-	tcp_stream_acceptor = (struct tcp_stream_acceptor *) ff_stream_acceptor_get_ctx(stream_acceptor);
+	tcp_stream_acceptor = (struct tcp_stream_acceptor *) ctx;
 	ff_assert(!tcp_stream_acceptor->is_initialized);
 	ff_tcp_delete(tcp_stream_acceptor->tcp);
 	tcp_stream_acceptor->tcp = ff_tcp_create();
@@ -51,11 +51,11 @@ static void initialize_tcp_stream_acceptor(struct ff_stream_acceptor *stream_acc
 	}
 }
 
-static void shutdown_tcp_stream_acceptor(struct ff_stream_acceptor *stream_acceptor)
+static void shutdown_tcp_stream_acceptor(void *ctx)
 {
 	struct tcp_stream_acceptor *tcp_stream_acceptor;
 
-	tcp_stream_acceptor = (struct tcp_stream_acceptor *) ff_stream_acceptor_get_ctx(stream_acceptor);
+	tcp_stream_acceptor = (struct tcp_stream_acceptor *) ctx;
 	if (tcp_stream_acceptor->is_initialized)
 	{
 		tcp_stream_acceptor->is_initialized = 0;
@@ -63,16 +63,16 @@ static void shutdown_tcp_stream_acceptor(struct ff_stream_acceptor *stream_accep
 	}
 	else
 	{
-		ff_log_debug(L"stream_acceptor=%p has been already shutdowned, so it won't be shutdowned again", stream_acceptor);
+		ff_log_debug(L"tcp_stream_acceptor=%p has been already shutdowned, so it won't be shutdowned again", tcp_stream_acceptor);
 	}
 }
 
-static struct ff_stream *accept_tcp_stream_acceptor(struct ff_stream_acceptor *stream_acceptor)
+static struct ff_stream *accept_tcp_stream_acceptor(void *ctx)
 {
 	struct tcp_stream_acceptor *tcp_stream_acceptor;
 	struct ff_stream *client_stream = NULL;
 
-	tcp_stream_acceptor = (struct tcp_stream_acceptor *) ff_stream_acceptor_get_ctx(stream_acceptor);
+	tcp_stream_acceptor = (struct tcp_stream_acceptor *) ctx;
 	if (tcp_stream_acceptor->is_initialized)
 	{
 		struct ff_tcp *tcp_client;
@@ -89,12 +89,12 @@ static struct ff_stream *accept_tcp_stream_acceptor(struct ff_stream_acceptor *s
 		{
 			/* ff_tcp_accept() can return NULL only if shutdown_tcp_stream_acceptor() was called */
 			ff_assert(!tcp_stream_acceptor->is_initialized);
-			ff_log_debug(L"shutdown_tcp_stream_acceptor() has been called for the stream_acceptor=%p. See previous messages for more info", stream_acceptor);
+			ff_log_debug(L"shutdown_tcp_stream_acceptor() has been called for the tcp_stream_acceptor=%p. See previous messages for more info", tcp_stream_acceptor);
 		}
     }
     else
     {
-    	ff_log_debug(L"stream_acceptor=%p has been already shutdowned, so it can't be used for accepting connections", stream_acceptor);
+    	ff_log_debug(L"tcp_stream_acceptor=%p has been already shutdowned, so it can't be used for accepting connections", tcp_stream_acceptor);
     }
 
 	return client_stream;
