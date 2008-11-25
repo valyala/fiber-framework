@@ -14,36 +14,35 @@ struct ff_stream_vtable
 	/**
 	 * the delete() callback should release the context passed to the ff_stream_create()
 	 */
-	void (*delete)(struct ff_stream *stream);
+	void (*delete)(void *ctx);
 
 	/**
 	 * the read() callback should read exactly len bytes from the stream into buf.
 	 * It should return FF_SUCCESS on success, FF_FAILURE on error.
 	 */
-	enum ff_result (*read)(struct ff_stream *stream, void *buf, int len);
+	enum ff_result (*read)(void *ctx, void *buf, int len);
 
 	/**
 	 * the write() callback should write exactly len bytes from the buf into the stream.
 	 * It should return FF_SUCCESS on success, FF_FAILURE on error.
 	 */
-	enum ff_result (*write)(struct ff_stream *stream, const void *buf, int len);
+	enum ff_result (*write)(void *ctx, const void *buf, int len);
 
 	/**
 	 * the flush() callback should flush stream's write buffer.
 	 * It should return FF_SUCCESS on success, FF_FAILURE on error.
 	 */
-	enum ff_result (*flush)(struct ff_stream *stream);
+	enum ff_result (*flush)(void *ctx);
 
 	/**
 	 * the disconnect() callback should unblock all pending write*() and read*() calls.
 	 * All subsequent write*() and read*() calls should return FF_FAILURE immediately.
 	 */
-	void (*disconnect)(struct ff_stream *stream);
+	void (*disconnect)(void *ctx);
 };
 
 /**
  * Creates a stream using the given vtable and ctx.
- * ctx then can be obtained by ff_stream_get_ctx() function.
  * vtable must be persistent until the ff_stream_delete() will be called.
  * Always returns correct result.
  */
@@ -54,11 +53,6 @@ FF_API struct ff_stream *ff_stream_create(const struct ff_stream_vtable *vtable,
  * It invokes the ff_stream_vtable::delete() callback.
  */
 FF_API void ff_stream_delete(struct ff_stream *stream);
-
-/**
- * Returns the context parameter, which was passed to the ff_stream_create()
- */
-FF_API void *ff_stream_get_ctx(struct ff_stream *stream);
 
 /**
  * Reads exactly len bytes from the stream into the buf.

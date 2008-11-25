@@ -2,22 +2,22 @@
 
 #include "private/ff_stream_tcp.h"
 
-static void delete_tcp(struct ff_stream *stream)
+static void delete_tcp(void *ctx)
 {
 	struct ff_tcp *tcp;
 
-	tcp = (struct ff_tcp *) ff_stream_get_ctx(stream);
+	tcp = (struct ff_tcp *) ctx;
 	ff_tcp_delete(tcp);
 }
 
-static enum ff_result read_from_tcp(struct ff_stream *stream, void *buf, int len)
+static enum ff_result read_from_tcp(void *ctx, void *buf, int len)
 {
 	struct ff_tcp *tcp;
 	enum ff_result result;
 
 	ff_assert(len >= 0);
 
-	tcp = (struct ff_tcp *) ff_stream_get_ctx(stream);
+	tcp = (struct ff_tcp *) ctx;
 	result = ff_tcp_read(tcp, buf, len);
 	if (result != FF_SUCCESS)
 	{
@@ -26,14 +26,14 @@ static enum ff_result read_from_tcp(struct ff_stream *stream, void *buf, int len
 	return result;
 }
 
-static enum ff_result write_to_tcp(struct ff_stream *stream, const void *buf, int len)
+static enum ff_result write_to_tcp(void *ctx, const void *buf, int len)
 {
 	struct ff_tcp *tcp;
 	enum ff_result result;
 
 	ff_assert(len >= 0);
 
-	tcp = (struct ff_tcp *) ff_stream_get_ctx(stream);
+	tcp = (struct ff_tcp *) ctx;
 	result = ff_tcp_write(tcp, buf, len);
 	if (result != FF_SUCCESS)
 	{
@@ -42,12 +42,12 @@ static enum ff_result write_to_tcp(struct ff_stream *stream, const void *buf, in
 	return result;
 }
 
-static enum ff_result flush_tcp(struct ff_stream *stream)
+static enum ff_result flush_tcp(void *ctx)
 {
 	struct ff_tcp *tcp;
 	enum ff_result result;
 
-	tcp = (struct ff_tcp *) ff_stream_get_ctx(stream);
+	tcp = (struct ff_tcp *) ctx;
 	result = ff_tcp_flush(tcp);
 	if (result != FF_SUCCESS)
 	{
@@ -56,11 +56,11 @@ static enum ff_result flush_tcp(struct ff_stream *stream)
 	return result;
 }
 
-static void disconnect_tcp(struct ff_stream *stream)
+static void disconnect_tcp(void *ctx)
 {
 	struct ff_tcp *tcp;
 
-	tcp = (struct ff_tcp *) ff_stream_get_ctx(stream);
+	tcp = (struct ff_tcp *) ctx;
 	ff_tcp_disconnect(tcp);
 }
 
