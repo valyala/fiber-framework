@@ -23,13 +23,8 @@ struct ff_stream *ff_stream_create(const struct ff_stream_vtable *vtable, void *
 
 void ff_stream_delete(struct ff_stream *stream)
 {
-	stream->vtable->delete(stream);
+	stream->vtable->delete(stream->ctx);
 	ff_free(stream);
-}
-
-void *ff_stream_get_ctx(struct ff_stream *stream)
-{
-	return stream->ctx;
 }
 
 enum ff_result ff_stream_read(struct ff_stream *stream, void *buf, int len)
@@ -38,7 +33,7 @@ enum ff_result ff_stream_read(struct ff_stream *stream, void *buf, int len)
 
 	ff_assert(len >= 0);
 
-	result = stream->vtable->read(stream, buf, len);
+	result = stream->vtable->read(stream->ctx, buf, len);
 	if (result != FF_SUCCESS)
 	{
 		ff_log_debug(L"cannot read data from the stream=%p to the buf=%p, len=%d. See previous messages for more info", stream, buf, len);
@@ -52,7 +47,7 @@ enum ff_result ff_stream_write(struct ff_stream *stream, const void *buf, int le
 
 	ff_assert(len >= 0);
 
-	result = stream->vtable->write(stream, buf, len);
+	result = stream->vtable->write(stream->ctx, buf, len);
 	if (result != FF_SUCCESS)
 	{
 		ff_log_debug(L"cannot write data to the stream=%p from the buf=%p, len=%d. See previous messages for more info", stream, buf, len);
@@ -64,7 +59,7 @@ enum ff_result ff_stream_flush(struct ff_stream *stream)
 {
 	enum ff_result result;
 
-	result = stream->vtable->flush(stream);
+	result = stream->vtable->flush(stream->ctx);
 	if (result != FF_SUCCESS)
 	{
 		ff_log_debug(L"cannot flush the stream=%p. See previous messages for more info", stream);
@@ -74,7 +69,7 @@ enum ff_result ff_stream_flush(struct ff_stream *stream)
 
 void ff_stream_disconnect(struct ff_stream *stream)
 {
-	stream->vtable->disconnect(stream);
+	stream->vtable->disconnect(stream->ctx);
 }
 
 enum ff_result ff_stream_copy(struct ff_stream *src_stream, struct ff_stream *dst_stream, int len)
