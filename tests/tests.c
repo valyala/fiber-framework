@@ -1035,15 +1035,18 @@ static uint32_t dictionary_get_key_hash_func(const void *key)
 {
 	uint32_t hash_value;
 
-	hash_value = ff_hash_uint32(0, (uint32_t *) &key, 1);
+	hash_value = ff_hash_uint32(0, (uint32_t *) key, 1);
 	return hash_value;
 }
 
 static int dictionary_is_equal_keys_func(const void *key1, const void *key2)
 {
 	int is_equal;
+	uint32_t *u32_key1, *u32_key2;
 
-	is_equal = (memcmp(&key1, &key2, sizeof(uint32_t)) == 0);
+	u32_key1 = (uint32_t *) key1;
+	u32_key2 = (uint32_t *) key2;
+	is_equal = (*u32_key1 == *u32_key2);
 	return is_equal;
 }
 
@@ -1070,9 +1073,14 @@ struct dictionary_basic_remove_entry_data
 static void dictionary_basic_remove_entry_func(const void *key, const void *value, void *ctx)
 {
 	struct dictionary_basic_remove_entry_data *data;
+	uint32_t *u32_key, *u32_value;
 
+	u32_key = (uint32_t *) key;
+	u32_value = (uint32_t *) value;
 	data = (struct dictionary_basic_remove_entry_data *) ctx;
-	ASSERT(((char *)key) + 2 == (char *)value, "unexpected key or value");
+	ASSERT(*u32_key + 2 == *u32_value, "unexpected key or value");
+	ff_free(u32_key);
+	ff_free(u32_value);
 	data->cnt--;
 	ASSERT(data->cnt >= 0, "unexpected number of remove_entry_func calls");
 }
@@ -1081,8 +1089,8 @@ static void dictionary_basic_with_order(int order, int elements_cnt)
 {
 	struct dictionary_basic_remove_entry_data data;
 	struct ff_dictionary *dictionary;
-	const void *entry_key;
-	const void *value;
+	uint32_t *key, *entry_key;
+	uint32_t *value;
 	int i;
 	int is_empty;
 	enum ff_result result;
@@ -1093,7 +1101,11 @@ static void dictionary_basic_with_order(int order, int elements_cnt)
 	ASSERT(is_empty, "dictionary must be empty");
 	for (i = 0; i < elements_cnt; i++)
 	{
-		result = ff_dictionary_add_entry(dictionary, (const void *) i, (const void *) (i + 2));
+		key = (uint32_t *) ff_malloc(sizeof(*key));
+		value = (uint32_t *) ff_malloc(sizeof(*value));
+		*key = i;
+		*value = i + 2;
+		result = ff_dictionary_add_entry(dictionary, key, value);
 		ASSERT(result == FF_SUCCESS, "cannot put entry to the dictionary");
 	}
 	is_empty = ff_dictionary_is_empty(dictionary);
@@ -1107,32 +1119,49 @@ static void dictionary_basic_with_order(int order, int elements_cnt)
 
 	for (i = 0; i < elements_cnt; i++)
 	{
-		result = ff_dictionary_add_entry(dictionary, (const void *) i, (const void *) (i + 1));
+		key = (uint32_t *) ff_malloc(sizeof(*key));
+		value = (uint32_t *) ff_malloc(sizeof(*value));
+		*key = i;
+		*value = i + 1;
+		result = ff_dictionary_add_entry(dictionary, key, value);
 		ASSERT(result == FF_SUCCESS, "cannot put entry to the dictionary");
 	}
-	result = ff_dictionary_add_entry(dictionary, (const void *) 0, (const void *) 100);
+	key = (uint32_t *) ff_malloc(sizeof(*key));
+	value = (uint32_t *) ff_malloc(sizeof(*value));
+	*key = 0;
+	*value = 100;
+	result = ff_dictionary_add_entry(dictionary, key, value);
 	ASSERT(result != FF_SUCCESS, "the entry with the given key must already exist");
+	ff_free(value);
 
-	result = ff_dictionary_get_entry(dictionary, (const void *) elements_cnt, &value);
+	*key = elements_cnt;
+	result = ff_dictionary_get_entry(dictionary, key, (const void **) &value);
 	ASSERT(result != FF_SUCCESS, "the entry with the given key mustn't exist");
 	for (i = 0; i < elements_cnt; i++)
 	{
-		result = ff_dictionary_get_entry(dictionary, (const void *) i, &value);
+		*key = (uint32_t) i;
+		result = ff_dictionary_get_entry(dictionary, key, (const void **) &value);
 		ASSERT(result == FF_SUCCESS, "cannot find the entry in the dictionary");
-		ASSERT(value == (const void *) (i + 1), "unexpected value for the entry from the dictionary");
+		ASSERT(*value == (i + 1), "unexpected value for the entry from the dictionary");
 	}
 
-	result = ff_dictionary_remove_entry(dictionary, (const void *) elements_cnt, &entry_key, &value);
+	*key = elements_cnt;
+	result = ff_dictionary_remove_entry(dictionary, key, (const void **) &entry_key, (const void **) &value);
 	ASSERT(result != FF_SUCCESS, "the entry with the given key mustn't exist");
 	for (i = 0; i < elements_cnt; i++)
 	{
-		result = ff_dictionary_remove_entry(dictionary, (const void *) i, &entry_key, &value);
+		*key = (uint32_t) i;
+		result = ff_dictionary_remove_entry(dictionary, key, (const void **) &entry_key, (const void **) &value);
 		ASSERT(result == FF_SUCCESS, "cannot remore the entry from the dictionary");
-		ASSERT(entry_key == (const void *) i, "unexpected key value");
-		ASSERT(value == (const void *) (i + 1), "unexpected value for the entry from the dictionary");
+		ASSERT(*entry_key == i, "unexpected key value");
+		ASSERT(*value == (i + 1), "unexpected value for the entry from the dictionary");
+		ff_free(entry_key);
+		ff_free(value);
 	}
-	result = ff_dictionary_remove_entry(dictionary,  (const void *) 0, &entry_key, &value);
+	*key = 0;
+	result = ff_dictionary_remove_entry(dictionary,  key, (const void **) &entry_key, (const void **) &value);
 	ASSERT(result != FF_SUCCESS, "the entry with the given key mustn't exist");
+	ff_free(key);
 	is_empty = ff_dictionary_is_empty(dictionary);
 	ASSERT(is_empty, "dictionary must be empty");
 
