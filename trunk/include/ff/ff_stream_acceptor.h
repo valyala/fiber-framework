@@ -15,7 +15,7 @@ struct ff_stream_acceptor_vtable
 	/**
 	 * the delete() callback should release the context passed to the ff_stream_acceptor_create()
 	 */
-	void (*delete)(struct ff_stream_acceptor *stream_acceptor);
+	void (*delete)(void *ctx);
 
 	/**
 	 * the initialize() callback should initialize the stream_acceptor for subsequent usage
@@ -24,7 +24,7 @@ struct ff_stream_acceptor_vtable
 	 * and after the shutdown() call.
 	 * The callback must call ff_log_fatal_error() if it cannot finish initialization.
 	 */
-	void (*initialize)(struct ff_stream_acceptor *stream_acceptor);
+	void (*initialize)(void *ctx);
 
 	/**
 	 * the shutdown() callback should unblock the currently blocked ff_stream_acceptor_accept()
@@ -33,19 +33,18 @@ struct ff_stream_acceptor_vtable
 	 * Subsequent call to the initialize() callback should restore ff_stream_acceptor_accept()
 	 * functionality.
 	 */
-	void (*shutdown)(struct ff_stream_acceptor *stream_acceptor);
+	void (*shutdown)(void *ctx);
 
 	/**
 	 * the accept() callback should return next accepted stream or NULL on error
 	 * or after the ff_stream_acceptor_shutdown() was called or if the ff_stream_acceptor_initialize()
 	 * wasn't called before.
 	 */
-	struct ff_stream *(*accept)(struct ff_stream_acceptor *stream_acceptor);
+	struct ff_stream *(*accept)(void *ctx);
 };
 
 /**
  * Creates a stream_acceptor using given vtable and ctx.
- * ctx then can be obtained by ff_stream_acceptor_get_ctx() function.
  * vtable must be persistent until the ff_stream_acceptor_delete() will be called.
  * Always returns correct result.
  */
@@ -55,11 +54,6 @@ FF_API struct ff_stream_acceptor *ff_stream_acceptor_create(const struct ff_stre
  * Deletes the given stream_acceptor.
  */
 FF_API void ff_stream_acceptor_delete(struct ff_stream_acceptor *stream_acceptor);
-
-/**
- * Returns context passed to the ff_stream_acceptor_create().
- */
-FF_API void *ff_stream_acceptor_get_ctx(struct ff_stream_acceptor *stream_acceptor);
 
 /**
  * Initializes the stream_acceptor.
