@@ -22,30 +22,25 @@ struct ff_stream_connector *ff_stream_connector_create(const struct ff_stream_co
 
 void ff_stream_connector_delete(struct ff_stream_connector *stream_connector)
 {
-	stream_connector->vtable->delete(stream_connector);
+	stream_connector->vtable->delete(stream_connector->ctx);
 	ff_free(stream_connector);
-}
-
-void *ff_stream_connector_get_ctx(struct ff_stream_connector *stream_connector)
-{
-	return stream_connector->ctx;
 }
 
 void ff_stream_connector_initialize(struct ff_stream_connector *stream_connector)
 {
-	stream_connector->vtable->initialize(stream_connector);
+	stream_connector->vtable->initialize(stream_connector->ctx);
 }
 
 void ff_stream_connector_shutdown(struct ff_stream_connector *stream_connector)
 {
-	stream_connector->vtable->shutdown(stream_connector);
+	stream_connector->vtable->shutdown(stream_connector->ctx);
 }
 
 struct ff_stream *ff_stream_connector_connect(struct ff_stream_connector *stream_connector)
 {
 	struct ff_stream *stream;
 
-	stream = stream_connector->vtable->connect(stream_connector);
+	stream = stream_connector->vtable->connect(stream_connector->ctx);
 	if (stream == NULL)
 	{
 		ff_log_debug(L"cannot establish connection using stream_connector=%p. See previous messages for more info", stream_connector);
