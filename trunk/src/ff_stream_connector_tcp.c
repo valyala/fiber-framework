@@ -20,32 +20,32 @@ struct tcp_stream_connector
 	int is_initialized;
 };
 
-static void delete_tcp_stream_connector(struct ff_stream_connector *stream_connector)
+static void delete_tcp_stream_connector(void *ctx)
 {
 	struct tcp_stream_connector *tcp_stream_connector;
 
-	tcp_stream_connector = (struct tcp_stream_connector *) ff_stream_connector_get_ctx(stream_connector);
+	tcp_stream_connector = (struct tcp_stream_connector *) ctx;
 	ff_assert(!tcp_stream_connector->is_initialized);
 	ff_event_delete(tcp_stream_connector->must_shutdown_event);
 	ff_arch_net_addr_delete(tcp_stream_connector->addr);
 	ff_free(tcp_stream_connector);
 }
 
-static void initialize_tcp_stream_connector(struct ff_stream_connector *stream_connector)
+static void initialize_tcp_stream_connector(void *ctx)
 {
 	struct tcp_stream_connector *tcp_stream_connector;
 
-	tcp_stream_connector = (struct tcp_stream_connector *) ff_stream_connector_get_ctx(stream_connector);
+	tcp_stream_connector = (struct tcp_stream_connector *) ctx;
 	ff_assert(!tcp_stream_connector->is_initialized);
 	tcp_stream_connector->is_initialized = 1;
 	ff_event_reset(tcp_stream_connector->must_shutdown_event);
 }
 
-static void shutdown_tcp_stream_connector(struct ff_stream_connector *stream_connector)
+static void shutdown_tcp_stream_connector(void *ctx)
 {
 	struct tcp_stream_connector *tcp_stream_connector;
 
-	tcp_stream_connector = (struct tcp_stream_connector *) ff_stream_connector_get_ctx(stream_connector);
+	tcp_stream_connector = (struct tcp_stream_connector *) ctx;
 	if (tcp_stream_connector->is_initialized)
 	{
 		tcp_stream_connector->is_initialized = 0;
@@ -53,19 +53,19 @@ static void shutdown_tcp_stream_connector(struct ff_stream_connector *stream_con
 	}
 	else
 	{
-		ff_log_debug(L"stream_connector=%p already has been shutdowned, so it won't be shutdowned again", stream_connector);
+		ff_log_debug(L"tcp_stream_connector=%p already has been shutdowned, so it won't be shutdowned again", tcp_stream_connector);
 	}
 }
 
-static struct ff_stream *connect_tcp_stream_connector(struct ff_stream_connector *stream_connector)
+static struct ff_stream *connect_tcp_stream_connector(void *ctx)
 {
 	struct tcp_stream_connector *tcp_stream_connector;
 	struct ff_stream *stream = NULL;
 	
-	tcp_stream_connector = (struct tcp_stream_connector *) ff_stream_connector_get_ctx(stream_connector);
+	tcp_stream_connector = (struct tcp_stream_connector *) ctx;
 	if (!tcp_stream_connector->is_initialized)
 	{
-		ff_log_debug(L"the stream_connector=%p has been shutdowned, so it cannot be used for connections", stream_connector);
+		ff_log_debug(L"the tcp_stream_connector=%p has been shutdowned, so it cannot be used for connections", tcp_stream_connector);
 	}
 	while (tcp_stream_connector->is_initialized)
 	{
@@ -91,7 +91,7 @@ static struct ff_stream *connect_tcp_stream_connector(struct ff_stream_connector
 		{
 			/* must_shutdown_event can be set only in the shutdown_tcp_stream_connector() */
 			ff_assert(!tcp_stream_connector->is_initialized);
-			ff_log_debug(L"shutdown_tcp_stream_connector() has been called for the stream_connector=%p, so it cannot be used for connections", stream_connector);
+			ff_log_debug(L"shutdown_tcp_stream_connector() has been called for the tcp_stream_connector=%p, so it cannot be used for connections", tcp_stream_connector);
 			break;
 		}
 	}

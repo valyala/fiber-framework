@@ -15,7 +15,7 @@ struct ff_stream_connector_vtable
 	/**
 	 * this callback must release resources allocated for the ctx, which was passed to the ff_stream_connector_create().
 	 */
-	void (*delete)(struct ff_stream_connector *stream_connector);
+	void (*delete)(void *ctx);
 
 	/**
 	 * the initialize() callback should initialize the stream_connector for subsequent usage
@@ -24,7 +24,7 @@ struct ff_stream_connector_vtable
 	 * and after the shutdown() call.
 	 * The callback must call ff_log_fatal_error() if it cannot finish initialization.
 	 */
-	void (*initialize)(struct ff_stream_connector *stream_connector);
+	void (*initialize)(void *ctx);
 
 	/**
 	 * the shutdown() callback should unblock the currently blocked ff_stream_connector_connect()
@@ -33,19 +33,18 @@ struct ff_stream_connector_vtable
 	 * Subsequent call to the initialize() callback should restore ff_stream_connector_connect()
 	 * functionality.
 	 */
-	void (*shutdown)(struct ff_stream_connector *stream_connector);
+	void (*shutdown)(void *ctx);
 
 	/**
 	 * the connect() callback should return next connected stream or NULL on error
 	 * or after the ff_stream_connector_shutdown() was called or if the ff_stream_connector_initialize()
 	 * wasn't called before.
 	 */
-	struct ff_stream *(*connect)(struct ff_stream_connector *stream_connector);
+	struct ff_stream *(*connect)(void *ctx);
 };
 
 /**
  * creates a stream connector using the given vtable and ctx.
- * ctx then can be obtained by ff_stream_connector_get_ctx() function.
  * vtable must be persistent until the ff_stream_connector_delete() will be called.
  * Always returns correct result.
  */
@@ -55,11 +54,6 @@ FF_API struct ff_stream_connector *ff_stream_connector_create(const struct ff_st
  * deletes the given stream_connector
  */
 FF_API void ff_stream_connector_delete(struct ff_stream_connector *stream_connector);
-
-/**
- * returns context, which was passed to the ff_stream_connector_create().
- */
-FF_API void *ff_stream_connector_get_ctx(struct ff_stream_connector *stream_connector);
 
 /**
  * Initializes the stream_connector.
