@@ -226,11 +226,19 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\ff_loopback.c"
+				>
+			</File>
+			<File
 				RelativePath=".\src\ff_malloc.c"
 				>
 			</File>
 			<File
 				RelativePath=".\src\ff_mutex.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\ff_pipe.c"
 				>
 			</File>
 			<File
@@ -653,11 +661,19 @@
 					>
 				</File>
 				<File
+					RelativePath=".\include\private\ff_loopback.h"
+					>
+				</File>
+				<File
 					RelativePath=".\include\private\ff_malloc.h"
 					>
 				</File>
 				<File
 					RelativePath=".\include\private\ff_mutex.h"
+					>
+				</File>
+				<File
+					RelativePath=".\include\private\ff_pipe.h"
 					>
 				</File>
 				<File
@@ -818,6 +834,10 @@
 				</File>
 				<File
 					RelativePath=".\include\ff\ff_mutex.h"
+					>
+				</File>
+				<File
+					RelativePath=".\include\ff\ff_pipe.h"
 					>
 				</File>
 				<File
