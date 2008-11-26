@@ -69,7 +69,7 @@ enum ff_result ff_loopback_read(struct ff_loopback *loopback, void *buf, int len
 				ff_event_wait(loopback->read_event);
 				continue;
 			}
-			else if (bytes_left = loopback->buffer_size - 1)
+			else if (bytes_left == loopback->buffer_size - 1)
 			{
 				ff_event_set(loopback->write_event);
 			}
