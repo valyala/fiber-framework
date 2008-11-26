@@ -282,6 +282,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\ff_stream_pipe.c"
+				>
+			</File>
+			<File
 				RelativePath=".\src\ff_stream_tcp.c"
 				>
 			</File>
@@ -717,6 +721,10 @@
 					>
 				</File>
 				<File
+					RelativePath=".\include\private\ff_stream_pipe.h"
+					>
+				</File>
+				<File
 					RelativePath=".\include\private\ff_stream_tcp.h"
 					>
 				</File>
@@ -866,6 +874,10 @@
 				</File>
 				<File
 					RelativePath=".\include\ff\ff_stream_connector_tcp.h"
+					>
+				</File>
+				<File
+					RelativePath=".\include\ff\ff_stream_pipe.h"
 					>
 				</File>
 				<File
