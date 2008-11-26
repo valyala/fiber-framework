@@ -29,8 +29,10 @@ MAIN_SRCS= \
 	$(SRC_DIR)/ff_file.c \
 	$(SRC_DIR)/ff_hash.c \
 	$(SRC_DIR)/ff_log.c \
+	$(SRC_DIR)/ff_loopback.c \
 	$(SRC_DIR)/ff_malloc.c \
 	$(SRC_DIR)/ff_mutex.c \
+	$(SRC_DIR)/ff_pipe.c \
 	$(SRC_DIR)/ff_pool.c \
 	$(SRC_DIR)/ff_queue.c \
 	$(SRC_DIR)/ff_read_stream_buffer.c \

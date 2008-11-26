@@ -10,6 +10,7 @@
 #include "ff/ff_pool.h"
 #include "ff/ff_dictionary.h"
 #include "ff/ff_hash.h"
+#include "ff/ff_pipe.h"
 #include "ff/ff_file.h"
 #include "ff/arch/ff_arch_net_addr.h"
 #include "ff/ff_tcp.h"
@@ -1188,6 +1189,141 @@ static void test_dictionary_all()
 
 /* end of ff_dictionary tests */
 
+/* start of ff_pipe tests */
+
+static void test_pipe_create_delete()
+{
+	int i;
+
+	ff_core_initialize(LOG_FILENAME);
+	for (i = 0; i < 100; i++)
+	{
+		struct ff_pipe *pipe1, *pipe2;
+
+		ff_pipe_create_pair(i + 2, &pipe1, &pipe2);
+		ff_pipe_delete(pipe1);
+		ff_pipe_delete(pipe2);
+	}
+	ff_core_shutdown();
+}
+
+static void test_pipe_basic()
+{
+	struct ff_pipe *pipe1, *pipe2;
+	char buf[4];
+	int is_equal;
+	enum ff_result result;
+
+	ff_core_initialize(LOG_FILENAME);
+
+	ff_pipe_create_pair(5, &pipe1, &pipe2);
+
+	result = ff_pipe_write(pipe1, "test", 4);
+	ASSERT(result == FF_SUCCESS, "cannot write to pipe");
+	result = ff_pipe_read(pipe2, buf, 4);
+	ASSERT(result == FF_SUCCESS, "cannnot read from pipe");
+	is_equal = (memcmp(buf, "test", 4) == 0);
+	ASSERT(is_equal, "wrong value received from the pipe");
+
+	result = ff_pipe_write(pipe2, "abcd", 4);
+	ASSERT(result == FF_SUCCESS, "cannot write to pipe");
+	result = ff_pipe_read(pipe1, buf, 4);
+	ASSERT(result == FF_SUCCESS, "cannot read from pipe");
+	is_equal = (memcmp(buf, "abcd", 4) == 0);
+	ASSERT(is_equal, "wrong value received from the pipe");
+
+	result = ff_pipe_write(pipe1, "01", 2);
+	ASSERT(result == FF_SUCCESS, "cannot write to pipe");
+	result = ff_pipe_write(pipe1, "23", 2);
+	ASSERT(result == FF_SUCCESS, "cannot write to pipe");
+	result = ff_pipe_read(pipe2, buf, 1);
+	ASSERT(result == FF_SUCCESS, "cannot read from pipe");
+	ASSERT(buf[0] == '0', "wrong value received");
+	result = ff_pipe_read(pipe2, buf, 3);
+	is_equal = (memcmp(buf, "123", 3) == 0);
+	ASSERT(is_equal, "wrong value received");
+
+	result = ff_pipe_write(pipe1, "qwe", 3);
+	ASSERT(result == FF_SUCCESS, "cannot write to pipe");
+	result = ff_pipe_write(pipe2, "rty", 3);
+	ASSERT(result == FF_SUCCESS, "cannot write to pipe");
+	result = ff_pipe_read(pipe2, buf, 3);
+	ASSERT(result == FF_SUCCESS, "cannot read from pipe");
+	is_equal = (memcmp(buf, "qwe", 3) == 0);
+	ASSERT(is_equal, "wrong value recevied");
+	result = ff_pipe_read(pipe1, buf, 3);
+	ASSERT(result == FF_SUCCESS, "cannot read from pipe");
+	is_equal = (memcmp(buf, "rty", 3) == 0);
+	ASSERT(is_equal, "wrong value recevied");
+
+	ff_pipe_delete(pipe1);
+	ff_pipe_delete(pipe2);
+
+	ff_core_shutdown();
+}
+
+static void pipe_short_fiberpool_func(void *ctx)
+{
+	struct ff_pipe *pipe;
+	char buf[10];
+	int is_equal;
+	enum ff_result result;
+
+	pipe = (struct ff_pipe *) ctx;
+	result = ff_pipe_read(pipe, buf, 10);
+	ASSERT(result == FF_SUCCESS, "cannot read from the pipe");
+	is_equal = (memcmp(buf, "0123456789", 10) == 0);
+	ASSERT(is_equal, "wrong value received");
+	result = ff_pipe_write(pipe, "0987654321", 10);
+	ASSERT(result == FF_SUCCESS, "cannot write to the pipe");
+
+	ff_pipe_disconnect(pipe);
+	result = ff_pipe_read(pipe, buf, 10);
+	ASSERT(result == FF_FAILURE, "the pipe must be disconnected");
+	result = ff_pipe_write(pipe, "aaa", 3);
+	ASSERT(result == FF_FAILURE, "the pipe must be disconnected");
+
+	ff_pipe_delete(pipe);
+}
+
+static void test_pipe_short()
+{
+	struct ff_pipe *pipe1, *pipe2;
+	char buf[10];
+	int is_equal;
+	enum ff_result result;
+
+	ff_core_initialize(LOG_FILENAME);
+	ff_pipe_create_pair(2, &pipe1, &pipe2);
+	ff_core_fiberpool_execute_async(pipe_short_fiberpool_func, pipe2);
+
+	result = ff_pipe_write(pipe1, "0123456789", 10);
+	ASSERT(result == FF_SUCCESS, "cannot write to the pipe");
+	result = ff_pipe_read(pipe1, buf, 10);
+	ASSERT(result == FF_SUCCESS, "cannot read from the pipe");
+	is_equal = (memcmp(buf, "0987654321", 10) == 0);
+	ASSERT(is_equal, "wrong value received");
+
+	result = ff_pipe_read(pipe1, buf, 10);
+	ASSERT(result == FF_FAILURE, "the pipe must be disconnected");
+	result = ff_pipe_write(pipe1, "test", 4);
+	ASSERT(result == FF_FAILURE, "the pipe must be disconnected");
+	result = ff_pipe_read(pipe1, buf, 10);
+	ASSERT(result == FF_FAILURE, "the pipe must be disconnected");
+
+	ff_pipe_delete(pipe1);
+	ff_core_shutdown();
+}
+
+static void test_pipe_all()
+{
+	test_pipe_create_delete();
+	test_pipe_basic();
+	test_pipe_short();
+}
+
+/* end of ff_pipe tests */
+
 /* start of ff_file tests */
 
 static void test_file_open_read_fail()
@@ -2139,6 +2275,7 @@ static void test_all()
 	test_blocking_stack_all();
 	test_pool_all();
 	test_dictionary_all();
+	test_pipe_all();
 	test_file_all();
 	test_arch_net_addr_all();
 	test_tcp_all();
