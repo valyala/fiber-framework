@@ -67,10 +67,17 @@ static const struct ff_stream_vtable pipe_stream_vtable =
 	disconnect_pipe
 };
 
-struct ff_stream *ff_stream_pipe_create(struct ff_pipe *pipe)
+void ff_stream_pipe_create_pair(int buffer_size, struct ff_stream **stream1, struct ff_stream **stream2)
 {
-	struct ff_stream *stream;
+	struct ff_pipe *pipe1;
+	struct ff_pipe *pipe2;
+	
+	ff_assert(buffer_size >= 0);
+	ff_assert(stream1 != NULL);
+	ff_assert(stream2 != NULL);
 
-	stream = ff_stream_create(&pipe_stream_vtable, pipe);
-	return stream;
+	ff_pipe_create_pair(buffer_size, &pipe1, &pipe2);
+
+	*stream1 = ff_stream_create(&pipe_stream_vtable, pipe1);
+	*stream2 = ff_stream_create(&pipe_stream_vtable, pipe2);
 }
