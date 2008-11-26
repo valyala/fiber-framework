@@ -43,6 +43,7 @@ MAIN_SRCS= \
 	$(SRC_DIR)/ff_stream_acceptor_tcp.c \
 	$(SRC_DIR)/ff_stream_connector.c \
 	$(SRC_DIR)/ff_stream_connector_tcp.c \
+	$(SRC_DIR)/ff_stream_pipe.c \
 	$(SRC_DIR)/ff_stream_tcp.c \
 	$(SRC_DIR)/ff_tcp.c \
 	$(SRC_DIR)/ff_threadpool.c \
