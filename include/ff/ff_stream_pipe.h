@@ -11,7 +11,7 @@ extern "C" {
  * Creates pair of connected pipe streams.
  * Always returns correct result.
  */
-FF_API void ff_stream_pipe_create(int buffer_size, struct ff_stream **stream1, struct ff_stream **stream2);
+FF_API void ff_stream_pipe_create_pair(int buffer_size, struct ff_stream **stream1, struct ff_stream **stream2);
 
 #ifdef __cplusplus
 }
