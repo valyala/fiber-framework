@@ -44,6 +44,18 @@ enum ff_result ff_arch_tcp_bind(struct ff_arch_tcp *tcp, const struct ff_arch_ne
 		goto end;
 	}
 
+	/* there is no need to set SO_REUSEADDR option for the listening socket on windows
+	 * in order to be able to bind it immediately after the application restart
+	 * or after closing this socket in the same application.
+	 * The http://msdn.microsoft.com/en-us/library/ms740621(VS.85).aspx article recommeds
+	 * to set the SO_EXCLUSIVEADDRUSE option in order to prevent other processes from binding
+	 * the same address, but this option requires administrative rights and has some caveats,
+	 * described in the article. So the best solution is to use default socket options,
+	 * which is almost the same as using SO_REUSEADDR under unix. The only exception is security:
+	 * under windows another process can bind to the same address using SO_REUSEADDR and steal data.
+	 * So it is fair to sacrifice security under windows, which has not very good security anyway ;).
+	 */
+
 	rv = bind(tcp->handle, (struct sockaddr *) &addr->addr, sizeof(addr->addr));
 	if (rv != SOCKET_ERROR)
 	{

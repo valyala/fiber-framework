@@ -64,6 +64,19 @@ enum ff_result ff_arch_tcp_bind(struct ff_arch_tcp *tcp, const struct ff_arch_ne
 	int rv;
 	enum ff_result result = FF_FAILURE;
 
+	/**
+	 * set SO_REUSEADDR option for the listening socket in order to be able to bind
+	 * to the given address immediately after the previous socket bound to the same address
+	 * has been closed.
+	 */
+	if (is_listening)
+	{
+		int one = 1;
+
+		rv = setsockopt(tcp->sd_rd, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one));
+		ff_assert(rv != -1);
+	}
+
 	rv = bind(tcp->sd_rd, (struct sockaddr *) &addr->addr, sizeof(addr->addr));
 	if (rv != -1)
 	{
