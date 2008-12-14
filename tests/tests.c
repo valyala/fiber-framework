@@ -977,9 +977,42 @@ static void test_pool_basic()
 	pool = ff_pool_create(10, pool_entry_constructor, NULL, pool_entry_destructor);
 	for (i = 0; i < 10; i++)
 	{
-		entry = ff_pool_acquire_entry(pool);
+		ff_pool_acquire_entry(pool, &entry);
 		ASSERT(entry == (void *)123, "unexpected value for the entry");
 		ASSERT(pool_entries_cnt == i + 1, "unexpected entries number");
+	}
+
+	for (i = 0; i < 10; i++)
+	{
+		ff_pool_release_entry(pool, (void *)123);
+	}
+
+	ff_pool_delete(pool);
+	ASSERT(pool_entries_cnt == 0, "pool should be empty after deletion");
+	ff_core_shutdown();
+}
+
+static void test_pool_with_timeout()
+{
+	struct ff_pool *pool;
+	void *entry;
+	int i;
+	enum ff_result result;
+
+	ff_core_initialize(LOG_FILENAME);
+	pool = ff_pool_create(10, pool_entry_constructor, NULL, pool_entry_destructor);
+	for (i = 0; i < 10; i++)
+	{
+		result = ff_pool_acquire_entry_with_timeout(pool, &entry, 100);
+		ASSERT(result == FF_SUCCESS, "enexpected result");
+		ASSERT(entry == (void *)123, "enexpected value for the entry");
+		ASSERT(pool_entries_cnt == i + 1, "unexpected entries number");
+	}
+
+	for (i = 0; i < 3; i++)
+	{
+		result = ff_pool_acquire_entry_with_timeout(pool, &entry, 10);
+		ASSERT(result != FF_SUCCESS, "enexpected result");
 	}
 
 	for (i = 0; i < 10; i++)
@@ -1008,11 +1041,11 @@ static void test_pool_fiberpool()
 	ff_core_initialize(LOG_FILENAME);
 	pool = ff_pool_create(1, pool_entry_constructor, NULL, pool_entry_destructor);
 	ASSERT(pool_entries_cnt == 0, "pool should be empty after creation");
-	entry = ff_pool_acquire_entry(pool);
+	ff_pool_acquire_entry(pool, &entry);
 	ASSERT(entry == (void *)123, "unexpected value received from the pool");
 	ASSERT(pool_entries_cnt == 1, "pool should create one entry");
 	ff_core_fiberpool_execute_async(fiberpool_pool_func, pool);
-	entry = ff_pool_acquire_entry(pool);
+	ff_pool_acquire_entry(pool, &entry);
 	ASSERT(entry == (void *)123, "wrong entry value");
 	ASSERT(pool_entries_cnt == 1, "pool should contain one entry");
 	ff_pool_release_entry(pool, (void *)123);
@@ -1025,6 +1058,7 @@ static void test_pool_all()
 {
 	test_pool_create_delete();
 	test_pool_basic();
+	test_pool_with_timeout();
 	test_pool_fiberpool();
 }
 
