@@ -17,7 +17,9 @@ FF_API struct ff_pool *ff_pool_create(int max_size, ff_pool_entry_constructor en
 
 FF_API void ff_pool_delete(struct ff_pool *pool);
 
-FF_API void *ff_pool_acquire_entry(struct ff_pool *pool);
+FF_API void ff_pool_acquire_entry(struct ff_pool *pool, void **entry);
+
+FF_API enum ff_result ff_pool_acquire_entry_with_timeout(struct ff_pool *pool, void **entry, int timeout);
 
 FF_API void ff_pool_release_entry(struct ff_pool *pool, void *entry);
 
