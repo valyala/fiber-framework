@@ -945,13 +945,15 @@ static int pool_entries_cnt = 0;
 static void *pool_entry_constructor(void *ctx)
 {
 	ASSERT(pool_entries_cnt >= 0, "unexpected pool entries value");
+	ASSERT(ctx == (void *)432, "unexpected constructor ctx");
 	pool_entries_cnt++;
 	return (void *)123;
 }
 
-static void pool_entry_destructor(void *entry)
+static void pool_entry_destructor(void *ctx, void *entry)
 {
 	ASSERT(pool_entries_cnt > 0, "unexpected pool entries value");
+	ASSERT(ctx == (void *)234, "unexpected destructor ctx");
 	pool_entries_cnt--;
 }
 
@@ -960,7 +962,7 @@ static void test_pool_create_delete()
 	struct ff_pool *pool;
 
 	ff_core_initialize(LOG_FILENAME);
-	pool = ff_pool_create(10, pool_entry_constructor, NULL, pool_entry_destructor);
+	pool = ff_pool_create(10, pool_entry_constructor, (void *)432, pool_entry_destructor, (void *)234);
 	ASSERT(pool_entries_cnt == 0, "pool should be empty after creation");
 	ff_pool_delete(pool);
 	ASSERT(pool_entries_cnt == 0, "pool should be empty after deletion");
@@ -974,7 +976,7 @@ static void test_pool_basic()
 	int i;
 
 	ff_core_initialize(LOG_FILENAME);
-	pool = ff_pool_create(10, pool_entry_constructor, NULL, pool_entry_destructor);
+	pool = ff_pool_create(10, pool_entry_constructor, (void *)432, pool_entry_destructor, (void *)234);
 	for (i = 0; i < 10; i++)
 	{
 		ff_pool_acquire_entry(pool, &entry);
@@ -1000,7 +1002,7 @@ static void test_pool_with_timeout()
 	enum ff_result result;
 
 	ff_core_initialize(LOG_FILENAME);
-	pool = ff_pool_create(10, pool_entry_constructor, NULL, pool_entry_destructor);
+	pool = ff_pool_create(10, pool_entry_constructor, (void *)432, pool_entry_destructor, (void *)234);
 	for (i = 0; i < 10; i++)
 	{
 		result = ff_pool_acquire_entry_with_timeout(pool, &entry, 100);
@@ -1039,7 +1041,7 @@ static void test_pool_fiberpool()
 	void *entry;
 	
 	ff_core_initialize(LOG_FILENAME);
-	pool = ff_pool_create(1, pool_entry_constructor, NULL, pool_entry_destructor);
+	pool = ff_pool_create(1, pool_entry_constructor, (void *)432, pool_entry_destructor, (void *)234);
 	ASSERT(pool_entries_cnt == 0, "pool should be empty after creation");
 	ff_pool_acquire_entry(pool, &entry);
 	ASSERT(entry == (void *)123, "unexpected value received from the pool");

@@ -9,6 +9,7 @@ struct ff_pool
 	ff_pool_entry_constructor entry_constructor;
 	ff_pool_entry_destructor entry_destructor;
 	void *entry_constructor_ctx;
+	void *entry_destructor_ctx;
 	struct ff_semaphore *semaphore;
 	struct ff_stack *free_entries;
 	int max_size;
@@ -41,7 +42,7 @@ static void get_free_entry(struct ff_pool *pool, void **entry)
         pool->busy_entries_cnt++;
 }
 
-struct ff_pool *ff_pool_create(int max_size, ff_pool_entry_constructor entry_constructor, void *entry_constructor_ctx, ff_pool_entry_destructor entry_destructor)
+struct ff_pool *ff_pool_create(int max_size, ff_pool_entry_constructor entry_constructor, void *entry_constructor_ctx, ff_pool_entry_destructor entry_destructor, void *entry_destructor_ctx)
 {
 	struct ff_pool *pool;
 
@@ -53,6 +54,7 @@ struct ff_pool *ff_pool_create(int max_size, ff_pool_entry_constructor entry_con
 	pool->entry_constructor = entry_constructor;
 	pool->entry_destructor = entry_destructor;
 	pool->entry_constructor_ctx = entry_constructor_ctx;
+	pool->entry_destructor_ctx = entry_destructor_ctx;
 	pool->semaphore = ff_semaphore_create(max_size);
 	pool->free_entries = ff_stack_create();
 	pool->max_size = max_size;
@@ -65,19 +67,23 @@ struct ff_pool *ff_pool_create(int max_size, ff_pool_entry_constructor entry_con
 void ff_pool_delete(struct ff_pool *pool)
 {
 	struct ff_stack *free_entries;
+	ff_pool_entry_destructor entry_destructor;
+	void *entry_destructor_ctx;
 	int i;
 	int current_size;
 
 	ff_assert(pool->busy_entries_cnt == 0);
 	free_entries = pool->free_entries;
 	current_size = pool->current_size;
+	entry_destructor = pool->entry_destructor;
+	entry_destructor_ctx = pool->entry_destructor_ctx;
 	for (i = 0; i < current_size; i++)
 	{
 		void *entry;
 
 		ff_stack_top(free_entries, (const void **) &entry);
 		ff_stack_pop(free_entries);
-		pool->entry_destructor(entry);
+		entry_destructor(entry_destructor_ctx, entry);
 	}
 	ff_stack_delete(free_entries);
 	ff_semaphore_delete(pool->semaphore);
