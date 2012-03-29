@@ -25,7 +25,7 @@ extern "C" {
 #endif
 
 /**
- * don't call this function directly! Use ff_log_debug() macro isntead.
+ * don't call this function directly! Use ff_log_debug() macro instead.
  */
 FF_API void ff_log_debug_private(const wchar_t *format, ...);
 

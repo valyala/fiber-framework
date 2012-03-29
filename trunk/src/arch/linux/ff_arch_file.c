@@ -298,7 +298,7 @@ again:
 	}
 
 	bytes_written_int = (int) bytes_written;
-	return bytes_written;
+	return bytes_written_int;
 }
 
 enum ff_result ff_arch_file_erase(const wchar_t *path)

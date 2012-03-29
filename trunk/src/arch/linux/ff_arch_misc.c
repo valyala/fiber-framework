@@ -6,7 +6,6 @@
 #include "ff_linux_misc.h"
 
 #include <time.h>
-#include <sys/time.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -62,12 +61,14 @@ void ff_arch_misc_shutdown()
 
 int64_t ff_arch_misc_get_current_time()
 {
-	struct timeval tv;
+	struct timespec ts;
 	int rv;
 	int64_t current_time;
 
-	rv = gettimeofday(&tv, NULL);
-	current_time = (((int64_t) tv.tv_sec) * 1000) + (tv.tv_usec / 1000);
+	rv = clock_gettime(CLOCK_REALTIME, &ts);
+	assert(rv == 0);
+	(void)rv;
+	current_time = (((int64_t) ts.tv_sec) * 1000) + (ts.tv_nsec / (1000 * 1000));
 	return current_time;
 }
 

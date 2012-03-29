@@ -13,6 +13,7 @@ static void cancel_udp_operation(struct ff_fiber *fiber, void *ctx)
 {
 	struct ff_udp *udp;
 
+	(void)fiber;
 	udp = (struct ff_udp *) ctx;
 	ff_udp_disconnect(udp);
 }

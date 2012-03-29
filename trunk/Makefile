@@ -1,5 +1,5 @@
-CFLAGS=-Wall -fpic -combine -fwhole-program -g -I./include -DHAS_STDINT_H -D_GNU_SOURCE -U_FORTIFY_SOURCE
-LDFLAGS=-lpthread -shared
+CFLAGS=-Wall -Wextra -fpic -g -I./include -DHAS_STDINT_H -D_GNU_SOURCE
+LDFLAGS=-lpthread -lrt -shared
 CC=gcc
 
 SRC_DIR=src
@@ -59,10 +59,11 @@ default: all
 all: libfiber-framework.so ff-tests
 
 libfiber-framework.so: $(FF_LIB_SRCS)
-	$(CC) $(CFLAGS) $(LDFLAGS) -o libfiber-framework.so $(FF_LIB_SRCS)
+	$(CC) $(CFLAGS) -o libfiber-framework.so $(FF_LIB_SRCS) $(LDFLAGS)
 
 ff-tests:
 	cd ./tests && make ff-tests && cp ff-tests ../
+	./ff-tests
 
 clean:
 	cd ./tests && make clean

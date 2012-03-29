@@ -45,6 +45,8 @@ static enum ff_result write_to_pipe(void *ctx, const void *buf, int len)
 
 static enum ff_result flush_pipe(void *ctx)
 {
+	(void)ctx;
+
 	/* the pipe is automatically flushed, so there is no need in its flushing anymore */
 
 	return FF_SUCCESS;

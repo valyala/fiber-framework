@@ -119,11 +119,13 @@ static void internal_sleep(int interval)
 
 static void sleep_timeout_func(struct ff_fiber *fiber, void *ctx)
 {
+	(void)ctx;
 	ff_core_schedule_fiber(fiber);
 }
 
 static void deferred_timeout_func(struct ff_fiber *fiber, void *ctx)
 {
+	(void)fiber;
 	ff_core_fiberpool_execute_async(deferred_func, ctx);
 }
 
@@ -150,6 +152,7 @@ static void timeout_operations_visitor_func(const void *data, void *ctx)
 
 static void timeout_checker_func(void *ctx)
 {
+	(void)ctx;
 	for (;;)
 	{
 		struct timeout_checker_data timeout_checker_data;
