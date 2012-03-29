@@ -32,6 +32,7 @@ struct ff_arch_completion_port *ff_arch_completion_port_create(int concurrency)
 	int rv;
 	struct epoll_event event;
 
+	(void)concurrency;
 	rv = pipe(pipe_fds);
 	ff_linux_fatal_error_check(rv != -1, L"cannot create pipe");
 

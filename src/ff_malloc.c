@@ -1,5 +1,6 @@
 #include "private/ff_common.h"
 
+#include "private/ff_log.h"
 #include "private/ff_malloc.h"
 #include <stdlib.h>
 
@@ -7,7 +8,7 @@ static void check_mem(void *mem)
 {
 	if (mem == NULL)
 	{
-		*(int *)0 = 0;
+		ff_log_fatal_error(L"Cannot allocate memory");
 	}
 }
 

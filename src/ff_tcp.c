@@ -66,6 +66,7 @@ static void cancel_tcp_operation(struct ff_fiber *fiber, void *ctx)
 {
 	struct ff_tcp *tcp;
 
+	(void)fiber;
 	tcp = (struct ff_tcp *) ctx;
 	ff_tcp_disconnect(tcp);
 }
